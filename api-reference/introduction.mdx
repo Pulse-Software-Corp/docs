@@ -1,33 +1,71 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'Overview'
 ---
 
+All API endpoints are authenticated using API keys provided to you upon billing.
+
+## File Upload
+
+<CardGroup cols={2}>
+  <Card
+    title="/extract Endpoint"
+    icon="cloud-arrow-up"
+  >
+    Accepts a presigned URL from the user, typically used for high volume page count documents.
+  </Card>
+  <Card
+    title="/convert Endpoint"
+    icon="cloud-arrow-down"
+  >
+    Provides a presigned URL from Pulse's secure S3 bucket for extraction of smaller files.
+  </Card>
+</CardGroup>
+
+## Document Processing
+
+We offer both structured Markdown and JSON responses. JSON outputs can be customized using your own schema via the `/extract` endpoint parameters.
+
+<CardGroup cols={2}>
+  <Card
+    title="Header Chunking"
+    icon="heading"
+  >
+    Splits content based on document headers and section breaks.
+  </Card>
+  <Card
+    title="Page Chunking"
+    icon="file"
+  >
+    Divides content by individual pages for page-specific processing.
+  </Card>
+  <Card
+    title="Semantic Chunking"
+    icon="brain"
+  >
+    Segments content based on semantic meaning and context.
+  </Card>
+  <Card
+    title="Recursive Chunking"
+    icon="repeat"
+  >
+    Iteratively breaks down content into smaller, meaningful segments.
+  </Card>
+</CardGroup>
+
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  An intelligent chunking strategy is coming soon! Our model will automatically select the optimal chunking mode for your specific use case.
 </Note>
 
-## Welcome
+## Processing Pipeline
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
-
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+<Steps>
+  <Step title="Upload" icon="cloud-arrow-up">
+    Submit your document via presigned URL or direct upload
+  </Step>
+  <Step title="Process" icon="wand-magic-sparkles">
+    Our backend models extract content based on your parameters
+  </Step>
+  <Step title="Response" icon="download">
+    Receive your processed output directly or via presigned URL for larger documents
+  </Step>
+</Steps>

@@ -1,29 +1,41 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Starter Kit",
+  "name": "Pulse STUDIO",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "/pulse 1024-2.png",
+    "light": "/pulse 1024-2.png"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/pulse 1024-2.png",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
+    "primary": "#3573f6",
+    "light": "#4a90f9",
+    "dark": "#2561ef",
+    "background": {
+      "dark": "#000000",
+      "light": "#ffffff"
+    },
     "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
+      "from": "#22c55e",
+      "to": "#15803d"
+    }
+  },
+  "font": {
+    "headings": {
+      "family": "Chakra Petch"
+    },
+    "body": {
+      "family": "Chakra Petch"
     }
   },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:hi@mintlify.com"
+      "url": "mailto:founders@trypulse.ai"
     }
   ],
   "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://dashboard.mintlify.com"
+    "name": "Website",
+    "url": "https://studio.trypulse.ai"
   },
   "tabs": [
     {
@@ -31,41 +43,19 @@
       "url": "api-reference"
     }
   ],
-  "anchors": [
-    {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://mintlify.com/docs"
-    },
-    {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://mintlify.com/community"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://mintlify.com/blog"
-    }
-  ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "DOCUMENTATION",
       "pages": [
         "introduction",
         "quickstart",
-        "development"
-      ]
-    },
-    {
-      "group": "Essentials",
-      "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/settings",
-        "essentials/navigation",
-        "essentials/reusable-snippets"
+        {
+          "group": "Security",
+          "pages": [
+            "security/overview",
+            "security/best-practices"
+          ]
+        }
       ]
     },
     {
@@ -75,17 +65,23 @@
       ]
     },
     {
-      "group": "Endpoint Examples",
+      "group": "API Endpoints",
       "pages": [
-        "api-reference/endpoint/get",
         "api-reference/endpoint/create",
         "api-reference/endpoint/delete"
       ]
     }
   ],
   "footerSocials": {
-    "x": "https://x.com/mintlify",
-    "github": "https://github.com/mintlify",
-    "linkedin": "https://linkedin.com/company/mintlify"
-  }
+    "x": "https://x.com/Pulse__AI",
+    "linkedin": "https://www.linkedin.com/company/pulse-ai-corp/"
+  },
+  "style": {
+    "css": "/style.css"
+  },
+  "modeToggle": {
+    "default": "dark"
+  },
+  "fontAwesome": true,
+  "theme": "prism"
 }

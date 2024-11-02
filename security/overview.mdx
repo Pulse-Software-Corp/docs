@@ -1,0 +1,151 @@
+---
+title: "Security Overview"
+description: "Discover how Pulse STUDIO safeguards your data through enterprise security and compliance measures"
+---
+
+<PageHeader>
+  <Icon name="shield-lock" className="h-8 w-8 text-primary" />
+  <Heading>Enterprise Security & Compliance</Heading>
+  <Text>Your data security is our top priority. Learn about our comprehensive security infrastructure and compliance standards.</Text>
+</PageHeader>
+
+<CardGroup cols={2}>
+  <Card title="SOC 2 Type II" icon="certificate">
+    Currently undergoing certification process. Contact founders@trypulse.ai for a letter of engagement.
+  </Card>
+  <Card title="HIPAA Compliance" icon="hospital">
+    Enterprise-ready with HIPAA compliance. BAAs available for qualifying customers.
+  </Card>
+</CardGroup>
+
+## Data Protection Architecture
+
+<Grid cols={2}>
+  <div>
+    ### Storage Security
+    <List>
+      <ListItem icon="lock-closed">
+        Enterprise-grade encryption across all data states
+      </ListItem>
+      <ListItem icon="cloud">
+        Secure AWS S3 infrastructure with granular permissions
+      </ListItem>
+      <ListItem icon="clock">
+        Automatic 48-hour data deletion policy
+      </ListItem>
+      <ListItem icon="shield-check">
+        No data retention for Scale+ customers
+      </ListItem>
+    </List>
+
+    Our storage infrastructure is built on AWS S3 with enterprise-grade security measures. All data is automatically purged after 48 hours, ensuring minimal data retention. We implement strict access controls and encryption at every layer:
+
+    - AES-256 encryption at rest
+    - TLS 1.3 encryption in transit
+    - Granular bucket policies and IAM roles
+    - Regular security audits and monitoring
+  </div>
+  
+  <div>
+    ### AI Partnership Security
+    <List>
+      <ListItem icon="document-check">
+        Zero data retention BAAs with OpenAI and Anthropic
+      </ListItem>
+      <ListItem icon="server-stack">
+        HIPAA-compliant data processing pipelines
+      </ListItem>
+      <ListItem icon="no-symbol">
+        Your data is never used for model training
+      </ListItem>
+    </List>
+
+    Our AI infrastructure combines self-hosted models and trusted partnerships:
+
+    - Self-hosted OCR and specialized ML models
+    - Zero-retention agreements with AI partners
+    - Isolated processing environments
+    - End-to-end encrypted data pipelines
+  </div>
+</Grid>
+
+## Infrastructure & Controls
+
+<Table>
+  <TableHead>
+    <TableRow>
+      <TableHeader>Component</TableHeader>
+      <TableHeader>Details</TableHeader>
+    </TableRow>
+  </TableHead>
+  <TableBody>
+    <TableRow>
+      <TableCell>Cloud Infrastructure</TableCell>
+      <TableCell>AWS enterprise security stack</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Access Management</TableCell>
+      <TableCell>Role-based access control (RBAC)</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Security Operations</TableCell>
+      <TableCell>24/7 monitoring and threat detection</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Data Protection</TableCell>
+      <TableCell>TLS 1.3 encryption in transit, AES-256 at rest</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Processing Pipeline Security
+
+Our processing pipeline is designed with security at its core:
+
+- **Isolated Environments**: Each processing task runs in isolated containers
+- **Self-hosted Components**: Critical OCR and ML models run on our secure infrastructure
+- **Zero Trust Architecture**: Every service-to-service communication is authenticated and encrypted
+- **Audit Logging**: Comprehensive logging of all system activities
+- **Real-time Monitoring**: Continuous security monitoring and threat detection
+
+### Data Lifecycle Management
+
+We maintain strict control over data throughout its lifecycle:
+
+1. **Ingestion**: Data is encrypted immediately upon upload
+2. **Processing**: Processed in isolated, ephemeral containers
+3. **Storage**: Temporarily stored in encrypted S3 buckets
+4. **Deletion**: Automatic deletion after 48 hours
+5. **Verification**: Regular audits ensure deletion compliance
+
+### Access Controls
+
+Our role-based access control (RBAC) system ensures:
+
+- Principle of least privilege
+- Multi-factor authentication
+- Regular access reviews
+- Detailed audit trails
+- Automated access revocation
+
+<Note>
+  For implementation details, see our [Security Best Practices](/security/best-practices) documentation.
+</Note>
+
+<CardGroup cols={2}>
+  <Card 
+    title="Contact Security Team" 
+    icon="shield-check" 
+    href="mailto:security@trypulse.ai"
+  >
+    Have questions about our security measures? Our team is here to help.
+  </Card>
+  
+  <Card
+    title="Request Compliance Documentation" 
+    icon="file-certificate"
+    href="mailto:founders@trypulse.ai"
+  >
+    Need SOC 2 or HIPAA documentation? Email us for compliance details.
+  </Card>
+</CardGroup>

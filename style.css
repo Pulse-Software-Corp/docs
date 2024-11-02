@@ -1,0 +1,71 @@
+.build-examples {
+  position: relative;
+  padding-left: 48px;
+}
+
+.build-examples::before {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 48px;
+  bottom: 48px;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.example {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 48px;
+  position: relative;
+}
+
+.icon-container {
+  position: relative;
+  left: -48px;
+  margin-right: -24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.icon-container i {
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.content {
+  flex: 1;
+}
+
+.content h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+/* Add these styles to ensure site name visibility */
+.nav-logo-name {
+  display: flex !important;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.logo-title {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

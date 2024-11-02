@@ -1,0 +1,308 @@
+openapi: 3.0.3
+info:
+  title: File Processing API
+  description: API for extracting, processing, and converting files
+  version: 1.0.0
+servers:
+  - url: https://igvlq7n0rk.execute-api.us-east-1.amazonaws.com/prod
+    description: Production server
+
+paths:
+  /extract:
+    post:
+      summary: Extract and process a file
+      description: Extracts content from a file at the given URL and processes it with specified chunking options.
+      operationId: extractFile
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+        - name: file-url
+          in: query
+          required: true
+          description: URL of the file to be processed
+          schema:
+            type: string
+            format: uri
+            example: https://textract-processing-pulseai.s3.amazonaws.com/data.pdf
+        - name: chunking
+          in: query
+          required: false
+          description: |
+            Comma-separated list of chunking methods to apply. Available options:
+            * semantic - Splits content into semantic chunks
+            * recursive - Applies recursive chunking algorithm
+            * page - Splits content by page
+            * header - Splits content by headers
+            Example combinations: "semantic,recursive" or "page,header" or "semantic,recursive,page,header"
+          schema:
+            type: string
+            example: semantic,recursive
+            pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: ['application/json']
+      responses:
+        '200':
+          description: Successful extraction and processing of file. Returns either URLs (for documents >10 pages) or full content (for documents ≤10 pages).
+          content:
+            application/json:
+              examples:
+                urlResponse:
+                  summary: Response for documents over 10 pages
+                  value:
+                    statusCode: 200
+                    s3_object_url: "https://example-bucket.s3.amazonaws.com/document.pdf"
+                    presigned_url: "https://example-bucket.s3.amazonaws.com/document.pdf?AWSAccessKeyId=XXXX&Signature=YYYY&Expires=1234567890"
+                fullContentResponse:
+                  summary: Response for documents of 10 pages or less
+                  value:
+                    chunks:
+                      intelligent:
+                        - chunk_number: 1
+                          content: "# Quote"
+                          length: 7
+                          method: "recursive"
+                        - chunk_number: 2
+                          content: "**Quote Expiration Date:** 06/28/2024"
+                          length: 95
+                          method: "recursive"
+                      semantic:
+                        - chunk_number: 1
+                          content: "Full document content..."
+                          length: 2818
+                          method: "semantic"
+                    layout:
+                      - - content: " "
+                          id: 0
+                          type: "Body"
+                          x1: 79.70349884033203
+                          x2: 529.2933349609375
+                          y1: 249.438720703125
+                          y2: 273.668701171875
+                    markdown: "# Quote\n\n**Quote Expiration Date:** 06/28/2024..."
+              schema:
+                oneOf:
+                  - type: object
+                    description: Response for documents over 10 pages
+                    properties:
+                      statusCode:
+                        type: integer
+                        example: 200
+                      s3_object_url:
+                        type: string
+                        description: Original S3 URL of the uploaded file
+                        example: "https://example-bucket.s3.amazonaws.com/document.pdf"
+                      presigned_url:
+                        type: string
+                        description: Temporary presigned URL for accessing the file
+                        example: "https://example-bucket.s3.amazonaws.com/document.pdf?AWSAccessKeyId=XXXX&Signature=YYYY&Expires=1234567890"
+                    required:
+                      - statusCode
+                      - s3_object_url
+                      - presigned_url
+                  - type: object
+                    description: Response for documents of 10 pages or less
+                    properties:
+                      chunks:
+                        type: object
+                        properties:
+                          intelligent:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                chunk_number:
+                                  type: integer
+                                  example: 1
+                                content:
+                                  type: string
+                                  example: "# Quote"
+                                length:
+                                  type: integer
+                                  example: 7
+                                method:
+                                  type: string
+                                  example: "recursive"
+                          semantic:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                chunk_number:
+                                  type: integer
+                                  example: 1
+                                content:
+                                  type: string
+                                  example: "Full document content..."
+                                length:
+                                  type: integer
+                                  example: 2818
+                                method:
+                                  type: string
+                                  example: "semantic"
+                      layout:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              content:
+                                type: string
+                              id:
+                                type: integer
+                              type:
+                                type: string
+                              x1:
+                                type: number
+                              x2:
+                                type: number
+                              y1:
+                                type: number
+                              y2:
+                                type: number
+                      markdown:
+                        type: string
+                        description: Full document content in markdown format
+                    required:
+                      - chunks
+                      - layout
+                      - markdown
+        '400':
+          description: Bad request, possibly due to missing file or incorrect parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "No file or URL provided."
+        '401':
+          description: Unauthorized, check API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "API key is required"
+        '403':
+          description: Forbidden, tier limit exceeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                    example: "Tier limit exceeded"
+        '500':
+          description: Internal server error, error in processing the request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "An error occurred while processing the file."
+
+  /convert:
+    post:
+      summary: Convert a PDF file
+      description: Accepts a PDF file and performs a specified conversion.
+      operationId: convertFile
+      requestBody:
+        required: true
+        content:
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+        - name: Content-Type
+          in: header
+          required: true
+          description: Must be application/pdf
+          schema:
+            type: string
+            enum: ['application/pdf']
+      responses:
+        '200':
+          description: Successfully converted PDF file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "File processed and uploaded to S3"
+                  plan-info:
+                    type: object
+                    properties:
+                      note:
+                        type: string
+                        example: "Success"
+                      pages_used:
+                        type: integer
+                        example: 42
+                      tier:
+                        type: string
+                        example: "foundation"
+                  url:
+                    type: string
+                    description: S3 URL for downloading the processed file
+                    example: "https://example-bucket.s3.amazonaws.com/processed_file.json"
+                required:
+                  - message
+                  - url
+        '400':
+          description: Bad request, possibly due to missing or incorrect file format.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Invalid file type or missing file"
+        '401':
+          description: Unauthorized, check API key.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "API key is required"
+        '500':
+          description: Internal server error, error in processing the request.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "An error occurred while processing the file."
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      name: x-api-key
+      in: header
+      description: API key for authentication
+
+security:
+  - ApiKeyAuth: []

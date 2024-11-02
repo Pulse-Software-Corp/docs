@@ -1,71 +1,139 @@
 ---
-title: Introduction
-description: 'Welcome to the home of your new documentation'
+title: API Overview
+description: Welcome to Pulse STUDIO's API
 ---
+Say hi to your new production-grade document extraction service, turning complex information into LLM-ready inputs. No training required. Our documentatio provides an overview of our API endpoints, as well as templates on how to best utilize Pulse STUDIO. 
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.svg"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.svg"
-  alt="Hero Dark"
-/>
+## Key Capabilities
 
-## Setting up
+- **AI-Ready Output**: Structured JSON perfect for LLM training and RAG systems
+- **Computer Vision**: Built-in support for diagrams, tables, and complex layouts
+- **Multimodal Processing**: Handles text, images, and mixed-content documents
 
-The first step to world-class documentation is setting up your editing environments.
+<Note>
+### 🚀 Upcoming Features
+
+- **Audio Processing**: Advanced audio extraction with
+  - Background noise filtering
+  - Speaker identification and separation
+  - Automatic transcription with timestamps
+- **Automated Template Learning**: Smart document analysis that
+  - Learns document patterns automatically
+  - Eliminates manual template creation
+  - Adapts to variations in document formats
+- **Contextual Document Linking**: Intelligent document relationships
+</Note>
 
 <CardGroup cols={2}>
   <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
+    title="AI Training"
+    icon="robot"
+    href="/use-cases/ai-training"
   >
-    Get your docs set up locally for easy development
+    Extract clean training data for fine-tuning LLMs and building RAG systems
   </Card>
   <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
+    title="Document Analysis"
+    icon="magnifying-glass-chart"
+    href="/use-cases/analysis"
   >
-    Preview your changes before you push to make sure they're perfect
+    Process financial reports, contracts, and technical documentation at scale
   </Card>
 </CardGroup>
 
-## Make it yours
+## Endpoints
 
-Update your docs to your brand and add valuable content for the best user conversion.
+We have two main processing endpoints, /extract and /convert. More information can be found in the [API Reference](/api-reference).
 
 <CardGroup cols={2}>
   <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
+    title="/extract"
+    icon="file-export"
+    href="/api-reference/extract"
   >
-    Customize your docs to your company's colors and brands
+    Parse unstructured data into structured Markdown or JSON, specifying your own schema and chunking strategy. 
   </Card>
   <Card
-    title="Reference APIs"
+    title="/convert"
+    icon="cloud-arrow-up"
+    href="/api-reference/convert"
+  >
+    For direct file uploads, get a presigned URL into our secure S3 storage system for processing.
+  </Card>
+</CardGroup>
+
+## Supported Documents
+
+Our API successfully processes a wide range of documents:
+
+- **Business Documents**: Contracts, invoices, purchase orders
+- **Financial Documents**: Annual reports, balance sheets, bank statements
+- **Technical Content**: Research papers, patents, technical specifications
+- **Healthcare Records**: Clinical notes, lab reports, medical histories
+- **Legal Documents**: Agreements, court filings, regulatory submissions
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get up and running with our API in minutes
+  </Card>
+  <Card
+    title="API Reference"
     icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
+    href="/api-reference"
   >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/components/accordion"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
+    Detailed API specifications and examples
   </Card>
 </CardGroup>
+
+## What will you build?
+
+Here are some examples of AI-powered tools you can build with Pulse STUDIO's API:
+
+<div className="build-examples">
+  <div className="example">
+    <div className="icon-container">
+      <i className="fas fa-heartbeat"></i>
+    </div>
+    <div className="content">
+      <h3>Medical Research Assistant</h3>
+      <p>Process thousands of patient records, clinical trials, and medical journals to create a specialized healthcare knowledge base. Extract key medical findings, drug interactions, and treatment outcomes into vector embeddings for instant clinical decision support.</p>
+    </div>
+  </div>
+
+  <div className="example">
+    <div className="icon-container">
+      <i className="fas fa-gavel"></i>
+    </div>
+    <div className="content">
+      <h3>Legal Case Analyzer</h3>
+      <p>Transform your firm's decades of case files, precedents, and legal opinions into a searchable knowledge base. Extract citations, legal arguments, and court decisions to help attorneys find relevant cases and build stronger arguments in minutes, not hours.</p>
+    </div>
+  </div>
+
+  <div className="example">
+    <div className="icon-container">
+      <i className="fas fa-microscope"></i>
+    </div>
+    <div className="content">
+      <h3>Research Literature Assistant</h3>
+      <p>Process vast archives of scientific papers, extracting methods, results, and conclusions into structured data. Create embeddings from figures, tables, and methodologies to power a semantic search engine that helps researchers find relevant studies and identify research gaps.</p>
+    </div>
+  </div>
+
+  <div className="example">
+    <div className="icon-container">
+      <i className="fas fa-robot"></i>
+    </div>
+    <div className="content">
+      <h3>Autonomous Research Agent</h3>
+      <p>Build an AI agent that can autonomously analyze new documents, extract key information, and update its knowledge base. Perfect for staying current with regulatory changes, market research, or competitive analysis while maintaining context across millions of documents.</p>
+    </div>
+  </div>
+</div>
+

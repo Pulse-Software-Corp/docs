@@ -1,0 +1,161 @@
+---
+title: 'Security & Compliance'
+description: 'Enterprise-grade security infrastructure and compliance standards at Pulse STUDIO'
+---
+
+<PageHeader>
+  <div className="flex items-center gap-3">
+    <Icon name="shield-lock" className="h-10 w-10 text-primary" />
+    <Heading>Security & Compliance</Heading>
+  </div>
+  <Text className="mt-2">
+    Enterprise-grade security infrastructure protecting your data at every layer
+  </Text>
+</PageHeader>
+
+<CardGroup cols={2}>
+  <Card title="SOC 2 Type II" icon="shield-check">
+    <div className="space-y-2">
+      <Text>Currently undergoing certification process</Text>
+      <Button variant="outline" href="mailto:founders@trypulse.ai">
+        Request Letter of Engagement
+      </Button>
+    </div>
+  </Card>
+  <Card title="HIPAA Compliance" icon="hospital" iconType="duotone">
+    <div className="space-y-2">
+      <Text>Enterprise-ready with full HIPAA compliance</Text>
+      <Button variant="outline" href="mailto:founders@trypulse.ai">
+        Request BAA Documentation
+      </Button>
+    </div>
+  </Card>
+</CardGroup>
+
+## Infrastructure Overview
+
+<Grid cols={2} className="gap-6">
+  <Card>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Icon name="server" className="h-6 w-6 text-primary" />
+        <Heading size="h3">Processing Architecture</Heading>
+      </div>
+      <List>
+        <ListItem icon="check-circle">Self-hosted ML models and OCR processing for maximum control</ListItem>
+        <ListItem icon="check-circle">Isolated container environments with strict process boundaries</ListItem>
+        <ListItem icon="check-circle">Zero-trust security model with service authentication</ListItem>
+        <ListItem icon="check-circle">End-to-end encryption across all data flows</ListItem>
+        <ListItem icon="check-circle">Real-time threat monitoring and anomaly detection</ListItem>
+      </List>
+    </div>
+  </Card>
+
+  <Card>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Icon name="database" className="h-6 w-6 text-primary" />
+        <Heading size="h3">Data Management</Heading>
+      </div>
+      <List>
+        <ListItem icon="check-circle">48-hour automatic data deletion with verification</ListItem>
+        <ListItem icon="check-circle">AWS S3 with enterprise security and bucket policies</ListItem>
+        <ListItem icon="check-circle">AES-256 encryption at rest for all stored data</ListItem>
+        <ListItem icon="check-circle">TLS 1.3 encryption for all data in transit</ListItem>
+        <ListItem icon="check-circle">Comprehensive audit logging and access tracking</ListItem>
+      </List>
+    </div>
+  </Card>
+</Grid>
+
+## Security Controls
+
+<Tabs>
+  <Tab title="Data Protection">
+    ### Zero Data Retention Policy
+    - 48-hour automatic deletion policy for all customer data
+    - Zero-retention agreements with OpenAI and Anthropic
+    - Data never used for model training
+    - Verified deletion process with audit trails
+
+    ### Processing Security
+    - Self-hosted ML models and OCR processing
+    - Isolated container environments
+    - Zero-trust security model
+    - End-to-end encryption
+    - Real-time threat monitoring
+
+    ### Storage Security
+    - AWS S3 with enterprise security
+    - AES-256 encryption at rest
+    - TLS 1.3 encryption in transit
+    - Granular bucket policies
+    - Comprehensive audit logging
+  </Tab>
+
+  <Tab title="Access Controls">
+    ### Authentication
+    - Multi-factor authentication required
+    - Strong password policies
+    - Session management and timeouts
+    - Regular credential rotation
+
+    ### Authorization
+    - Role-based access control (RBAC)
+    - Least privilege enforcement
+    - Regular access reviews
+    - Automated access revocation
+
+    ### Monitoring & Audit
+    - Real-time activity monitoring
+    - Threat detection systems
+    - Detailed audit logs
+    - Regular security reviews
+    - Incident response procedures
+  </Tab>
+
+  <Tab title="Compliance">
+    ### SOC 2 Type II
+    - Currently undergoing certification process
+    - Comprehensive security controls audit
+    - Email founders@trypulse.ai for Letter of Engagement
+    - Regular control assessments
+
+    ### HIPAA Compliance
+    - Full HIPAA compliance infrastructure
+    - Security Rule compliance
+    - Privacy Rule compliance
+    - BAA availability
+    - Protected health information safeguards
+
+    ### Data Processing
+    - Zero data retention agreements
+    - Strict privacy controls
+    - Regular compliance audits
+    - Data processing transparency
+  </Tab>
+</Tabs>
+
+## Data Lifecycle
+
+<Steps>
+  <Step title="Ingestion">
+    Data is encrypted immediately upon upload using TLS 1.3
+  </Step>
+  <Step title="Processing">
+    Processed in isolated containers with self-hosted ML models
+  </Step>
+  <Step title="Storage">
+    Temporarily stored in encrypted S3 with strict access controls
+  </Step>
+  <Step title="Deletion">
+    Automatic deletion after 48 hours with verification
+  </Step>
+</Steps>
+
+
+<Note>
+  For detailed implementation guidelines and security best practices, see our <Link href="/security/authentication">Authentication</Link> documentation. 
+  
+  Questions or security concerns? Email our security team at <Link href="mailto:security@trypulse.ai">security@trypulse.ai</Link>.
+</Note>
