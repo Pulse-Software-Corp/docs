@@ -30,7 +30,8 @@ paths:
                   pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
                 schema:
                   type: object
-                  example: <json object>
+                  additionalProperties: true
+                  example: {}
                   description: JSON schema for processing
               required:
                 - file-url
