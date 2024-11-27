@@ -4,7 +4,7 @@ info:
   description: API for extracting, processing, and converting files
   version: 1.0.0
 servers:
-  - url: https://api-6600-c46d4858-10ti74e6.onporter.run
+  - url: https://api.trypulse.ai
     description: Production server
 
 paths:
