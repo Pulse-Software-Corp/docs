@@ -67,8 +67,8 @@
     {
       "group": "API Endpoints",
       "pages": [
-        "api-reference/endpoint/create",
-        "api-reference/endpoint/delete"
+        "api-reference/endpoint/extract",
+        "api-reference/endpoint/convert"
       ]
     }
   ],
