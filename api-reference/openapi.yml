@@ -217,6 +217,176 @@ paths:
                     type: string
                     example: "An error occurred while processing the file"
 
+  /extract_async:
+    post:
+      summary: Asynchronously extract and process a file
+      description: Starts an asynchronous job to extract content from a file at the given URL
+      operationId: extractAsync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file-url:
+                  type: string
+                  format: uri
+                  example: "PRESIGNED_URL"
+                return_table:
+                  type: boolean
+                  example: true
+                chunking:
+                  type: string
+                  example: "<chunking_string>"
+                  pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+                schema:
+                  type: object
+                  additionalProperties: true
+                  example: {}
+                  description: JSON schema for processing
+              required:
+                - file-url
+                - schema
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: ['application/json']
+      responses:
+        '202':
+          description: Job accepted and processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                    example: "JOB_ID"
+                  status:
+                    type: string
+                    enum: [pending, cancelled, failed, completed]
+                    example: "pending"
+                required:
+                  - job_id
+                  - status
+
+  /job/{job_id}:
+    get:
+      summary: Get job status and results
+      description: Poll for the status of an asynchronous extraction job
+      operationId: getJobStatus
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: ID of the job to check
+          schema:
+            type: string
+            format: uuid
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-12-11T06:36:18.236779+00:00"
+                  estimated_completion_time:
+                    type: string
+                    format: date-time
+                    example: "2024-12-11T06:41:18.236779+00:00"
+                  job_id:
+                    type: string
+                    format: uuid
+                    example: "JOB_ID"
+                  progress:
+                    type: number
+                    format: float
+                    example: 10.2
+                  status:
+                    type: string
+                    enum: [pending, cancelled, failed, completed]
+                  updated_at:
+                    type: string
+                    format: date-time
+                    example: "2024-12-11T06:36:18.316609+00:00"
+                required:
+                  - created_at
+                  - estimated_completion_time
+                  - job_id
+                  - progress
+                  - status
+                  - updated_at
+
+  /cancel/{job_id}:
+    post:
+      summary: Cancel a running job
+      description: Cancels an in-progress extraction job
+      operationId: cancelJob
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: ID of the job to cancel
+          schema:
+            type: string
+            format: uuid
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                    example: "JOB_ID"
+                  message:
+                    type: string
+                    example: "Job cancelled successfully"
+                required:
+                  - job_id
+                  - message
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Job not found"
+
 components:
   securitySchemes:
     ApiKeyAuth:

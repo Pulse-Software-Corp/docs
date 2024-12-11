@@ -68,7 +68,10 @@
       "group": "API Endpoints",
       "pages": [
         "api-reference/endpoint/extract",
-        "api-reference/endpoint/convert"
+        "api-reference/endpoint/convert",
+        "api-reference/endpoint/extract_async",
+        "api-reference/endpoint/poll",
+        "api-reference/endpoint/cancel"
       ]
     }
   ],

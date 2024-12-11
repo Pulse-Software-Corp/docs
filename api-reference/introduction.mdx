@@ -69,3 +69,32 @@ We offer both structured Markdown and JSON responses. JSON outputs can be custom
     Receive your processed output directly or via presigned URL for larger documents
   </Step>
 </Steps>
+
+## Asynchronous Processing
+
+For processing large documents or handling multiple requests, we provide asynchronous endpoints:
+
+<CardGroup cols={2}>
+  <Card
+    title="/extract_async Endpoint"
+    icon="clock"
+  >
+    Initiates asynchronous document processing and returns a job ID for tracking.
+  </Card>
+  <Card
+    title="/poll Endpoint"
+    icon="magnifying-glass"
+  >
+    Check the status of an ongoing processing job using the job ID.
+  </Card>
+  <Card
+    title="/cancel Endpoint"
+    icon="stop"
+  >
+    Cancel an in-progress processing job if needed.
+  </Card>
+</CardGroup>
+
+<Note>
+  Async processing is recommended for documents larger than 50 pages or when processing multiple files simultaneously.
+</Note>
