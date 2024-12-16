@@ -24,6 +24,9 @@ paths:
                   type: string
                   format: uri
                   example: "PRESIGNED_URL"
+                return_table:
+                  type: boolean
+                  example: true
                 chunking:
                   type: string
                   example: "<chunking method>"
