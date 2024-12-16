@@ -56,9 +56,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  json:
-                    type: object
-                    description: Structured JSON representation of the document content
                   markdown:
                     type: string
                     description: Full document content in markdown format
@@ -82,7 +79,6 @@ paths:
                     type: object
                     description: Extracted structured data based on provided schema
                 required:
-                  - json
                   - markdown
                   - chunks
                   - plan-info
