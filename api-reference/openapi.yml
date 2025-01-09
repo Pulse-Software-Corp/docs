@@ -136,7 +136,7 @@ paths:
   /convert:
     post:
       summary: Convert a PDF file
-      description: Accepts a PDF file as binary data and performs a specified conversion.
+      description: Accepts a PDF file up to 6MB as binary data and performs a specified conversion.
       operationId: convertPdf
       requestBody:
         required: true
