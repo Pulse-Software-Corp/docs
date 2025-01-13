@@ -27,6 +27,9 @@ paths:
                 return_table:
                   type: boolean
                   example: true
+                experimental_return_table:
+                  type: boolean
+                  example: true
                 chunking:
                   type: string
                   example: "<chunking method>"
@@ -233,6 +236,9 @@ paths:
                   format: uri
                   example: "PRESIGNED_URL"
                 return_table:
+                  type: boolean
+                  example: true
+                experimental_return_table:
                   type: boolean
                   example: true
                 chunking:
