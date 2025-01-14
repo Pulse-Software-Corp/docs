@@ -1,0 +1,205 @@
+---
+title: 'Updates'
+description: 'Latest updates and improvements to Pulse API'
+---
+
+<Update label="2025-01-14" description="v0.1.5">
+  ## Batch Processing Endpoint
+  ____
+
+  - Introduced `/batch_extract_async` endpoint for parallel document processing
+  - Process multiple documents with customized parameters in one API call
+  - Support for both file URLs and file paths in batch requests
+  - Integrated with existing `/job/<job_id>` polling endpoint
+
+  ### Example Request Structure
+  ```json
+  {
+    "files": [
+      {
+        "file_path": "path/to/document1.pdf",
+        "return_table": true,
+        "experimental_return_table": true,
+        "chunking": ["page", "semantic"]
+      },
+      {
+        "file_path": "path/to/document2.pdf",
+        "return_table": true,
+        "chunking": ["page"]
+      }
+    ]
+  }
+  ```
+
+  Full documentation available at docs.runpulse.com
+</Update>
+
+<Update label="2025-01-13" description="v0.1.4">
+  ## Cloud-Agnostic Processing & Table Improvements
+  ____
+
+  - Universal presigned URL support (AWS, GCP, Azure)
+  - Direct support for any valid presigned URL from major cloud providers
+  - Support for direct PDF links without cloud storage
+
+  ### Table Processing Enhancements
+  - New `experimental_return_table` parameter (beta)
+  - Improved cell boundary detection
+  - Better handling of merged cells
+  - Original `return_table` parameter maintained for production stability
+
+  ### Schema Processing Improvements
+  - Resolved token limit truncation in large document processing
+  - Optimized processing pipeline for faster schema generation
+  - Improved handling of nested data structures
+
+  ### Important Notes
+  - experimental_return_table is in beta
+  - Processing time estimates now reflect real-world processing times
+  - All existing endpoints and features remain fully supported
+  - Schema processing improvements are automatically applied
+</Update>
+
+<Update label="2024-12-11" description="v0.1.3">
+  ## Async Processing Update
+  ____
+
+  - New asynchronous processing capabilities for large documents
+  - Job status monitoring and management
+  - Cancel in-progress jobs
+  - All existing endpoints and features maintained
+
+  ### New Features
+  - New `/extract_async` endpoint for processing large documents
+  - Immediate job ID response for status tracking
+  - Progress monitoring through `/job/<job_id>` endpoint
+  - Cancel long-running jobs with `/cancel/<job_id>`
+
+  ### Response Examples
+  ```json
+  {
+    "job_id": "3569370a-fce2-44b0-8300-67a79ce58330",
+    "status": "pending"  // statuses: pending, completed, failed, cancelled
+  }
+  ```
+
+  ```json
+  {
+    "created_at": "2024-12-11T06:31:28.870782+00:00",
+    "estimated_completion_time": "2024-12-11T06:36:28.870782+00:00",
+    "job_id": "<JOB_ID>",
+    "progress": 21.0,
+    "status": "processing"
+  }
+  ```
+</Update>
+
+<Update label="2024-12-05" description="v0.1.2">
+  ## Post-Thanksgiving Feature Release
+  ____
+
+  - Enhanced schema processing engine - more accurate field extraction
+  - New domain & API endpoint: api.runpulse.com (existing endpoint still supported)
+  - New table extraction capabilities
+  - Improved layout recognition for complex documents
+
+  ### Direct Table Extraction
+  - New return_table parameter returns tables in 2D matrix format
+  - Perfect for financial documents, rent rolls, and structured data
+  - Clean, processed tables ready for data analysis
+
+  ### Schema & Response Changes
+  - Better field type handling (string, float, time)
+  - More accurate extraction of nested data
+  - Specify schema to receive "schema-json" in response
+
+  ```json
+  {
+    "markdown": "...",
+    "tables": [...],
+    "schema-json": {...},
+    "plan-info": {
+      "note": "Page limit exceeded. Your foundation tier limit is 20000 pages...",
+      "pages_used": 20924,
+      "tier": "foundation"
+    }
+  }
+  ```
+
+  ### Resources & Support
+  - Full documentation: docs.runpulse.com
+  - Questions? Email our founders directly: founders@trypulse.ai
+</Update>
+
+<Update label="2024-11-27" description="v0.1.1">
+  ## Pulse API Launch!
+  ____
+
+  ### Key Update
+  - Renaming `/upload` to `/extract` for documents requiring custom extraction patterns and high volume processing
+  - `/convert` endpoint unchanged for quick PDF processing & URL generation
+
+  ### Performance Improvements
+  - 2x faster document processing
+  - Significantly improved table extraction accuracy
+  - Enhanced layout recognition for complex documents
+  - All existing parameters and schemas work exactly the same
+
+  ### Custom Schema Power
+  - Extract exactly what you need with flexible JSON schemas
+  - Design any extraction pattern - from simple text to complex nested structures
+
+  ```json
+  {
+    "project_title": "string",
+    "introduction_background": "string",
+    "objectives": "string",
+    "scope_of_work": "string"
+  }
+  ```
+
+  ### Coming Soon
+  - New parameter to receive all detected tables as separate CSV files
+  - More extraction capabilities rolling out weekly
+
+  ### Working with Tables
+  Need to convert extracted tables to matrix format? Here's a helper script:
+
+  ```python
+  import re
+
+  def extract_tables(markdown):
+      table_pattern = r"(\|.*?\|\n(\|[-:]+[-|:]+\|\n)?(?:\|.*?\|\n)+)"
+      tables = re.findall(table_pattern, markdown, re.DOTALL)
+      return [match[0] for match in tables]
+
+  def markdown_to_matrix(markdown):
+      lines = markdown.strip().split("\n")
+      matrix = []
+      for i, line in enumerate(lines):
+          if i == 1:
+              continue
+          row = [cell.strip() for cell in line.split('|') if cell.strip()]
+          if row:
+              matrix.append(row)
+      for row in matrix[1:]:
+          for j in range(1, len(row)):
+              row[j] = convert_to_number(row[j])
+      return matrix
+
+  def convert_to_number(value):
+      value = value.replace(",", "").replace("%", "").replace("$", "")
+      try:
+          if "." in value or "e" in value.lower():
+              return float(value)
+          return int(value)
+      except ValueError:
+          return value
+  ```
+
+  ### Resources & Support
+  - Full documentation: docs.trypulse.ai
+  - Questions? Email our founders directly: founders@trypulse.ai
+
+  Keep extracting amazing things!
+</Update>

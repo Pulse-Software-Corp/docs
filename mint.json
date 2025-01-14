@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Pulse STUDIO",
+  "name": "Pulse API",
   "logo": {
     "dark": "/pulse 1024-2.png",
     "light": "/pulse 1024-2.png"

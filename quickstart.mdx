@@ -41,14 +41,21 @@ Learn how to quickly integrate with our API endpoints for document extraction an
     Send your PDF directly to the endpoint:
 
     ```bash
-    curl --location 'https://igvlq7n0rk.execute-api.us-east-1.amazonaws.com/prod/convert' \
+    curl --location 'https://api.runpulse.com/convert' \
       --header 'Content-Type: application/pdf' \
       --header 'x-api-key: YOUR_API_KEY' \
       --data-binary '@/path/to/your/file.pdf'
     ```
   </Step>
   <Step title="Retrieve Results" icon="download">
-    You'll receive a JSON response with the processed file URL
+    You'll receive a JSON response with presigned URL and S3 object URL:
+    ```json
+    {
+      "presigned_url": "https://bucket-name.s3.amazonaws.com/path/to/file.pdf?[signed-parameters]",
+      "s3_object_url": "https://bucket-name.s3.amazonaws.com/path/to/file.pdf",
+      "statusCode": 200
+    }
+    ```
   </Step>
 </Steps>
 
@@ -56,15 +63,18 @@ Learn how to quickly integrate with our API endpoints for document extraction an
 
 <Steps>
   <Step title="Prepare Your Request" icon="code">
-    Include your API key in the headers and specify the file URL. You can combine any of the chunking methods (semantic, recursive, page, header) with commas:
+    Include your API key in the headers and specify the file URL:
 
     ```bash
-    curl --location --request POST 'https://igvlq7n0rk.execute-api.us-east-1.amazonaws.com/prod/upload' \
-      --get \
-      --data-urlencode 'file-url=YOUR_FILE_URL' \
-      --data-urlencode 'chunking=semantic,recursive' \
+    curl --location 'https://api.runpulse.com/extract' \
       --header 'Content-Type: application/json' \
-      --header 'x-api-key: YOUR_API_KEY'
+      --header 'x-api-key: YOUR_API_KEY' \
+      --data-raw '{
+        "file-url": "YOUR_FILE_URL",
+        "chunking": "semantic,recursive",
+        "return_table": true,
+        "schema": {}
+      }'
     ```
 
     Examples of chunking combinations:
@@ -74,9 +84,11 @@ Learn how to quickly integrate with our API endpoints for document extraction an
     - `chunking=semantic`
   </Step>
   <Step title="Process Response" icon="wand-magic-sparkles">
-    You'll receive either:
-    - Direct content (≤10 pages)
-    - Presigned URL (>10 pages)
+    You'll receive a JSON response containing:
+    - Markdown content
+    - Processed chunks
+    - Plan information
+    - Schema-based extracted data
   </Step>
 </Steps>
 
