@@ -104,3 +104,45 @@ For processing large documents or handling multiple requests, we provide asynchr
 <Note>
   Async processing is recommended for documents larger than 50 pages or when processing multiple files simultaneously.
 </Note>
+
+## Batch Processing
+
+<Card
+  title="/batch_extract_async Endpoint"
+  icon="layer-group"
+>
+  Process multiple documents in parallel with customized parameters for each file.
+</Card>
+
+### Batch Processing Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Multiple Input Sources"
+    icon="files"
+  >
+    Accept both file URLs and file paths in a single batch request
+  </Card>
+  <Card
+    title="Custom Schemas"
+    icon="code"
+  >
+    Apply different extraction schemas for each document
+  </Card>
+  <Card
+    title="Parallel Processing"
+    icon="microchip"
+  >
+    Process multiple documents simultaneously for improved throughput
+  </Card>
+  <Card
+    title="Unified Tracking"
+    icon="list-check"
+  >
+    Monitor all jobs with a single batch ID
+  </Card>
+</CardGroup>
+
+<Note>
+  Batch processing automatically handles rate limiting and queuing to ensure optimal performance.
+</Note>

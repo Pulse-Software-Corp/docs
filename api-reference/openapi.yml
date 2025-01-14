@@ -392,6 +392,107 @@ paths:
                     type: string
                     example: "Job not found"
 
+  /batch_extract_async:
+    post:
+      summary: Batch asynchronous file extraction
+      description: Start multiple asynchronous extraction jobs for multiple files
+      operationId: batchExtractAsync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      file-url:
+                        type: string
+                        format: uri
+                        example: "PRESIGNED_URL"
+                      file-path:
+                        type: string
+                        example: "/path/to/file.pdf"
+                      schema:
+                        type: object
+                        additionalProperties: true
+                        example: {}
+                        description: JSON schema for processing
+                      return_table:
+                        type: boolean
+                        example: true
+                      experimental_return_table:
+                        type: boolean
+                        example: true
+                      chunking:
+                        type: string
+                        example: "semantic,recursive"
+                        pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+                    oneOf:
+                      - required: [file-url]
+                      - required: [file-path]
+              required:
+                - files
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: ['application/json']
+      responses:
+        '202':
+          description: Batch job accepted and processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        job_id:
+                          type: string
+                          format: uuid
+                          example: "1a17e6e4-28d0-4e75-aff8-8b8011a46a91"
+                        original_path:
+                          type: string
+                          example: "/path/to/file.pdf"
+                        status:
+                          type: string
+                          enum: [pending, cancelled, failed, completed]
+                          example: "pending"
+                        url:
+                          type: string
+                          format: uri
+                          example: "https://pulse-studio-api.s3.amazonaws.com/path/to/file.pdf"
+                      required:
+                        - job_id
+                        - status
+                  successful_files:
+                    type: integer
+                    description: Number of files successfully queued for processing
+                    example: 1
+                  total_files:
+                    type: integer
+                    description: Total number of files in the request
+                    example: 1
+                required:
+                  - jobs
+                  - successful_files
+                  - total_files
+
 components:
   securitySchemes:
     ApiKeyAuth:
