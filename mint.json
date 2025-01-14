@@ -41,6 +41,10 @@
     {
       "name": "API Reference",
       "url": "api-reference"
+    },
+    {
+      "name": "Changelog",
+      "url": "api"
     }
   ],
   "navigation": [
@@ -73,6 +77,12 @@
         "api-reference/endpoint/batch_extract",
         "api-reference/endpoint/poll",
         "api-reference/endpoint/cancel"
+      ]
+    },
+    {
+      "group": "Pulse API",
+      "pages": [
+        "api/changelog"
       ]
     }
   ],
