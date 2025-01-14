@@ -44,7 +44,7 @@
     },
     {
       "name": "Changelog",
-      "url": "api"
+      "url": "changelog"
     }
   ],
   "navigation": [
@@ -82,7 +82,7 @@
     {
       "group": "Pulse API",
       "pages": [
-        "api/changelog"
+        "changelog/overview"
       ]
     }
   ],
