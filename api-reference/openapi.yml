@@ -39,6 +39,18 @@ paths:
                   additionalProperties: true
                   example: {}
                   description: JSON schema for processing
+                thinking:
+                  type: boolean
+                  example: false
+                  description: When true, enables enhanced reasoning for higher accuracy with slightly increased processing time but superior extraction quality
+                custom_prompt:
+                  type: string
+                  example: ""
+                  description: Custom instructions, notes, or specifications for domain-specific extraction needs
+                pages:
+                  type: string
+                  example: ""
+                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
               required:
                 - file-url
       parameters:
@@ -250,6 +262,18 @@ paths:
                   additionalProperties: true
                   example: {}
                   description: JSON schema for processing
+                thinking:
+                  type: boolean
+                  example: false
+                  description: When true, enables enhanced reasoning for higher accuracy with slightly increased processing time but superior extraction quality
+                custom_prompt:
+                  type: string
+                  example: ""
+                  description: Custom instructions, notes, or specifications for domain-specific extraction needs
+                pages:
+                  type: string
+                  example: ""
+                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
               required:
                 - file-url
                 - schema

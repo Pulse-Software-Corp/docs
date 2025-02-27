@@ -85,10 +85,11 @@ Learn how to quickly integrate with our API endpoints for document extraction an
   </Step>
   <Step title="Process Response" icon="wand-magic-sparkles">
     You'll receive a JSON response containing:
-    - Markdown content
-    - Processed chunks
-    - Plan information
-    - Schema-based extracted data
+    - Markdown content from the document
+    - Chunked content based on your specified chunking methods
+    - Schema-based extracted data (if schema was provided)
+    - Tables extracted from the document (if return_table was set to true)
+    - Plan information including usage metrics
   </Step>
 </Steps>
 
@@ -114,7 +115,8 @@ Learn how to quickly integrate with our API endpoints for document extraction an
 <CodeGroup>
   ```json Example Response
   {
-    "chunks": {
+    "markdown": "# Sample Purchase Order\n\n**Example Company Inc**  \n123 Main Street  \nUnit 2  \nBoston Massachusetts 02101  \nUSA  \n\n---\n\n**Purchase Order**  \n**# PO-12345**",
+    "chunking": {
       "recursive": [
         {
           "chunk_number": 1,
@@ -127,71 +129,57 @@ Learn how to quickly integrate with our API endpoints for document extraction an
           "content": "**Example Company Inc**  \n123 Main Street  \nUnit 2  \nBoston Massachusetts 02101",
           "length": 95,
           "method": "recursive"
-        },
-        {
-          "chunk_number": 3,
-          "content": "USA",
-          "length": 6,
-          "method": "recursive"
-        },
-        {
-          "chunk_number": 4,
-          "content": "---\n\n**Purchase Order**  \n**# PO-12345**",
-          "length": 40,
-          "method": "recursive"
-        },
-        {
-          "chunk_number": 5,
-          "content": "**Vendor Address**  \n**Supplier Co**  \n456 Business Road  \nChicago  \n60601 Illinois  \nU.S.A  \n\n---",
-          "length": 94,
-          "method": "recursive"
-        },
-        {
-          "chunk_number": 6,
-          "content": "---\n\n**Deliver To**  \n**John Smith**  \n789 Tech Parkway  \nSan Jose California 95110  \nU.S.A",
-          "length": 95,
-          "method": "recursive"
-        },
-        {
-          "chunk_number": 7,
-          "content": "**Date:** 29 May 2024  \n**Ref#:** REF0012345  \n\n**Sarah Johnson**  \n\n---\n\n## Itemized List",
-          "length": 91,
-          "method": "recursive"
         }
       ],
       "semantic": [
         {
           "chunk_number": 1,
-          "content": "
-      ]
-    },
-    "json": {
-      "Sample Purchase Order": {
-        "Itemized List": "| #  | Item & Description                                      | Qty  | Rate      | Amount    |\n|----|--------------------------------------------------------|------|-----------|-----------|\n| 1  | Setup Fee                                              | 1.00 | 1,000.00  | 1,000.00  |\n| 2  | Product A                                              | 50.00| 30.00     | 1,500.00  |\n| 3  | Testing Fee                                            | 1.00 | 100.00    | 100.00    |\n| 4  | Quality Control Fee                                    | 1.00 | 100.00    | 100.00    |\n| 5  | Rush Processing Fee                                    | 1.00 | 4,000.00  | 4,000.00  |"
-      }
-    },
-    "layout": [
-      [
-        {
-          "content": "",
-          "id": 0,
-          "type": "Body",
-          "x1": 559.41,
-          "x2": 562.85,
-          "y1": 799.42,
-          "y2": 807.59
+          "content": "Sample Purchase Order from Example Company Inc located at 123 Main Street, Unit 2, Boston Massachusetts 02101",
+          "length": 112,
+          "method": "semantic"
         }
       ]
+    },
+    "schema-json": {
+      "company": "Example Company Inc",
+      "purchase_order_number": "PO-12345",
+      "address": {
+        "street": "123 Main Street",
+        "unit": "Unit 2",
+        "city": "Boston",
+        "state": "Massachusetts",
+        "zip": "02101",
+        "country": "USA"
+      }
+    },
+    "tables": [
+      {
+        "table_id": 1,
+        "content": "| #  | Item & Description | Qty  | Rate     | Amount   |\n|----|-------------------|------|----------|----------|\n| 1  | Setup Fee         | 1.00 | 1,000.00 | 1,000.00 |\n| 2  | Product A         | 50.00| 30.00    | 1,500.00 |"
+      }
     ],
-    "markdown": "# Sample Purchase Order\n\n**Example Company Inc**  \n123 Main Street  \nUnit 2  \nBoston Massachusetts 02101  \nUSA  \n\n---\n\n**Purchase Order**  \n**# PO-12345**",
     "plan-info": {
-        "pages_used": 19998,
-        "tier": "foundation"
+      "pages_used": 19998,
+      "tier": "foundation"
     }
   }
   ```
 
-  ```json Error Response
+  ```json Error Response (Page Limit Exceeded)
+  {
+    "markdown": "",
+    "chunking": null,
+    "schema-json": null,
+    "tables": null,
+    "plan-info": {
+      "note": "Page limit exceeded. Your foundation tier limit is 20000 pages. You have processed 29167 pages and are trying to process 11 more pages.",
+      "pages_used": 29178,
+      "tier": "foundation"
+    }
+  }
+  ```
+
+  ```json General Error Response
   {
     "status": "error",
     "error": {
@@ -201,6 +189,14 @@ Learn how to quickly integrate with our API endpoints for document extraction an
   }
   ```
 </CodeGroup>
+
+## Response Fields Explained
+
+- **markdown**: The full document text converted to markdown format
+- **chunking**: Contains different chunking methods and their results
+- **schema-json**: Data extracted according to your provided schema
+- **tables**: Tables extracted from the document (when return_table is true)
+- **plan-info**: Information about your subscription usage and limits
 
 ## Next Steps
 
