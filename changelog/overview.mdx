@@ -2,6 +2,39 @@
 title: 'Updates'
 description: 'Latest updates and improvements to Pulse API'
 ---
+<Update label="2025-03-13" description="v0.1.6">
+  ## Large Document Processing Enhancement
+  ____
+
+  - Documents with more than 70 pages now return a URL containing the complete response
+  - URLs automatically expire after 24 hours for security
+  - Improved reliability and performance for large document processing
+  - Reduced memory usage and faster response times
+
+  ### Response Structure for Large Documents
+  ```json
+  {
+    "is_url": true,
+    "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
+    "plan-info": {
+      "pages_used": 0,
+      "tier": "foundation"
+    }
+  }
+  ```
+
+  ### Key Updates
+  - Applies to both `/extract` and `/extract_async` endpoints
+  - No changes required to your API request structure
+  - Documents under 70 pages continue to return results directly
+  - Significantly improved reliability for large document processing
+
+  ### Best Practices
+  - Use page selection parameter to process only needed pages
+  - Consider breaking very large documents into logical sections
+  - Store document URLs securely - they contain your processed results
+  - Check if responses contain `"is_url": true` in your code
+</Update>
 
 <Update label="2025-01-14" description="v0.1.5">
   ## Batch Processing Endpoint
@@ -203,3 +236,4 @@ description: 'Latest updates and improvements to Pulse API'
 
   Keep extracting amazing things!
 </Update>
+

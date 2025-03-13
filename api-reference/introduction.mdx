@@ -80,6 +80,40 @@ We offer both structured Markdown and JSON responses. JSON outputs can be custom
   </Step>
 </Steps>
 
+### Large Document Responses
+
+For documents exceeding 70 pages, responses are delivered via secure URLs:
+
+```json
+{
+  "is_url": true,
+  "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
+  "plan-info": {
+    "pages_used": 0,
+    "tier": "foundation"
+  }
+}
+```
+
+<Note>
+  Response URLs automatically expire after 24 hours for security. Store these URLs securely as they contain your processed results.
+</Note>
+
+<CardGroup cols={2}>
+  <Card
+    title="Direct Response"
+    icon="file-lines"
+  >
+    Documents under 70 pages return results directly in the API response
+  </Card>
+  <Card
+    title="URL Response"
+    icon="link"
+  >
+    Larger documents return a secure, temporary URL to access results
+  </Card>
+</CardGroup>
+
 ## Asynchronous Processing
 
 For processing large documents or handling multiple requests, we provide asynchronous endpoints:

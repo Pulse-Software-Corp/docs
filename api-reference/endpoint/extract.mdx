@@ -2,3 +2,29 @@
 title: 'Extract File'
 openapi: 'POST /extract'
 ---
+
+## Large Document Response Structure
+
+For documents exceeding 70 pages, the API returns a URL structure instead of the direct response:
+
+```json
+{
+  "is_url": true,
+  "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
+  "plan-info": {
+    "pages_used": 0,
+    "tier": "foundation"
+  }
+}
+```
+
+### Key Points:
+- Documents over 70 pages return a URL containing the complete response
+- URLs automatically expire after 24 hours
+- No changes required to your API request structure
+- For documents under 70 pages, the API continues to return results directly
+
+### Implementation Tips:
+1. Check if response contains `"is_url": true`
+2. If true, fetch the complete document data from the provided URL
+3. Store URLs securely as they contain your processed results
