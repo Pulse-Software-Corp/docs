@@ -3,6 +3,10 @@ title: 'Extract File'
 openapi: 'POST /extract'
 ---
 
+<Note type="warning">
+  **Large Document Processing**: For documents over 50 pages, we strongly recommend using the [/extract_async](/api-reference/endpoint/extract_async) endpoint instead. The async endpoint prevents timeout issues and provides better handling of extensive processing tasks.
+</Note>
+
 ## Large Document Response Structure
 
 For documents exceeding 70 pages, the API returns a URL structure instead of the direct response:

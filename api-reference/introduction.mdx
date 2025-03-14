@@ -101,6 +101,10 @@ For documents exceeding 70 pages, responses are delivered via secure URLs:
   Response URLs automatically expire after 24 hours for security. Store these URLs securely as they contain your processed results.
 </Note>
 
+<Note type="warning">
+  **Important**: For large documents (50+ pages), we strongly recommend using the [/extract_async](/api-reference/endpoint/extract_async) endpoint instead of the synchronous endpoints. This prevents timeout issues and provides better handling of extensive processing tasks.
+</Note>
+
 <CardGroup cols={2}>
   <Card
     title="Direct Response"
