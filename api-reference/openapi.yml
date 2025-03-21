@@ -32,7 +32,7 @@ paths:
                   example: true
                 chunking:
                   type: string
-                  example: "<chunking method>"
+                  example: "semantic,header,page,recursive"
                   pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
                 schema:
                   type: object
@@ -255,7 +255,7 @@ paths:
                   example: true
                 chunking:
                   type: string
-                  example: "<chunking_string>"
+                  example: "semantic,header,page,recursive"
                   pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
                 schema:
                   type: object
