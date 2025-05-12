@@ -4,7 +4,7 @@ info:
   description: API for extracting, processing, and converting files
   version: 1.0.0
 servers:
-  - url: https://api.runpulse.com
+  - url: https://pro.api.runpulse.com
     description: Production server
 
 paths:
@@ -39,14 +39,10 @@ paths:
                   additionalProperties: true
                   example: {}
                   description: JSON schema for processing
-                thinking:
-                  type: boolean
-                  example: false
-                  description: When true, enables enhanced reasoning for higher accuracy with slightly increased processing time but superior extraction quality
-                custom_prompt:
+                schema_prompt:
                   type: string
                   example: ""
-                  description: Custom instructions, notes, or specifications for domain-specific extraction needs
+                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
                 pages:
                   type: string
                   example: ""
@@ -262,14 +258,10 @@ paths:
                   additionalProperties: true
                   example: {}
                   description: JSON schema for processing
-                thinking:
-                  type: boolean
-                  example: false
-                  description: When true, enables enhanced reasoning for higher accuracy with slightly increased processing time but superior extraction quality
-                custom_prompt:
+                schema_prompt:
                   type: string
                   example: ""
-                  description: Custom instructions, notes, or specifications for domain-specific extraction needs
+                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
                 pages:
                   type: string
                   example: ""

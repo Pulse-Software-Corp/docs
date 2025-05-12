@@ -81,6 +81,13 @@
       ]
     },
     {
+      "group": "Ultra API Endpoints",
+      "pages": [
+        "api-reference/ultra-endpoint/extract",
+        "api-reference/ultra-endpoint/convert"
+      ]
+    },
+    {
       "group": "Pulse API",
       "pages": [
         "changelog/overview"
