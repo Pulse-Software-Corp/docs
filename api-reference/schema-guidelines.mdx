@@ -62,9 +62,9 @@ The `schema` parameter uses a simplified format where you directly specify the e
 ```
 *(Note: Types like `string`, `float`, `integer`, `date`, `boolean`, `null`, and simple `enum(VALUE1, VALUE2)` definitions are used directly)*
 
-## Experimental Schema Parameter (`experimental-schema`)
+## Experimental Schema Parameter (`experimental_schema`)
 
-The `experimental-schema` parameter utilizes a subset of the OpenAPI 3.0 specification for more complex schema definitions.
+The `experimental_schema` parameter utilizes a subset of the OpenAPI 3.0 specification for more complex schema definitions.
 
 Supported operations:
 
@@ -120,4 +120,4 @@ Supported operations:
 
 ## Schema Prompting
 
-For both schema types, you can enhance extraction accuracy by providing natural language instructions within the schema's `description` fields or as a separate `prompt` parameter. These prompts guide the model in mapping document content to your schema, handling logical expressions, complex enum mapping, calculations, and other nuanced extraction requirements.
+For both schema types, you can enhance extraction accuracy by providing natural language instructions within the schema's description fields or as a separate `schema_prompt` parameter. These prompts guide the model in mapping document content to your schema, handling logical expressions, complex enum mapping, calculations, and other nuanced extraction requirements.
