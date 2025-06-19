@@ -1,8 +1,17 @@
 ---
 title: 'Retrieve URL'
 openapi: 'POST /convert'
+description: 'api reference for the /convert endpoint'
 ---
 
-<Note type="warning">
-  **Temporary Storage**: /convert is purely for temporary file storage into Pulse's S3 bucket (auto-deletes in 24 hours), and returns a presigned URL for use in /extract. For more robust processing please use your own cloud storage.
-</Note>
+<RestClient
+  method="POST"
+  path="/convert"
+  description="This endpoint is for temporary file storage into Pulse's S3 bucket (auto-deletes in 24 hours), and returns a presigned URL for use in /extract."
+  responses={{
+    '200': '/snippets/200-convert.mdx',
+    '400': '/snippets/400-convert.mdx',
+    '401': '/snippets/401.mdx',
+    '500': '/snippets/500.mdx',
+  }}
+/>

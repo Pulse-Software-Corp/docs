@@ -4,7 +4,7 @@ info:
   description: API for extracting, processing, and converting files
   version: 1.0.0
 servers:
-  - url: https://pro.api.runpulse.com
+  - url: https://api.runpulse.com
     description: Production server
 
 paths:
@@ -144,7 +144,149 @@ paths:
                     type: string
                     example: "Error in upload_file"
 
+  /extract_beta:
+    servers:
+      - url: https://pro.api.runpulse.com
+        description: Production server for ultra endpoints
+    post:
+      summary: Extract and process a file [BETA]
+      description: Extracts content from a file at the given URL and processes it with specified chunking options.
+      operationId: uploadFileBeta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file-url:
+                  type: string
+                  format: uri
+                  example: "PRESIGNED_URL"
+                return_table:
+                  type: boolean
+                  example: true
+                experimental_return_table:
+                  type: boolean
+                  example: true
+                chunking:
+                  type: string
+                  example: "semantic,header,page,recursive"
+                  pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+                schema:
+                  type: object
+                  additionalProperties: true
+                  example: {}
+                  description: JSON schema for processing
+                schema_prompt:
+                  type: string
+                  example: ""
+                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
+                pages:
+                  type: string
+                  example: ""
+                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
+              required:
+                - file-url
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          description: API key for authorization
+          schema:
+            type: string
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: ['application/json']
+      responses:
+        '200':
+          description: Successful extraction and processing of file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markdown:
+                    type: string
+                    description: Full document content in markdown format
+                  chunks:
+                    type: object
+                    description: Document broken down into smaller, processable chunks
+                  plan-info:
+                    type: object
+                    properties:
+                      note:
+                        type: string
+                        description: Usage information and limits
+                      pages_used:
+                        type: integer
+                        description: Total number of pages processed
+                        format: int32
+                      tier:
+                        type: string
+                        description: Current subscription tier
+                  schema-json:
+                    type: object
+                    description: Extracted structured data based on provided schema
+                required:
+                  - markdown
+                  - chunks
+                  - plan-info
+                  - schema-json
+        '400':
+          description: Bad request errors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - "No file or URL provided"
+                      - "Failed to download file from URL"
+                      - "Error fetching file from URL"
+                      - "The PDF content is empty"
+                      - "Invalid PDF file"
+                      - "Invalid file type"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "API key is required"
+        '403':
+          description: Forbidden - page limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Page limit exceeded. Your foundation tier limit is 20000 pages. You have processed 20763 pages and are trying to process 1 more pages."
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Error in upload_file"
+
   /convert:
+    servers:
+      - url: https://pro.api.runpulse.com
+        description: Production server for ultra endpoints
     post:
       summary: Convert a PDF file
       description: Accepts a PDF file up to 5MB as binary data and performs a specified conversion.

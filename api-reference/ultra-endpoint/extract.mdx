@@ -1,34 +1,60 @@
 ---
 title: 'Extract File'
-openapi: 'POST /extract'
+openapi: 'POST /extract_beta'
+description: 'api reference for the /extract_beta endpoint'
 ---
 
-<Note type="warning">
-  **Large Document Processing**: For documents over 50 pages, we strongly recommend using the [/extract_async](/api-reference/endpoint/extract_async) endpoint instead. The async endpoint prevents timeout issues and provides better handling of extensive processing tasks.
-</Note>
-
-## Large Document Response Structure
-
-For documents exceeding 70 pages, the API returns a URL structure instead of the direct response:
-
-```json
-{
-  "is_url": true,
-  "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
-  "plan-info": {
-    "pages_used": 0,
-    "tier": "foundation"
-  }
-}
-```
-
-### Key Points:
-- Documents over 70 pages return a URL containing the complete response
-- URLs automatically expire after 24 hours
-- No changes required to your API request structure
-- For documents under 70 pages, the API continues to return results directly
-
-### Implementation Tips:
-1. Check if response contains `"is_url": true`
-2. If true, fetch the complete document data from the provided URL
-3. Store URLs securely as they contain your processed results
+<RestClient
+  method="POST"
+  path="/extract_beta"
+  description="This endpoint extracts content, layout, and table data from a PDF, image, or Office document. It can process documents of up to 2000 pages."
+  responses={{
+    '200': '/snippets/200-extract.mdx',
+    '400': '/snippets/400-extract.mdx',
+    '401': '/snippets/401.mdx',
+    '403': '/snippets/403.mdx',
+    '500': '/snippets/500.mdx',
+  }}
+>
+  <Param
+    name="file_url"
+    type="string"
+    description="The presigned URL for the file to be processed. The URL must be accessible to the API."
+  />
+  <Param
+    name="return_table"
+    type="boolean"
+    description="When true, the API will return a list of tables found in the document. Defaults to true."
+    optional
+  />
+  <Param
+    name="experimental_return_table"
+    type="boolean"
+    description="When true, the API will use an experimental model to return a list of tables found in the document. Defaults to false."
+    optional
+  />
+  <Param
+    name="chunking"
+    type="string"
+    description="The chunking strategy to use when processing the document. Can be a single value or a comma-separated list. Defaults to 'semantic,header,page,recursive'."
+    optional
+  />
+  <Param
+    name="schema"
+    type="object"
+    description="A JSON schema used to structure the extracted data. When provided, the API will return a JSON object that conforms to the schema."
+    optional
+  />
+  <Param
+    name="schema_prompt"
+    type="string"
+    description="A prompt to guide the schema extraction process. This can be used to provide additional context or instructions to the model."
+    optional
+  />
+  <Param
+    name="pages"
+    type="string"
+    description="A comma-separated list of pages or page ranges to process. For example, '1,3-5,7'."
+    optional
+  />
+</RestClient>
