@@ -70,6 +70,13 @@
       ]
     },
     {
+      "group": "Ultra API Endpoints",
+      "pages": [
+        "api-reference/ultra-endpoint/extract",
+        "api-reference/ultra-endpoint/convert"
+      ]
+    },
+    {
       "group": "API Endpoints",
       "pages": [
         "api-reference/endpoint/extract",
@@ -78,13 +85,6 @@
         "api-reference/endpoint/batch_extract",
         "api-reference/endpoint/poll",
         "api-reference/endpoint/cancel"
-      ]
-    },
-    {
-      "group": "Ultra API Endpoints",
-      "pages": [
-        "api-reference/ultra-endpoint/extract",
-        "api-reference/ultra-endpoint/convert"
       ]
     },
     {
