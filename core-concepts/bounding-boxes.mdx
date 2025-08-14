@@ -1,0 +1,180 @@
+---
+title: 'Bounding Boxes'
+description: 'Understanding layout information from document extraction'
+---
+
+## Overview
+
+When extracting content with layout information, Pulse API returns bounding box coordinates for text, tables, and images. This spatial data enables precise document understanding and region-based extraction.
+
+## Bounding Box Format
+
+Bounding boxes are returned as normalized coordinates (0-1 range) in an 8-point format:
+
+```
+[x1, y1, x2, y2, x3, y3, x4, y4]
+```
+
+Where:
+- **(x1, y1)** = Top-left corner
+- **(x2, y2)** = Top-right corner  
+- **(x3, y3)** = Bottom-right corner
+- **(x4, y4)** = Bottom-left corner
+
+<Note>
+  Coordinates are normalized to 0-1 range, making them resolution-independent. To convert to pixels, multiply by the page width/height.
+</Note>
+
+## Response Structure
+
+The extraction response includes the following arrays:
+
+```json
+{
+  "Footer": [],
+  "Header": [],
+  "Images": [],
+  "Tables": [],
+  "Text": [],
+  "Title": [],
+  "Page Number": []
+}
+```
+
+<Note>
+  Not all fields will be present in every response. The API only includes arrays for elements that were detected in the document.
+</Note>
+
+## Example Response
+
+Here's a real example of bounding box data:
+
+```json
+{
+  "Images": [
+    {
+      "bounding_box": [0.01014957264957265, 0.01744186046511628, 0.09241452991452992, 0.01744186046511628, 0.09241452991452992, 0.10719476744186046, 0.01014957264957265, 0.10719476744186046],
+      "confidence": "N/A",
+      "page_number": 1
+    },
+    {
+      "bounding_box": [0.2013888888888889, 0.005813953488372093, 0.32425213675213677, 0.005087209302325582, 0.3247863247863248, 0.08829941860465117, 0.20192307692307693, 0.08866279069767442],
+      "confidence": "N/A",
+      "page_number": 1
+    }
+  ],
+  "Tables": [],
+  "Text": [
+    {
+      "average_word_confidence": 0.973,
+      "bounding_box": [0.026709401709401708, 0.0872093023255814, 0.06891025641025642, 0.07885174418604651, 0.07425213675213675, 0.09084302325581395, 0.03205128205128205, 0.09956395348837209],
+      "content": "0a-NCRI",
+      "page_number": 1
+    },
+    {
+      "average_word_confidence": 0.994,
+      "bounding_box": [0.2548076923076923, 0.1587936046511628, 0.3680555555555556, 0.16388081395348839, 0.36698717948717946, 0.17732558139534885, 0.2537393162393162, 0.17223837209302326],
+      "content": "0a-Dalia Kundu",
+      "page_number": 1
+    }
+  ],
+  "Title": [
+    {
+      "average_word_confidence": 0.995,
+      "bounding_box": [0.21955128205128205, 0.1224563953488372, 0.4577991452991453, 0.1348110465116279, 0.45566239316239315, 0.1537063953488372, 0.21741452991452992, 0.14171511627906977],
+      "content": "0a-Doctor Prescription",
+      "page_number": 1
+    }
+  ]
+}
+```
+
+## Field Descriptions
+
+### Text Array
+Each text element contains:
+- `content`: The extracted text
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the text appears
+- `average_word_confidence`: OCR confidence score (0-1)
+
+### Title Array
+Each title element contains:
+- `content`: The title text
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the title appears
+- `average_word_confidence`: OCR confidence score (0-1)
+
+### Header Array
+Each header element contains:
+- `content`: The header text
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the header appears
+- `average_word_confidence`: OCR confidence score (0-1)
+
+### Footer Array
+Each footer element contains:
+- `content`: The footer text
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the footer appears
+- `average_word_confidence`: OCR confidence score (0-1)
+
+### Images Array
+Each image element contains:
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the image appears
+- `confidence`: Detection confidence (if available)
+
+### Tables Array
+Each table element contains:
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where the table appears
+- `content`: Table content (in HTML format)
+
+### Page Number Array
+Each page number element contains:
+- `content`: The page number text
+- `bounding_box`: 8-point coordinate array
+- `page_number`: Page where it appears
+- `average_word_confidence`: OCR confidence score (0-1)
+
+<Note>
+  Tables are extracted and returned in HTML format, preserving the structure and making it easy to parse or display.
+</Note>
+
+## Converting Coordinates
+
+To convert normalized coordinates to pixel coordinates:
+
+```python
+def normalize_to_pixels(bbox, page_width, page_height):
+    """Convert normalized bounding box to pixel coordinates."""
+    return [
+        bbox[0] * page_width,   # x1
+        bbox[1] * page_height,  # y1
+        bbox[2] * page_width,   # x2
+        bbox[3] * page_height,  # y2
+        bbox[4] * page_width,   # x3
+        bbox[5] * page_height,  # y3
+        bbox[6] * page_width,   # x4
+        bbox[7] * page_height   # y4
+    ]
+
+# Example: Convert for a standard letter-size page at 72 DPI
+page_width = 612  # 8.5 inches * 72 DPI
+page_height = 792  # 11 inches * 72 DPI
+
+normalized_bbox = [0.1, 0.1, 0.3, 0.1, 0.3, 0.15, 0.1, 0.15]
+pixel_bbox = normalize_to_pixels(normalized_bbox, page_width, page_height)
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Extract Endpoint" icon="code" href="/api-reference/endpoint/extract">
+    Enable bounding box extraction
+  </Card>
+  <Card title="Schema Extraction" icon="table" href="/core-concepts/schema-extraction">
+    Combine with structured data
+  </Card>
+</CardGroup> 

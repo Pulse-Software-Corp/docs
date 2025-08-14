@@ -1,192 +1,251 @@
 ---
-title: 'Overview'
+title: 'API Reference'
+description: 'Complete reference for all Pulse API endpoints'
 ---
 
-<Note type="success">
-  🆕 **New Feature**: The `thinking` parameter is now available across all endpoints! Enable AI reasoning capabilities with your models to deliver more accurate and contextually relevant results.
-</Note>
+## Base URL
 
-All API endpoints are authenticated using API keys provided to you upon billing.
+All API requests should be made to:
 
-## File Upload
+```
+https://dev.api.runpulse.com
+```
+
+## Authentication
+
+All endpoints require authentication via API key in the request header:
+
+```
+x-api-key: YOUR_API_KEY
+```
+
+Get your API key from [console.runpulse.com](https://console.runpulse.com).
+
+## Available Endpoints
 
 <CardGroup cols={2}>
-  <Card
-    title="/extract Endpoint"
-    icon="cloud-arrow-up"
-    href="/api-reference/endpoint/extract"
-  >
-    Accepts a presigned URL from the user, typically used for high volume page count documents.
+  <Card title="Extract" icon="file-export" href="/api-reference/endpoint/extract">
+    **POST** `/extract`
+    
+    Synchronously extract content from documents. Best for files under 50 pages.
   </Card>
-  <Card
-    title="/convert Endpoint"
-    icon="cloud-arrow-down"
-    href="/api-reference/endpoint/convert"
-  >
-    Provides a presigned URL from Pulse's secure S3 bucket for extraction of smaller files.
+  
+  <Card title="Extract Async" icon="clock" href="/api-reference/endpoint/extract_async">
+    **POST** `/extract_async`
+    
+    Asynchronously process large documents. Returns job ID for polling.
+  </Card>
+  
+  <Card title="Convert" icon="cloud-arrow-up" href="/api-reference/endpoint/convert">
+    **POST** `/convert`
+    
+    Upload files to S3 and get a URL for processing.
+  </Card>
+  
+  <Card title="Get Job Status" icon="magnifying-glass" href="/api-reference/endpoint/poll">
+    **GET** `/job/{job_id}`
+    
+    Check status and retrieve results of async jobs.
+  </Card>
+  
+  <Card title="Cancel Job" icon="xmark" href="/api-reference/endpoint/cancel">
+    **POST** `/cancel/{job_id}`
+    
+    Cancel a pending or processing async job.
+  </Card>
+  
+  <Card title="Configure Webhooks" icon="webhook" href="/api-reference/endpoint/webhook">
+    **POST** `/webhook`
+    
+    Get portal link to configure webhook endpoints.
   </Card>
 </CardGroup>
 
-## Document Processing
+## Request Format
 
-We offer both structured Markdown and JSON responses. JSON outputs can be customized using your own schema via the `/extract` endpoint parameters.
+### Extract and Extract Async Endpoints
 
-<CardGroup cols={2}>
-  <Card
-    title="Header Chunking"
-    icon="heading"
-  >
-    Splits content based on document headers and section breaks.
-  </Card>
-  <Card
-    title="Page Chunking"
-    icon="file"
-  >
-    Divides content by individual pages for page-specific processing.
-  </Card>
-  <Card
-    title="Semantic Chunking"
-    icon="brain"
-  >
-    Segments content based on semantic meaning and context.
-  </Card>
-  <Card
-    title="Recursive Chunking"
-    icon="repeat"
-  >
-    Iteratively breaks down content into smaller, meaningful segments.
-  </Card>
-  <Card
-    title="Table Extraction"
-    icon="table"
-  >
-    Extract tables in matrix format using the `return_tables` parameter. Returns tables as 2D arrays for easy processing.
-  </Card>
-</CardGroup>
+The `/extract` and `/extract_async` endpoints accept `application/json` content type:
 
-<Note>
-  An intelligent chunking strategy is coming soon! Our model will automatically select the optimal chunking mode for your specific use case.
-</Note>
+```bash
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file-url": "https://example.com/document.pdf",
+    "schema": {"invoice_number": "string"},
+    "pages": "1-10"
+  }'
+```
 
-## Processing Pipeline
+They also support direct file upload via `multipart/form-data`:
 
-<Steps>
-  <Step title="Upload" icon="cloud-arrow-up">
-    Submit your document via presigned URL or direct upload
-  </Step>
-  <Step title="Process" icon="wand-magic-sparkles">
-    Our backend models extract content based on your parameters
-  </Step>
-  <Step title="Response" icon="download">
-    Receive your processed output directly or via presigned URL for larger documents
-  </Step>
-</Steps>
+```bash
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf" \
+  -F "schema={\"invoice_number\":\"string\"}" \
+  -F "pages=1-10"
+```
 
-### Large Document Responses
+### Convert Endpoint
 
-For documents exceeding 70 pages, responses are delivered via secure URLs:
+The `/convert` endpoint accepts files via `multipart/form-data`:
+
+```bash
+curl -X POST https://dev.api.runpulse.com/convert \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf"
+```
+
+## Response Format
+
+### Successful Response
 
 ```json
 {
-  "is_url": true,
-  "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
-  "plan-info": {
-    "pages_used": 0,
-    "tier": "foundation"
+  "content": "# Extracted Content\n\nDocument text in markdown format...",
+  "metadata": {
+    "page_count": 10,
+    "processing_time": 2.34,
+    "source_file": "document.pdf"
   }
 }
 ```
 
-<Note>
-  Response URLs automatically expire after 24 hours for security. Store these URLs securely as they contain your processed results.
-</Note>
+### Large Document Response
 
-<Note type="warning">
-  **Important**: For large documents (50+ pages), we strongly recommend using the [/extract_async](/api-reference/endpoint/extract_async) endpoint instead of the synchronous endpoints. This prevents timeout issues and provides better handling of extensive processing tasks.
-</Note>
+For documents over 70 pages, content is delivered via S3 URL:
+
+```json
+{
+  "is_url": true,
+  "url": "https://pulse-studio-api.s3.amazonaws.com/results/...",
+  "expires_at": "2024-01-16T12:00:00Z",
+  "plan-info": {
+    "pages_used": 150,
+    "tier": "professional"
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "error": {
+    "code": "FILE_001",
+    "message": "Invalid file type",
+    "details": {
+      "supported_types": ["PDF", "JPG", "PNG", "DOCX", "PPTX", "XLSX", "HTML"],
+      "received_type": "DOC"
+    }
+  }
+}
+```
+
+## Common Parameters
+
+### Schema Parameter
+
+Define structured data extraction:
+
+```json
+{
+  "field_name": "data_type",
+  "nested_object": {
+    "field": "string"
+  },
+  "array_field": ["string"]
+}
+```
+
+Supported data types:
+- `string` - Text values
+- `integer` - Whole numbers
+- `float` - Decimal numbers
+- `date` - Date values
+- `boolean` - True/false
+- `array` - Lists
+- `object` - Nested structures
+
+### Pages Parameter
+
+Specify page ranges to process:
+
+- Single page: `"5"`
+- Range: `"1-10"`
+- Multiple: `"1,3,5-7,10"`
+- All pages: Omit parameter
+
+### Output Options
+
+Control extraction output:
+
+- `return_html`: Return HTML instead of markdown (default: false)
+- `extract_figure`: Extract images and figures (default: false)
+- `figure_description`: Generate AI descriptions for figures
+- `chunk_size`: Custom chunk size in characters
+
+## API Versioning
+
+The API is versioned through the URL path. The current version is v1 (implicit in the base URL).
+
+Future versions will be accessible at:
+- `https://api.runpulse.com/v2/...`
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Invalid API key |
+| 403 | Forbidden - Access denied |
+| 404 | Not Found - Resource doesn't exist |
+| 413 | Payload Too Large - File exceeds limit |
+| 429 | Too Many Requests - Rate limited |
+| 500 | Internal Server Error |
+| 503 | Service Unavailable |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Appropriate Endpoints">
+    - Use `/extract` for documents under 50 pages
+    - Use `/extract_async` for large documents
+    - Use `/convert` when you need to reuse file URLs
+  </Accordion>
+
+  <Accordion title="Handle Errors Gracefully">
+    - Implement retry logic with exponential backoff
+    - Check error codes and handle specifically
+    - Log errors for debugging
+  </Accordion>
+
+  <Accordion title="Optimize Performance">
+    - Process only necessary pages
+    - Use schemas for structured extraction
+    - Cache results when possible
+  </Accordion>
+
+  <Accordion title="Security">
+    - Never expose API keys in client code
+    - Use environment variables
+    - Rotate keys regularly
+    - Validate file types before upload
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Explore specific endpoints:
 
 <CardGroup cols={2}>
-  <Card
-    title="Direct Response"
-    icon="file-lines"
-  >
-    Documents under 70 pages return results directly in the API response
+  <Card title="Extract Endpoint" icon="file-export" href="/api-reference/endpoint/extract">
+    Main extraction endpoint
   </Card>
-  <Card
-    title="URL Response"
-    icon="link"
-  >
-    Larger documents return a secure, temporary URL to access results
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Get started quickly
   </Card>
 </CardGroup>
-
-## Asynchronous Processing
-
-For processing large documents or handling multiple requests, we provide asynchronous endpoints:
-
-<CardGroup cols={2}>
-  <Card
-    title="/extract_async Endpoint"
-    icon="clock"
-  >
-    Initiates asynchronous document processing and returns a job ID for tracking.
-  </Card>
-  <Card
-    title="/poll Endpoint"
-    icon="magnifying-glass"
-  >
-    Check the status of an ongoing processing job using the job ID.
-  </Card>
-  <Card
-    title="/cancel Endpoint"
-    icon="stop"
-  >
-    Cancel an in-progress processing job if needed.
-  </Card>
-</CardGroup>
-
-<Note>
-  Async processing is recommended for documents larger than 50 pages or when processing multiple files simultaneously.
-</Note>
-
-## Batch Processing
-
-<Card
-  title="/batch_extract_async Endpoint"
-  icon="layer-group"
->
-  Process multiple documents in parallel with customized parameters for each file.
-</Card>
-
-### Batch Processing Features
-
-<CardGroup cols={2}>
-  <Card
-    title="Multiple Input Sources"
-    icon="files"
-  >
-    Accept both file URLs and file paths in a single batch request
-  </Card>
-  <Card
-    title="Custom Schemas"
-    icon="code"
-  >
-    Apply different extraction schemas for each document
-  </Card>
-  <Card
-    title="Parallel Processing"
-    icon="microchip"
-  >
-    Process multiple documents simultaneously for improved throughput
-  </Card>
-  <Card
-    title="Unified Tracking"
-    icon="list-check"
-  >
-    Monitor all jobs with a single batch ID
-  </Card>
-</CardGroup>
-
-<Note>
-  Batch processing automatically handles rate limiting and queuing to ensure optimal performance.
-</Note>

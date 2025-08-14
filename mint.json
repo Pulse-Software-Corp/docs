@@ -29,13 +29,21 @@
   },
   "topbarLinks": [
     {
+      "name": "Console",
+      "url": "https://console.runpulse.com"
+    },
+    {
+      "name": "Platform",
+      "url": "https://platform.runpulse.com"
+    },
+    {
       "name": "Support",
-      "url": "mailto:founders@trypulse.ai"
+      "url": "mailto:support@trypulse.ai"
     }
   ],
   "topbarCtaButton": {
-    "name": "Website",
-    "url": "https://studio.trypulse.ai"
+    "name": "Get API Key",
+    "url": "https://console.runpulse.com"
   },
   "tabs": [
     {
@@ -49,47 +57,52 @@
   ],
   "navigation": [
     {
-      "group": "DOCUMENTATION",
+      "group": "Getting Started",
       "pages": [
         "introduction",
-        "quickstart",
-        {
-          "group": "Security",
-          "pages": [
-            "security/overview",
-            "security/best-practices"
-          ]
-        }
+        "authentication",
+        "quickstart"
       ]
     },
     {
-      "group": "API Documentation",
+      "group": "Core Concepts",
+      "pages": [
+        "core-concepts/supported-file-types",
+        "core-concepts/schema-extraction",
+        "core-concepts/large-documents",
+        "core-concepts/bounding-boxes"
+      ]
+    },
+    {
+      "group": "Advanced Topics",
+      "pages": [
+        "advanced/error-handling",
+        "security/overview",
+        "security/best-practices"
+      ]
+    },
+    {
+      "group": "API Reference",
       "pages": [
         "api-reference/introduction",
         "api-reference/schema-guidelines"
       ]
     },
     {
-      "group": "Ultra API Endpoints",
-      "pages": [
-        "api-reference/ultra-endpoint/extract",
-        "api-reference/ultra-endpoint/convert"
-      ]
-    },
-    {
-      "group": "API Endpoints",
+      "group": "Endpoints",
       "pages": [
         "api-reference/endpoint/extract",
-        "api-reference/endpoint/convert",
         "api-reference/endpoint/extract_async",
-        "api-reference/endpoint/batch_extract",
+        "api-reference/endpoint/convert",
         "api-reference/endpoint/poll",
-        "api-reference/endpoint/cancel"
+        "api-reference/endpoint/cancel",
+        "api-reference/endpoint/webhook"
       ]
     },
     {
-      "group": "Pulse API",
+      "group": "Resources",
       "pages": [
+        "support",
         "changelog/overview"
       ]
     }

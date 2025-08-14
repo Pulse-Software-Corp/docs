@@ -1,0 +1,286 @@
+---
+title: 'Supported File Types'
+description: 'File formats supported by Pulse API for document extraction'
+---
+
+## Overview
+
+Pulse API supports a wide range of document formats, enabling extraction from virtually any business document. All file types are processed with the same high accuracy and can be used with structured schema extraction.
+
+## Supported Formats
+
+<CardGroup cols={2}>
+  <Card title="PDF Documents" icon="file-pdf">
+    **Extension**: `.pdf`
+    
+    - Text-based PDFs (searchable)
+    - Image-based PDFs (scanned)
+    - Mixed content PDFs
+    - Password-protected PDFs (provide password)
+    - Multi-page documents
+  </Card>
+
+  <Card title="Images" icon="image">
+    **Extensions**: `.jpg`, `.jpeg`, `.png`
+    
+    - High-resolution scans
+    - Photographs of documents
+    - Screenshots
+    - Multi-page TIFFs
+    - Handwritten content (with limitations)
+  </Card>
+
+  <Card title="Office Documents" icon="file-word">
+    **Extensions**: `.docx`, `.pptx`, `.xlsx`
+    
+    - Microsoft Word documents
+    - PowerPoint presentations
+    - Excel spreadsheets
+    - Embedded images and charts
+    - Complex formatting preserved
+  </Card>
+
+  <Card title="Web Documents" icon="globe">
+    **Extensions**: `.html`, `.htm`
+    
+    - Static HTML pages
+    - Saved web pages
+    - HTML emails
+    - Inline styles preserved
+    - Embedded images extracted
+  </Card>
+</CardGroup>
+
+## Processing Large Files
+
+For very large files, we recommend:
+- Using async processing (`/extract_async`)
+- Processing specific page ranges
+- Contacting support for optimization strategies
+
+## Format-Specific Features
+
+### PDF Processing
+
+PDFs receive the most comprehensive processing:
+
+```python
+# Extract with PDF-specific options
+result = client.extract(
+    file_path="document.pdf",
+    pages="1-10",  # Process specific pages
+    extract_figure=True,  # Extract embedded images
+    return_html=False  # Get markdown output
+)
+```
+
+**Advanced PDF Features**:
+- Preserve document structure
+- Extract form fields
+- Handle multi-column layouts
+- Process rotated pages
+- Extract embedded images
+
+### Image Processing
+
+Images are processed using advanced OCR:
+
+```python
+# High-quality image extraction
+result = client.extract(
+    file_path="scanned_document.jpg"
+)
+```
+
+**Image Best Practices**:
+- **Resolution**: Minimum 150 DPI, recommended 300 DPI
+- **Format**: PNG for text, JPG for photos
+- **Size**: Keep under 10MB per image
+- **Quality**: Avoid blurry or skewed images
+
+### Office Document Processing
+
+Office files maintain their structure:
+
+```python
+# Extract structured data from Excel
+schema = {
+    "headers": ["string"],
+    "data": [["string"]]
+}
+
+result = client.extract(
+    file_path="spreadsheet.xlsx",
+    schema=schema
+)
+```
+
+**Office Document Features**:
+- Preserve table structures
+- Extract embedded objects
+- Handle multiple sheets/slides
+- Maintain formatting context
+
+## File Upload Methods
+
+### Direct Upload
+
+Upload files directly in your API request:
+
+```python
+# Direct file upload (recommended for files < 10MB)
+with open("document.pdf", "rb") as f:
+    response = requests.post(
+        "https://api.runpulse.com/extract",
+        headers={"x-api-key": API_KEY},
+        files={"file": f}
+    )
+```
+
+### Pre-upload to S3
+
+For larger files or reusable uploads:
+
+```python
+# Upload to S3 first
+upload_response = requests.post(
+    "https://api.runpulse.com/convert",
+    headers={"x-api-key": API_KEY},
+    files={"file": open("large_file.pdf", "rb")}
+)
+
+file_url = upload_response.json()["s3_object_url"]
+
+# Then extract using the URL
+extract_response = requests.post(
+    "https://api.runpulse.com/extract",
+    headers={"x-api-key": API_KEY},
+    json={"file-url": file_url}
+)
+```
+
+### URL-Based Processing
+
+Process files from public URLs:
+
+```python
+# Extract from URL
+response = requests.post(
+    "https://api.runpulse.com/extract",
+    headers={"x-api-key": API_KEY},
+    json={"file-url": "https://example.com/document.pdf"}
+)
+```
+
+## Unsupported Formats
+
+The following formats are **not** currently supported:
+
+- Video files (`.mp4`, `.avi`, `.mov`)
+- Audio files (`.mp3`, `.wav`)
+- CAD files (`.dwg`, `.dxf`)
+- Legacy Office formats (`.doc`, `.xls`, `.ppt`)
+- Compressed archives (`.zip`, `.rar`)
+- Executable files (`.exe`, `.app`)
+
+<Info>
+  Need support for a specific format? Contact us at support@runpulse.com
+</Info>
+
+## Format Detection
+
+Pulse API automatically detects file types based on:
+1. File extension
+2. MIME type
+3. File content analysis
+
+```python
+# API automatically detects format
+result = client.extract(file_path="document")  # Works even without extension
+```
+
+## Best Practices by Document Type
+
+<AccordionGroup>
+  <Accordion title="Financial Documents">
+    **Invoices, Statements, Reports**
+    
+    - Use PDF format when possible
+    - Ensure text is selectable (not scanned)
+    - Include all pages for context
+    - Use schema extraction for structured data
+  </Accordion>
+
+  <Accordion title="Legal Documents">
+    **Contracts, Agreements, Forms**
+    
+    - Maintain original formatting with PDF
+    - Process complete documents for context
+    - Use high-resolution scans for signatures
+    - Process complex layouts with care
+  </Accordion>
+
+  <Accordion title="Technical Documents">
+    **Manuals, Specifications, Diagrams**
+    
+    - Use `extract_figure=True` for diagrams
+    - Process in smaller chunks if very large
+    - Maintain original format for tables
+    - Consider HTML output for preservation
+  </Accordion>
+
+  <Accordion title="Medical Records">
+    **Clinical Notes, Lab Reports, Prescriptions**
+    
+    - Use high-resolution scans (300+ DPI)
+    - Process handwritten content carefully
+    - Verify extracted data accuracy
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="FILE_001: Invalid file type">
+    **Solution**: Check that your file extension matches our supported formats
+    
+    ```python
+    # Correct
+    client.extract(file_path="document.pdf")
+    
+    # Incorrect
+    client.extract(file_path="document.doc")  # Use .docx instead
+    ```
+  </Accordion>
+
+  <Accordion title="FILE_002: File too large">
+    **Solution**: Reduce file size or use async processing
+    
+    ```python
+    # For large files
+    client.extract(file_path="large_file.pdf", async_mode=True)
+    ```
+  </Accordion>
+
+  <Accordion title="FILE_003: File corrupted">
+    **Solution**: Verify file integrity and re-save if needed
+    
+    ```bash
+    # Check PDF integrity
+    pdfinfo document.pdf
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Schema Extraction" icon="code" href="/core-concepts/schema-extraction">
+    Extract structured data from any format
+  </Card>
+  <Card title="Large Documents" icon="file-lines" href="/core-concepts/large-documents">
+    Handle big files efficiently
+  </Card>
+</CardGroup> 

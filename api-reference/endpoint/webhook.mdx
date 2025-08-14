@@ -1,0 +1,238 @@
+---
+title: 'Configure Webhooks'
+openapi: 'POST /webhook'
+---
+
+## Overview
+
+Configure webhook endpoints to receive real-time notifications about job status changes. This endpoint returns a portal link where you can manage your webhook configurations.
+
+<Note>
+  Webhook event delivery is currently under development. The configuration portal is fully functional, but events are not yet being sent.
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="Request Portal Link">
+    Call this endpoint to get your unique portal URL
+  </Step>
+  <Step title="Visit Portal">
+    Open the portal link in your browser
+  </Step>
+  <Step title="Add Endpoints">
+    Configure one or more webhook URLs to receive events
+  </Step>
+  <Step title="Test & Save">
+    Test your endpoints and save the configuration
+  </Step>
+</Steps>
+
+## Portal Features
+
+The webhook configuration portal allows you to:
+
+- **Add Multiple Endpoints** - Configure different URLs for different event types
+- **Set Authentication** - Add headers or basic auth to your webhooks
+- **Filter Events** - Choose which events to receive at each endpoint
+- **Test Endpoints** - Send test events to verify your setup
+- **View Logs** - See delivery attempts and debug failed webhooks
+
+## Webhook Security
+
+Each webhook request includes security headers for verification:
+
+```
+webhook-id: msg_2Jv7pYGL7UwXqF3v6RjLVxQYPZG
+webhook-timestamp: 1704067200
+webhook-signature: v1,g0hM9SsE+OTPJTjfm/kBRBOlqPmYFYpwTEFfQK6UHdI=
+```
+
+### Verifying Webhook Signatures
+
+```python
+import hmac
+import hashlib
+import time
+
+def verify_webhook(payload, headers, webhook_secret):
+    """Verify webhook authenticity using HMAC signature."""
+    
+    webhook_id = headers.get('webhook-id')
+    webhook_timestamp = headers.get('webhook-timestamp')
+    webhook_signature = headers.get('webhook-signature')
+    
+    if not all([webhook_id, webhook_timestamp, webhook_signature]):
+        return False
+    
+    # Check timestamp to prevent replay attacks (5 minute window)
+    current_time = int(time.time())
+    if abs(current_time - int(webhook_timestamp)) > 300:
+        return False
+    
+    # Construct signed content
+    signed_content = f"{webhook_id}.{webhook_timestamp}.{payload}"
+    
+    # Extract signature from header (format: v1,signature)
+    signature = webhook_signature.split(',')[1] if ',' in webhook_signature else webhook_signature
+    
+    # Compute expected signature
+    expected = hmac.new(
+        webhook_secret.encode(),
+        signed_content.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Constant-time comparison
+    return hmac.compare_digest(signature, expected)
+```
+
+## Webhook Events (Coming Soon)
+
+Once enabled, you'll receive events for:
+
+### Job Status Events
+
+```json
+{
+  "type": "job.completed",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "job_id": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "completed",
+    "pages_processed": 25,
+    "processing_time": 12.5
+  }
+}
+```
+
+### Event Types
+
+| Event | Description |
+|-------|-------------|
+| `job.created` | New async job created |
+| `job.processing` | Job started processing |
+| `job.completed` | Job completed successfully |
+| `job.failed` | Job failed with error |
+| `job.cancelled` | Job was cancelled |
+
+## Example Implementation
+
+### Express.js Webhook Handler
+
+```javascript
+const express = require('express');
+const crypto = require('crypto');
+
+const app = express();
+app.use(express.raw({ type: 'application/json' }));
+
+app.post('/webhook', (req, res) => {
+  const payload = req.body.toString();
+  
+  // Verify webhook signature
+  if (!verifyWebhook(payload, req.headers, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  const event = JSON.parse(payload);
+  
+  // Handle different event types
+  switch (event.type) {
+    case 'job.completed':
+      console.log(`Job ${event.data.job_id} completed`);
+      // Process completed job
+      break;
+    case 'job.failed':
+      console.error(`Job ${event.data.job_id} failed: ${event.data.error}`);
+      // Handle failure
+      break;
+  }
+  
+  res.status(200).send('OK');
+});
+```
+
+### Python Flask Handler
+
+```python
+from flask import Flask, request, abort
+import json
+
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    payload = request.get_data(as_text=True)
+    
+    # Verify webhook
+    if not verify_webhook(payload, request.headers, app.config['WEBHOOK_SECRET']):
+        abort(401)
+    
+    event = json.loads(payload)
+    
+    # Process event
+    if event['type'] == 'job.completed':
+        process_completed_job(event['data'])
+    elif event['type'] == 'job.failed':
+        handle_failed_job(event['data'])
+    
+    return '', 200
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Endpoint Security">
+    - Use HTTPS endpoints only
+    - Implement signature verification
+    - Add IP allowlisting if possible
+    - Use authentication headers
+  </Accordion>
+
+  <Accordion title="Error Handling">
+    - Return 2xx status for successful receipt
+    - Implement idempotency to handle retries
+    - Log all received events
+    - Handle timeouts gracefully
+  </Accordion>
+
+  <Accordion title="Performance">
+    - Process webhooks asynchronously
+    - Respond quickly (< 5 seconds)
+    - Queue events for processing
+    - Implement proper concurrency controls
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Not receiving webhooks | Check endpoint URL is publicly accessible |
+| Signature verification fails | Ensure you're using the correct secret |
+| Timeouts | Process webhooks async and respond quickly |
+| Duplicate events | Implement idempotency using webhook-id |
+
+### Testing Your Endpoint
+
+Before going live:
+
+1. Use webhook testing tools like ngrok for local development
+2. Send test events from the portal
+3. Verify signature validation works
+4. Test error handling and retries
+5. Monitor initial production events closely
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore other endpoints
+  </Card>
+  <Card title="Async Processing" icon="clock" href="/api-reference/endpoint/extract_async">
+    Learn about async jobs
+  </Card>
+</CardGroup> 

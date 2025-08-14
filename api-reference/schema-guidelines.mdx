@@ -1,123 +1,426 @@
 ---
 title: 'Schema Guidelines'
+description: 'Best practices and examples for defining extraction schemas'
 ---
 
-Pulse API can transform unstructured document content (like Markdown) into structured JSON output by providing a schema definition in your API request. This allows for precise data extraction tailored to your needs.
+## Overview
 
-## Schema Parameter (`schema`)
+Schemas allow you to extract structured data from documents in a consistent format. This guide provides comprehensive guidelines for creating effective schemas.
 
-The `schema` parameter uses a simplified format where you directly specify the expected data types for each key. It supports basic types, arrays, and enums without requiring the full OpenAPI 3.0 specification.
+## Schema Basics
 
-**Example 1: Transaction Data**
+A schema is a JSON object that defines the structure of data you want to extract:
 
 ```json
 {
-  "transactions": [
-    {
-      "date": "date",
-      "description": "string",
-      "amount": "float",
-      "balance": "float",
-      "accrued_bank_charges": "float|null"
-    }
-  ]
+  "field_name": "data_type",
+  "nested_object": {
+    "sub_field": "string"
+  },
+  "array_field": ["string"]
 }
 ```
 
-**Example 2: Invoice Data**
+## Data Types
+
+### Primitive Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `string` | Text values | `"John Doe"` |
+| `integer` | Whole numbers | `42` |
+| `float` | Decimal numbers | `99.99` |
+| `boolean` | True/false values | `true` |
+| `date` | Date values | `"2024-01-15"` |
+
+### Complex Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `object` | Nested structures | `{"name": "string", "age": "integer"}` |
+| `array` | Lists of items | `["string"]` or `[{"item": "string"}]` |
+
+## Schema Design Principles
+
+### 1. Start Simple
+
+Begin with basic fields and gradually add complexity:
 
 ```json
+// Start with this
 {
-  "name": "string",
-  "customer_email": "string",
-  "street_address_line_1": "string",
-  "street_address_line_2": "string",
-  "city": "string",
-  "state": "string",
-  "zip_code": "string",
-  "country": "string",
-  "total_price.unit": "USD",
-  "revenue_schedule": [
-    {
-      "service_start_date": "date",
-      "service_term": "integer",
-      "service_end_date": "date",
-      "item_name": "string",
-      "item_description": "string|null",
-      "integration_item": "string",
-      "billing_type": "enum(FLAT_PRICE, PER_UNIT)",
-      "total_price": "float",
-      "accountingCurrency": "USD",
-      "quantity": "integer",
-      "start_date": "date",
-      "period": "integer",
-      "#_of_periods": "integer",
-      "frequency_unit": "enum(YEAR, MONTH, DAY)",
-      "end_date": "date",
-      "net_terms": "integer",
-      "arrears": "boolean|null"
-    }
-  ]
+  "invoice_number": "string",
+  "total": "float"
+}
+
+// Then expand to this
+{
+  "invoice_number": "string",
+  "date": "date",
+  "vendor": {
+    "name": "string",
+    "address": "string"
+  },
+  "line_items": [{
+    "description": "string",
+    "amount": "float"
+  }],
+  "total": "float"
 }
 ```
-*(Note: Types like `string`, `float`, `integer`, `date`, `boolean`, `null`, and simple `enum(VALUE1, VALUE2)` definitions are used directly)*
 
-## Experimental Schema Parameter (`experimental_schema`)
+### 2. Use Descriptive Names
 
-The `experimental_schema` parameter utilizes a subset of the OpenAPI 3.0 specification for more complex schema definitions.
+Field names should match document terminology:
 
-Supported operations:
+```json
+// Good - matches invoice terminology
+{
+  "invoice_number": "string",
+  "bill_to": "string",
+  "remit_to": "string"
+}
 
-*   **`type`**: (Required) Defines the data type (`string`, `number`, `integer`, `boolean`, `array`, `object`).
-*   **`properties`**: (Required for `object` type) Defines key-value pairs within an object, following OpenAPI 3.0 formatting.
-*   **`required`**: (Optional for `object` type) An array listing mandatory property keys.
-*   **`items`**: (Required for `array` type) Defines the schema for elements within an array, following OpenAPI 3.0 formatting.
-*   **`nullable`**: (Optional) Boolean (`true`/`false`, default `false`). Allows the value to be `null`.
-*   **`description`**: (Optional) A string providing context or use-case for the value.
+// Avoid - generic names
+{
+  "number": "string",
+  "address1": "string",
+  "address2": "string"
+}
+```
 
-**Example: Condensed Profile Schema**
+### 3. Handle Optional Fields
+
+Make fields nullable when they might not exist:
 
 ```json
 {
-  "type": "object",
-  "properties": {
-    "basics": {
-      "type": "object",
-      "description": "Basic personal information",
-      "properties": {
-        "rawName": { "type": "string", "description": "Full name", "nullable": true },
-        "email": { "type": "string", "description": "Email address", "nullable": true },
-        "phone": { "type": "string", "description": "Phone number", "nullable": true },
-        "location": { "type": "string", "description": "Formatted location text", "nullable": true },
-        "gender": { 
-          "type": "string", 
-          "description": "Gender identifier", 
-          "enum": ["Male", "Female", "Non-Binary", "Other"],
-          "nullable": true
+  "required_field": "string",
+  "optional_field": "string|null",
+  "optional_number": "float|null"
+}
+```
+
+## Common Schema Patterns
+
+### Financial Documents
+
+```json
+{
+  "document_type": "string",
+  "document_number": "string",
+  "date": "date",
+  "due_date": "date|null",
+  "vendor": {
+    "name": "string",
+    "address": "string",
+    "tax_id": "string|null"
+  },
+  "customer": {
+    "name": "string",
+    "account_number": "string|null"
+  },
+  "line_items": [{
+    "description": "string",
+    "quantity": "float",
+    "unit_price": "float",
+    "amount": "float"
+  }],
+  "subtotal": "float",
+  "tax": "float",
+  "total": "float",
+  "payment_terms": "string|null"
+}
+```
+
+### Legal Documents
+
+```json
+{
+  "document_title": "string",
+  "case_number": "string|null",
+  "parties": [{
+    "name": "string",
+    "role": "string",
+    "representation": "string|null"
+  }],
+  "dates": {
+    "filed": "date",
+    "effective": "date",
+    "expiration": "date|null"
+  },
+  "sections": [{
+    "number": "string",
+    "title": "string",
+    "content": "string"
+  }],
+  "signatures": [{
+    "name": "string",
+    "title": "string|null",
+    "date": "date"
+  }]
+}
+```
+
+### Medical Records
+
+```json
+{
+  "patient": {
+    "name": "string",
+    "dob": "date",
+    "mrn": "string"
+  },
+  "encounter": {
+    "date": "date",
+    "provider": "string",
+    "location": "string"
+  },
+  "chief_complaint": "string",
+  "history_of_present_illness": "string",
+  "medications": [{
+    "name": "string",
+    "dosage": "string",
+    "frequency": "string",
+    "route": "string"
+  }],
+  "diagnoses": [{
+    "code": "string",
+    "description": "string",
+    "type": "string"
+  }],
+  "plan": "string"
+}
+```
+
+## Advanced Techniques
+
+### Dynamic Fields
+
+For documents with variable structures:
+
+```json
+{
+  "metadata": {
+    "document_type": "string",
+    "date": "date"
+  },
+  "dynamic_fields": {
+    "field_1": "string|null",
+    "field_2": "float|null",
+    "field_3": "boolean|null"
+  }
+}
+```
+
+### Conditional Extraction
+
+Use schema_prompt to guide conditional extraction:
+
+```python
+schema = {
+  "contract_type": "string",
+  "terms": [{
+    "type": "string",
+    "value": "string"
+  }]
+}
+
+schema_prompt = """
+If contract_type is 'lease', extract rental amount and duration as terms.
+If contract_type is 'purchase', extract price and closing date as terms.
+"""
+```
+
+### Hierarchical Data
+
+For documents with nested structures:
+
+```json
+{
+  "organization": {
+    "name": "string",
+    "departments": [{
+      "name": "string",
+      "head": "string",
+      "divisions": [{
+        "name": "string",
+        "manager": "string",
+        "employees": ["string"]
+      }]
+    }]
+  }
+}
+```
+
+## Performance Optimization
+
+### 1. Minimize Schema Complexity
+
+```json
+// Efficient - flat structure
+{
+  "invoice_number": "string",
+  "vendor_name": "string",
+  "total": "float"
+}
+
+// Less efficient - deeply nested
+{
+  "invoice": {
+    "header": {
+      "number": "string",
+      "vendor": {
+        "details": {
+          "name": "string"
         }
-      },
-      "required": ["rawName", "email"]
-    },
-    "experience": {
-      "type": "array",
-      "description": "List of work experiences",
-      "items": {
-        "type": "object",
-        "properties": {
-          "company": { "type": "string", "description": "Company name", "nullable": true },
-          "position": { "type": "string", "description": "Job title", "nullable": true },
-          "startDate": { "type": "string", "description": "Start date (ISO format)", "format": "date", "nullable": true },
-          "endDate": { "type": "string", "description": "End date (ISO format) or null", "format": "date", "nullable": true },
-          "description": { "type": "string", "description": "Job details", "nullable": true }
-        },
-        "required": ["company", "position", "startDate"]
       }
     }
-  },
-  "required": ["basics", "experience"]
+  }
 }
 ```
 
-## Schema Prompting
+### 2. Extract Only What You Need
 
-For both schema types, you can enhance extraction accuracy by providing natural language instructions within the schema's description fields or as a separate `schema_prompt` parameter. These prompts guide the model in mapping document content to your schema, handling logical expressions, complex enum mapping, calculations, and other nuanced extraction requirements.
+```json
+// Good - specific fields
+{
+  "patient_name": "string",
+  "diagnosis_code": "string",
+  "treatment_plan": "string"
+}
+
+// Avoid - too broad
+{
+  "entire_medical_record": "string"
+}
+```
+
+### 3. Use Appropriate Data Types
+
+```json
+// Good - specific types
+{
+  "quantity": "integer",
+  "price": "float",
+  "is_taxable": "boolean"
+}
+
+// Avoid - everything as string
+{
+  "quantity": "string",
+  "price": "string",
+  "is_taxable": "string"
+}
+```
+
+## Validation and Testing
+
+### Schema Validation
+
+Before using a schema, validate its structure:
+
+```python
+import json
+
+def validate_schema(schema):
+    """Basic schema validation."""
+    valid_types = ["string", "integer", "float", "boolean", "date"]
+    
+    def check_value(value):
+        if isinstance(value, str):
+            # Check for valid type or null option
+            types = value.split("|")
+            return all(t in valid_types + ["null"] for t in types)
+        elif isinstance(value, dict):
+            # Recursive check for objects
+            return all(check_value(v) for v in value.values())
+        elif isinstance(value, list) and len(value) == 1:
+            # Check array type
+            return check_value(value[0])
+        return False
+    
+    try:
+        return all(check_value(v) for v in schema.values())
+    except:
+        return False
+
+# Test your schema
+schema = {
+    "invoice_number": "string",
+    "amount": "float"
+}
+print(validate_schema(schema))  # True
+```
+
+### Testing Schemas
+
+Test with sample documents:
+
+```python
+# Test with increasing complexity
+test_schemas = [
+    # Level 1: Basic fields
+    {"invoice_number": "string", "total": "float"},
+    
+    # Level 2: Add nested object
+    {"invoice_number": "string", "vendor": {"name": "string"}, "total": "float"},
+    
+    # Level 3: Add arrays
+    {"invoice_number": "string", "items": [{"desc": "string", "amount": "float"}], "total": "float"}
+]
+
+for i, schema in enumerate(test_schemas):
+    result = client.extract(file_path="test_invoice.pdf", schema=schema)
+    print(f"Schema level {i+1}: {json.dumps(result, indent=2)}")
+```
+
+## Error Handling
+
+### Common Schema Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Invalid JSON | Syntax error in schema | Validate JSON syntax |
+| Unknown type | Using unsupported data type | Use only supported types |
+| Too complex | Deeply nested structure | Simplify schema |
+| No matches | Fields don't match document | Adjust field names |
+
+### Debugging Tips
+
+1. **Start with a minimal schema** and add fields incrementally
+2. **Use schema prompts** to provide context
+3. **Check extracted content** without schema first
+4. **Verify field names** match document terminology
+
+## Best Practices Summary
+
+<AccordionGroup>
+  <Accordion title="DO">
+    - Use descriptive field names
+    - Start simple and iterate
+    - Make optional fields nullable
+    - Test with real documents
+    - Validate schema structure
+    - Use appropriate data types
+  </Accordion>
+
+  <Accordion title="DON'T">
+    - Create overly complex nested structures
+    - Use generic field names
+    - Assume all fields will always exist
+    - Extract entire documents as single fields
+    - Mix data types inconsistently
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Schema Extraction" icon="code" href="/core-concepts/schema-extraction">
+    See more examples
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/endpoint/extract">
+    Try schema extraction
+  </Card>
+</CardGroup> 

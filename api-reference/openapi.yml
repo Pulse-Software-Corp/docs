@@ -1,296 +1,154 @@
 openapi: 3.0.3
 info:
-  title: File Processing API
-  description: API for extracting, processing, and converting files
+  title: Pulse API
+  description: Production-grade document extraction service that transforms complex documents into structured, AI-ready data
   version: 1.0.0
+  contact:
+    name: Pulse Support
+    email: support@trypulse.ai
+    url: https://docs.runpulse.com
 servers:
-  - url: https://api.runpulse.com
+  - url: https://dev.api.runpulse.com
     description: Production server
+
+security:
+  - ApiKeyAuth: []
 
 paths:
   /extract:
     post:
-      summary: Extract and process a file
-      description: Extracts content from a file at the given URL and processes it with specified chunking options.
-      operationId: uploadFile
+      summary: Extract Document
+      description: |
+        Synchronously extract content from documents. Best for files under 50 pages.
+        Returns markdown or HTML formatted content with optional structured data extraction.
+        
+        For documents over 70 pages, results are returned via S3 URL.
+      operationId: extractDocument
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - file-url
               properties:
                 file-url:
                   type: string
                   format: uri
-                  example: "PRESIGNED_URL"
-                return_table:
-                  type: boolean
-                  example: true
-                experimental_return_table:
-                  type: boolean
-                  example: true
-                chunking:
-                  type: string
-                  example: "semantic,header,page,recursive"
-                  pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+                  description: URL of the file to process
                 schema:
                   type: object
-                  additionalProperties: true
-                  example: {}
-                  description: JSON schema for processing
-                schema_prompt:
-                  type: string
-                  example: ""
-                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
+                  description: JSON schema for structured data extraction
+                  example: {"invoice_number": "string", "total": "float"}
                 pages:
                   type: string
-                  example: ""
-                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
-              required:
-                - file-url
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
-        - name: Content-Type
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: ['application/json']
+                  description: Page range to process (e.g., "1-5", "1,3,5")
+                  example: "1-10"
+                chunk_size:
+                  type: integer
+                  description: Custom chunk size in characters
+                  example: 5000
+                extract_figure:
+                  type: boolean
+                  description: Extract figures and images
+                  default: false
+                figure_description:
+                  type: boolean
+                  description: Generate AI descriptions for figures
+                  default: false
+                return_html:
+                  type: boolean
+                  description: Return HTML instead of markdown
+                  default: false
+                schema_prompt:
+                  type: string
+                  description: Custom prompt for schema extraction
       responses:
         '200':
-          description: Successful extraction and processing of file
+          description: Successful extraction
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  markdown:
-                    type: string
-                    description: Full document content in markdown format
-                  chunks:
-                    type: object
-                    description: Document broken down into smaller, processable chunks
-                  plan-info:
-                    type: object
-                    properties:
-                      note:
-                        type: string
-                        description: Usage information and limits
-                      pages_used:
-                        type: integer
-                        description: Total number of pages processed
-                        format: int32
-                      tier:
-                        type: string
-                        description: Current subscription tier
-                  schema-json:
-                    type: object
-                    description: Extracted structured data based on provided schema
-                required:
-                  - markdown
-                  - chunks
-                  - plan-info
-                  - schema-json
+                oneOf:
+                  - $ref: '#/components/schemas/DirectExtractionResponse'
+                  - $ref: '#/components/schemas/URLExtractionResponse'
         '400':
-          description: Bad request errors
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    enum:
-                      - "No file or URL provided"
-                      - "Failed to download file from URL"
-                      - "Error fetching file from URL"
-                      - "The PDF content is empty"
-                      - "Invalid PDF file"
-                      - "Invalid file type"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "API key is required"
-        '403':
-          description: Forbidden - page limit exceeded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Page limit exceeded. Your foundation tier limit is 20000 pages. You have processed 20763 pages and are trying to process 1 more pages."
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Error in upload_file"
+          $ref: '#/components/responses/InternalServerError'
 
-  /extract_beta:
-    servers:
-      - url: https://pro.api.runpulse.com
-        description: Production server for ultra endpoints
+  /extract_async:
     post:
-      summary: Extract and process a file [BETA]
-      description: Extracts content from a file at the given URL and processes it with specified chunking options.
-      operationId: uploadFileBeta
+      summary: Extract Document Async
+      description: |
+        Asynchronously process documents. Ideal for large files or when processing multiple documents.
+        Returns a job ID that can be used to poll for results.
+      operationId: extractDocumentAsync
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - file-url
               properties:
                 file-url:
                   type: string
                   format: uri
-                  example: "PRESIGNED_URL"
-                return_table:
-                  type: boolean
-                  example: true
-                experimental_return_table:
-                  type: boolean
-                  example: true
-                chunking:
-                  type: string
-                  example: "semantic,header,page,recursive"
-                  pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
+                  description: URL of the file to process
                 schema:
                   type: object
-                  additionalProperties: true
-                  example: {}
-                  description: JSON schema for processing
-                schema_prompt:
-                  type: string
-                  example: ""
-                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
+                  description: JSON schema for structured data extraction
                 pages:
                   type: string
-                  example: ""
-                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
-              required:
-                - file-url
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
-        - name: Content-Type
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: ['application/json']
+                  description: Page range to process
+                chunk_size:
+                  type: integer
+                  description: Custom chunk size in characters
+                extract_figure:
+                  type: boolean
+                  description: Extract figures and images
+                  default: false
+                figure_description:
+                  type: boolean
+                  description: Generate AI descriptions for figures
+                  default: false
+                return_html:
+                  type: boolean
+                  description: Return HTML instead of markdown
+                  default: false
+                schema_prompt:
+                  type: string
+                  description: Custom prompt for schema extraction
       responses:
         '200':
-          description: Successful extraction and processing of file
+          description: Job created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  markdown:
-                    type: string
-                    description: Full document content in markdown format
-                  chunks:
-                    type: object
-                    description: Document broken down into smaller, processable chunks
-                  plan-info:
-                    type: object
-                    properties:
-                      note:
-                        type: string
-                        description: Usage information and limits
-                      pages_used:
-                        type: integer
-                        description: Total number of pages processed
-                        format: int32
-                      tier:
-                        type: string
-                        description: Current subscription tier
-                  schema-json:
-                    type: object
-                    description: Extracted structured data based on provided schema
-                required:
-                  - markdown
-                  - chunks
-                  - plan-info
-                  - schema-json
+                $ref: '#/components/schemas/AsyncJobResponse'
         '400':
-          description: Bad request errors
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    enum:
-                      - "No file or URL provided"
-                      - "Failed to download file from URL"
-                      - "Error fetching file from URL"
-                      - "The PDF content is empty"
-                      - "Invalid PDF file"
-                      - "Invalid file type"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "API key is required"
-        '403':
-          description: Forbidden - page limit exceeded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Page limit exceeded. Your foundation tier limit is 20000 pages. You have processed 20763 pages and are trying to process 1 more pages."
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Error in upload_file"
+          $ref: '#/components/responses/InternalServerError'
 
   /convert:
-    servers:
-      - url: https://pro.api.runpulse.com
-        description: Production server for ultra endpoints
     post:
-      summary: Convert a PDF file
-      description: Accepts a PDF file up to 5MB as binary data and performs a specified conversion.
-      operationId: convertPdf
+      summary: Upload File to S3
+      description: |
+        Upload a file to secure S3 storage and receive a URL for processing with /extract.
+        Useful when you need to reuse the uploaded file multiple times.
+      operationId: convertFile
       requestBody:
         required: true
         content:
@@ -298,229 +156,63 @@ paths:
             schema:
               type: string
               format: binary
-              description: The PDF file to be converted as binary data
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
-        - name: Content-Type
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: ['application/pdf']
+              description: The raw PDF file content
       responses:
         '200':
-          description: Successfully converted PDF file
+          description: File uploaded successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  presigned_url:
-                    type: string
-                    description: Temporary URL for downloading the processed file
-                    example: "https://bucket-name.s3.amazonaws.com/path/to/file.pdf?[signed-parameters]"
-                  s3_object_url:
-                    type: string
-                    description: S3 object URL (without signatures)
-                    example: "https://bucket-name.s3.amazonaws.com/path/to/file.pdf"
-                  statusCode:
-                    type: integer
-                    example: 200
-                required:
-                  - presigned_url
-                  - s3_object_url
-                  - statusCode
+                $ref: '#/components/schemas/ConvertResponse'
         '400':
-          description: Bad request errors
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    enum:
-                      - "Invalid content type. Must be application/pdf"
-                      - "No PDF content provided"
-                      - "Invalid PDF file"
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "API key is required"
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "An error occurred while processing the file"
-
-  /extract_async:
-    post:
-      summary: Asynchronously extract and process a file
-      description: Starts an asynchronous job to extract content from a file at the given URL
-      operationId: extractAsync
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                file-url:
-                  type: string
-                  format: uri
-                  example: "PRESIGNED_URL"
-                return_table:
-                  type: boolean
-                  example: true
-                experimental_return_table:
-                  type: boolean
-                  example: true
-                chunking:
-                  type: string
-                  example: "semantic,header,page,recursive"
-                  pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
-                schema:
-                  type: object
-                  additionalProperties: true
-                  example: {}
-                  description: JSON schema for processing
-                schema_prompt:
-                  type: string
-                  example: ""
-                  description: Allows specifying model instructions and conditionals for prompting the JSON mapping
-                pages:
-                  type: string
-                  example: ""
-                  description: Precise page selection for targeted extraction. Supports single pages (1,3,5), page ranges (1-5,7-9), or combinations (1,3-5,7,9-11)
-              required:
-                - file-url
-                - schema
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
-        - name: Content-Type
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: ['application/json']
-      responses:
-        '202':
-          description: Job accepted and processing started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  job_id:
-                    type: string
-                    format: uuid
-                    example: "JOB_ID"
-                  status:
-                    type: string
-                    enum: [pending, cancelled, failed, completed]
-                    example: "pending"
-                required:
-                  - job_id
-                  - status
+          $ref: '#/components/responses/InternalServerError'
 
   /job/{job_id}:
     get:
-      summary: Get job status and results
-      description: Poll for the status of an asynchronous extraction job
+      summary: Get Job Status
+      description: Check the status and retrieve results of an async extraction job
       operationId: getJobStatus
       parameters:
         - name: job_id
           in: path
           required: true
-          description: ID of the job to check
+          description: The job ID returned from extract_async
           schema:
             type: string
             format: uuid
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
       responses:
         '200':
-          description: Job status retrieved successfully
+          description: Job status retrieved
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  created_at:
-                    type: string
-                    format: date-time
-                    example: "2024-12-11T06:36:18.236779+00:00"
-                  estimated_completion_time:
-                    type: string
-                    format: date-time
-                    example: "2024-12-11T06:41:18.236779+00:00"
-                  job_id:
-                    type: string
-                    format: uuid
-                    example: "JOB_ID"
-                  progress:
-                    type: number
-                    format: float
-                    example: 10.2
-                  status:
-                    type: string
-                    enum: [pending, cancelled, failed, completed]
-                  updated_at:
-                    type: string
-                    format: date-time
-                    example: "2024-12-11T06:36:18.316609+00:00"
-                required:
-                  - created_at
-                  - estimated_completion_time
-                  - job_id
-                  - progress
-                  - status
-                  - updated_at
+                $ref: '#/components/schemas/JobStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /cancel/{job_id}:
     post:
-      summary: Cancel a running job
-      description: Cancels an in-progress extraction job
+      summary: Cancel Job
+      description: Cancel a pending or processing async job
       operationId: cancelJob
       parameters:
         - name: job_id
           in: path
           required: true
-          description: ID of the job to cancel
+          description: The job ID to cancel
           schema:
             type: string
             format: uuid
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
       responses:
         '200':
           description: Job cancelled successfully
@@ -529,135 +221,196 @@ paths:
               schema:
                 type: object
                 properties:
-                  job_id:
-                    type: string
-                    format: uuid
-                    example: "JOB_ID"
                   message:
                     type: string
                     example: "Job cancelled successfully"
-                required:
-                  - job_id
-                  - message
-        '404':
-          description: Job not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
+                  job_id:
                     type: string
-                    example: "Job not found"
+                    format: uuid
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /batch_extract_async:
+  /webhook:
     post:
-      summary: Batch asynchronous file extraction
-      description: Start multiple asynchronous extraction jobs for multiple files
-      operationId: batchExtractAsync
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      file-url:
-                        type: string
-                        format: uri
-                        example: "PRESIGNED_URL"
-                      file-path:
-                        type: string
-                        example: "/path/to/file.pdf"
-                      schema:
-                        type: object
-                        additionalProperties: true
-                        example: {}
-                        description: JSON schema for processing
-                      return_table:
-                        type: boolean
-                        example: true
-                      experimental_return_table:
-                        type: boolean
-                        example: true
-                      chunking:
-                        type: string
-                        example: "semantic,recursive"
-                        pattern: ^(semantic|recursive|page|header)(,(semantic|recursive|page|header))*$
-                    oneOf:
-                      - required: [file-url]
-                      - required: [file-path]
-              required:
-                - files
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          description: API key for authorization
-          schema:
-            type: string
-        - name: Content-Type
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: ['application/json']
+      summary: Configure Webhooks
+      description: Get a portal link to configure webhook endpoints for receiving job status notifications
+      operationId: configureWebhooks
       responses:
-        '202':
-          description: Batch job accepted and processing started
+        '200':
+          description: Portal link generated
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  jobs:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        job_id:
-                          type: string
-                          format: uuid
-                          example: "1a17e6e4-28d0-4e75-aff8-8b8011a46a91"
-                        original_path:
-                          type: string
-                          example: "/path/to/file.pdf"
-                        status:
-                          type: string
-                          enum: [pending, cancelled, failed, completed]
-                          example: "pending"
-                        url:
-                          type: string
-                          format: uri
-                          example: "https://pulse-studio-api.s3.amazonaws.com/path/to/file.pdf"
-                      required:
-                        - job_id
-                        - status
-                  successful_files:
-                    type: integer
-                    description: Number of files successfully queued for processing
-                    example: 1
-                  total_files:
-                    type: integer
-                    description: Total number of files in the request
-                    example: 1
-                required:
-                  - jobs
-                  - successful_files
-                  - total_files
+                  link:
+                    type: string
+                    format: uri
+                    example: "https://app.svix.com/app-portal/..."
+                    description: Portal URL for webhook configuration
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
-      name: x-api-key
       in: header
+      name: x-api-key
       description: API key for authentication
 
-security:
-  - ApiKeyAuth: []
+  schemas:
+    DirectExtractionResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Extracted content in markdown or HTML format
+        metadata:
+          type: object
+          properties:
+            page_count:
+              type: integer
+              description: Number of pages processed
+            processing_time:
+              type: number
+              description: Processing time in seconds
+            source_file:
+              type: string
+              description: Original filename
+        schema_data:
+          type: object
+          description: Extracted structured data if schema was provided
+
+    URLExtractionResponse:
+      type: object
+      properties:
+        is_url:
+          type: boolean
+          enum: [true]
+          description: Indicates response is delivered via URL
+        url:
+          type: string
+          format: uri
+          description: S3 URL containing extraction results (expires in 24 hours)
+        expires_at:
+          type: string
+          format: date-time
+          description: URL expiration timestamp
+        plan-info:
+          type: object
+          properties:
+            pages_used:
+              type: integer
+              description: Number of pages processed
+            tier:
+              type: string
+              description: Current subscription tier
+
+    AsyncJobResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: Unique job identifier
+        status:
+          type: string
+          enum: [pending]
+          description: Initial job status
+        message:
+          type: string
+          example: "Job queued for processing"
+
+    JobStatusResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+          description: Current job status
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        result:
+          type: object
+          description: Extraction results (only when status is completed)
+        error:
+          type: string
+          description: Error message (only when status is failed)
+
+    ConvertResponse:
+      type: object
+      properties:
+        s3_object_url:
+          type: string
+          format: uri
+          description: S3 URL of uploaded file
+        presigned_url:
+          type: string
+          format: uri
+          description: Presigned URL for direct access
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code (e.g., FILE_001, AUTH_002)
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              description: Additional error context
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: Unauthorized - Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    PayloadTooLarge:
+      description: File too large
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

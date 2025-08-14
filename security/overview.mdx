@@ -1,151 +1,262 @@
 ---
-title: "Security Overview"
-description: "Discover how Pulse STUDIO safeguards your data through enterprise security and compliance measures"
+title: 'Security Overview'
+description: 'Enterprise-grade security for document processing'
 ---
 
-<PageHeader>
-  <Icon name="shield-lock" className="h-8 w-8 text-primary" />
-  <Heading>Enterprise Security & Compliance</Heading>
-  <Text>Your data security is our top priority. Learn about our comprehensive security infrastructure and compliance standards.</Text>
-</PageHeader>
+## Security Commitment
+
+Pulse API is built with security at its core. We implement industry-leading security practices to protect your sensitive documents and data throughout the entire processing lifecycle.
+
+## Compliance & Certifications
 
 <CardGroup cols={2}>
-  <Card title="SOC 2 Type II" icon="certificate">
-    Contact founders@trypulse.ai for details.
+  <Card title="SOC 2 Type II" icon="shield-check">
+    Audited controls for security, availability, and confidentiality
   </Card>
-  <Card title="HIPAA Compliance" icon="hospital">
-    Enterprise-ready with HIPAA compliance. BAAs available for qualifying customers.
+  <Card title="HIPAA Compliant" icon="hospital">
+    Safeguards for protected health information (PHI)
+  </Card>
+  <Card title="GDPR Ready" icon="flag">
+    Privacy-by-design architecture for EU data protection
+  </Card>
+  <Card title="ISO 27001" icon="certificate">
+    Information security management certification (in progress)
   </Card>
 </CardGroup>
 
-## Data Protection Architecture
+## Data Protection
 
-<Grid cols={2}>
-  <div>
-    ### Storage Security
-    <List>
-      <ListItem icon="lock-closed">
-        Enterprise-grade encryption across all data states
-      </ListItem>
-      <ListItem icon="cloud">
-        Secure AWS S3 infrastructure with granular permissions
-      </ListItem>
-      <ListItem icon="clock">
-        Automatic 48-hour data deletion policy
-      </ListItem>
-      <ListItem icon="shield-check">
-        No data retention for Scale+ customers
-      </ListItem>
-    </List>
+### Encryption
 
-    Our storage infrastructure is built on AWS S3 with enterprise-grade security measures. All data is automatically purged after 48 hours, ensuring minimal data retention. We implement strict access controls and encryption at every layer:
+<AccordionGroup>
+  <Accordion title="In Transit">
+    - **TLS 1.3** for all API communications
+    - Certificate pinning available for enterprise
+    - Perfect forward secrecy enabled
+    - Strong cipher suites only
+  </Accordion>
 
-    - AES-256 encryption at rest
-    - TLS 1.3 encryption in transit
-    - Granular bucket policies and IAM roles
-    - Regular security audits and monitoring
-  </div>
-  
-  <div>
-    ### AI Partnership Security
-    <List>
-      <ListItem icon="document-check">
-        Zero data retention BAAs with OpenAI and Anthropic
-      </ListItem>
-      <ListItem icon="server-stack">
-        HIPAA-compliant data processing pipelines
-      </ListItem>
-      <ListItem icon="no-symbol">
-        Your data is never used for model training
-      </ListItem>
-    </List>
+  <Accordion title="At Rest">
+    - **AES-256** encryption for stored data
+    - Encrypted S3 buckets with customer-managed keys
+    - Encrypted database backups
+    - Secure key management via AWS KMS
+  </Accordion>
 
-    Our AI infrastructure combines self-hosted models and trusted partnerships:
+  <Accordion title="Processing">
+    - Isolated compute environments
+    - Memory encryption for sensitive operations
+    - Secure enclaves for key material
+    - No data persistence on compute nodes
+  </Accordion>
+</AccordionGroup>
 
-    - Self-hosted OCR and specialized ML models
-    - Zero-retention agreements with AI partners
-    - Isolated processing environments
-    - End-to-end encrypted data pipelines
-  </div>
-</Grid>
+### Data Retention
 
-## Infrastructure & Controls
+| Data Type | Retention Period | Notes |
+|-----------|------------------|-------|
+| Uploaded files | 48 hours | Automatic deletion |
+| Extraction results | 48 hours | Unless saved by user |
+| API logs | 30 days | For debugging only |
+| Audit logs | 1 year | Compliance requirement |
 
-<Table>
-  <TableHead>
-    <TableRow>
-      <TableHeader>Component</TableHeader>
-      <TableHeader>Details</TableHeader>
-    </TableRow>
-  </TableHead>
-  <TableBody>
-    <TableRow>
-      <TableCell>Cloud Infrastructure</TableCell>
-      <TableCell>AWS enterprise security stack</TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell>Access Management</TableCell>
-      <TableCell>Role-based access control (RBAC)</TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell>Security Operations</TableCell>
-      <TableCell>24/7 monitoring and threat detection</TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell>Data Protection</TableCell>
-      <TableCell>TLS 1.3 encryption in transit, AES-256 at rest</TableCell>
-    </TableRow>
-  </TableBody>
-</Table>
+<Info>
+  Enterprise customers can configure custom retention policies to meet their compliance requirements.
+</Info>
 
-### Processing Pipeline Security
+## Infrastructure Security
 
-Our processing pipeline is designed with security at its core:
+### AWS Architecture
 
-- **Isolated Environments**: Each processing task runs in isolated containers
-- **Self-hosted Components**: Critical OCR and ML models run on our secure infrastructure
-- **Zero Trust Architecture**: Every service-to-service communication is authenticated and encrypted
-- **Audit Logging**: Comprehensive logging of all system activities
-- **Real-time Monitoring**: Continuous security monitoring and threat detection
+```mermaid
+graph TD
+    A[Client] -->|TLS 1.3| B[CloudFront CDN]
+    B --> C[WAF]
+    C --> D[API Gateway]
+    D --> E[Lambda Functions]
+    E --> F[S3 Encrypted]
+    E --> G[RDS Encrypted]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style F fill:#9f9,stroke:#333,stroke-width:2px
+    style G fill:#9f9,stroke:#333,stroke-width:2px
+```
 
-### Data Lifecycle Management
+### Security Features
 
-We maintain strict control over data throughout its lifecycle:
+- **DDoS Protection**: AWS Shield Standard + CloudFront
+- **Web Application Firewall**: AWS WAF with custom rules
+- **Network Isolation**: VPC with private subnets
+- **Access Control**: IAM roles with least privilege
+- **Monitoring**: CloudWatch + GuardDuty threat detection
 
-1. **Ingestion**: Data is encrypted immediately upon upload
-2. **Processing**: Processed in isolated, ephemeral containers
-3. **Storage**: Temporarily stored in encrypted S3 buckets
-4. **Deletion**: Automatic deletion after 48 hours
-5. **Verification**: Regular audits ensure deletion compliance
+## Access Control
 
-### Access Controls
+### API Authentication
 
-Our role-based access control (RBAC) system ensures:
+- **API Keys**: Unique per organization
+- **Key Rotation**: Supported and recommended
+- **IP Allowlisting**: Available for enterprise
+- **Rate Limiting**: Automatic abuse prevention
 
-- Principle of least privilege
-- Multi-factor authentication
-- Regular access reviews
-- Detailed audit trails
-- Automated access revocation
+### Administrative Access
 
-<Note>
-  For implementation details, see our [Security Best Practices](/security/best-practices) documentation.
-</Note>
+- **Multi-Factor Authentication**: Required for all staff
+- **Role-Based Access Control**: Principle of least privilege
+- **Audit Logging**: All administrative actions logged
+- **Background Checks**: All employees screened
+
+## Data Privacy
+
+### Our Commitments
 
 <CardGroup cols={2}>
-  <Card 
-    title="Contact Security Team" 
-    icon="shield-check" 
-    href="mailto:security@trypulse.ai"
-  >
-    Have questions about our security measures? Our team is here to help.
+  <Card title="No Training" icon="brain">
+    Your data is never used to train our models
   </Card>
-  
-  <Card
-    title="Request Compliance Documentation" 
-    icon="file-certificate"
-    href="mailto:founders@trypulse.ai"
-  >
-    Need SOC 2 or HIPAA documentation? Email us for compliance details.
+  <Card title="No Sharing" icon="users-slash">
+    Data is never shared with third parties
+  </Card>
+  <Card title="No Persistence" icon="database">
+    Automatic deletion after processing
+  </Card>
+  <Card title="No Access" icon="eye-slash">
+    Staff cannot access your documents
+  </Card>
+</CardGroup>
+
+### GDPR Compliance
+
+- **Right to Access**: Export all your data
+- **Right to Deletion**: Immediate purge available
+- **Data Portability**: Standard formats
+- **Privacy by Design**: Built-in from day one
+
+## Security Monitoring
+
+### Real-Time Protection
+
+- **Threat Detection**: AWS GuardDuty + custom rules
+- **Anomaly Detection**: ML-based pattern analysis
+- **Security Scanning**: Continuous vulnerability assessment
+- **Incident Response**: 24/7 security team for enterprise
+
+### Audit Trail
+
+All API operations are logged with:
+- Timestamp
+- API key identifier (hashed)
+- Operation performed
+- Response status
+- IP address (hashed)
+
+<Note>
+  Logs are retained for 30 days and are available for security investigations only.
+</Note>
+
+## Vulnerability Management
+
+### Security Practices
+
+<Steps>
+  <Step title="Code Review">
+    All code peer-reviewed before deployment
+  </Step>
+  <Step title="Dependency Scanning">
+    Automated scanning for vulnerable packages
+  </Step>
+  <Step title="Penetration Testing">
+    Annual third-party security assessments
+  </Step>
+  <Step title="Bug Bounty">
+    Responsible disclosure program (coming soon)
+  </Step>
+</Steps>
+
+### Update Policy
+
+- **Critical Patches**: Applied within 24 hours
+- **Security Updates**: Applied within 7 days
+- **Regular Updates**: Monthly maintenance window
+- **Zero Downtime**: Rolling deployments
+
+## Incident Response
+
+### Response Plan
+
+1. **Detection**: Automated monitoring + manual review
+2. **Assessment**: Severity classification within 1 hour
+3. **Containment**: Immediate isolation of affected systems
+4. **Notification**: Customer notification per SLA
+5. **Remediation**: Fix deployment and verification
+6. **Post-Mortem**: Published within 5 business days
+
+### Customer Notification
+
+Enterprise customers receive:
+- Immediate notification of incidents
+- Regular status updates
+- Post-incident report
+- Remediation recommendations
+
+## Best Practices for Users
+
+<AccordionGroup>
+  <Accordion title="API Key Security">
+    - Store keys in environment variables
+    - Never commit keys to version control
+    - Rotate keys regularly (every 90 days)
+    - Use different keys for different environments
+    - Monitor key usage in Console
+  </Accordion>
+
+  <Accordion title="Document Handling">
+    - Encrypt sensitive documents before upload
+    - Use presigned URLs for direct S3 access
+    - Process documents immediately after upload
+    - Don't store extraction results permanently
+  </Accordion>
+
+  <Accordion title="Network Security">
+    - Always use HTTPS connections
+    - Implement webhook signature verification
+    - Use IP allowlisting when possible
+    - Monitor for unusual activity patterns
+  </Accordion>
+</AccordionGroup>
+
+## Compliance Documents
+
+Available upon request:
+- SOC 2 Type II Report
+- HIPAA Compliance Attestation
+- Security Whitepaper
+- Penetration Test Executive Summary
+- Vendor Security Assessment Questionnaire
+
+Contact [security@trypulse.ai](mailto:security@trypulse.ai) for compliance documents.
+
+## Report Security Issues
+
+Found a security vulnerability? Please report it responsibly:
+
+<Warning>
+  Do NOT post security issues publicly. Email us directly for coordinated disclosure.
+</Warning>
+
+**Email**: [security@trypulse.ai](mailto:security@trypulse.ai)
+
+**PGP Key**: Available upon request
+
+We respond to all security reports within 24 hours and work with researchers to ensure issues are properly addressed.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Security Best Practices" icon="shield" href="/security/best-practices">
+    Implementation guidelines
+  </Card>
+  <Card title="API Authentication" icon="key" href="/authentication">
+    Secure your API calls
   </Card>
 </CardGroup>

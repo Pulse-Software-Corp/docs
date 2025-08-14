@@ -1,0 +1,174 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate with the Pulse API'
+---
+
+## Overview
+
+All Pulse API endpoints require authentication using an API key. This key identifies your organization and tracks usage for billing purposes.
+
+## Getting Your API Key
+
+<Steps>
+  <Step title="Sign Up">
+    Create an account at [console.runpulse.com](https://console.runpulse.com)
+  </Step>
+  <Step title="Generate API Key">
+    Navigate to the API Keys section in your dashboard
+  </Step>
+  <Step title="Copy Your Key">
+    Click "Create New Key" and copy the generated key immediately
+  </Step>
+</Steps>
+
+<Warning>
+  API keys are shown only once when created. Store them securely - you cannot retrieve them later.
+</Warning>
+
+## Using Your API Key
+
+Include your API key in the `x-api-key` header with every request:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf"
+```
+
+```python Python
+import requests
+
+headers = {
+    "x-api-key": "YOUR_API_KEY"
+}
+
+response = requests.post(
+    "https://dev.api.runpulse.com/extract",
+    headers=headers,
+    files={"file": open("document.pdf", "rb")}
+)
+```
+
+```javascript JavaScript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+
+fetch('https://dev.api.runpulse.com/extract', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'YOUR_API_KEY'
+  },
+  body: formData
+});
+```
+
+</CodeGroup>
+
+## API Key Security
+
+<AccordionGroup>
+  <Accordion title="Best Practices">
+    - **Never expose API keys in client-side code** - Use server-side proxies
+    - **Use environment variables** - Don't hardcode keys in your source code
+    - **Rotate keys regularly** - Generate new keys periodically
+    - **Use separate keys** - Different keys for development, staging, and production
+  </Accordion>
+
+  <Accordion title="Environment Variables">
+    Store your API key in environment variables:
+
+    ```bash .env
+    PULSE_API_KEY=your_api_key_here
+    ```
+
+    ```python Python
+    import os
+    
+    API_KEY = os.getenv("PULSE_API_KEY")
+    ```
+
+    ```javascript Node.js
+    const API_KEY = process.env.PULSE_API_KEY;
+    ```
+  </Accordion>
+
+  <Accordion title="Key Rotation">
+    To rotate your API key:
+    
+    1. Generate a new key in the Console
+    2. Update your application to use the new key
+    3. Verify the new key is working
+    4. Delete the old key from the Console
+  </Accordion>
+</AccordionGroup>
+
+## Managing API Keys
+
+### View Active Keys
+
+Access your API keys at [console.runpulse.com](https://console.runpulse.com):
+
+- See all active keys
+- View creation dates
+- Monitor usage per key
+- Delete compromised keys
+
+### Key Permissions
+
+All API keys have full access to:
+- Document extraction endpoints
+- File upload endpoints
+- Job management endpoints
+- Webhook configuration
+
+<Note>
+  Fine-grained permissions are coming soon. Contact support if you need restricted access patterns.
+</Note>
+
+## Troubleshooting
+
+### Common Authentication Errors
+
+<AccordionGroup>
+  <Accordion title="AUTH_001: API key is required">
+    **Solution**: Ensure you're including the `x-api-key` header in your request
+    
+    ```bash
+    # Incorrect - missing header
+    curl -X POST https://api.runpulse.com/extract
+    
+    # Correct - includes header
+    curl -X POST https://dev.api.runpulse.com/extract \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+  </Accordion>
+
+  <Accordion title="AUTH_002: Invalid API key">
+    **Possible causes**:
+    - Key was typed incorrectly
+    - Key has been deleted
+    - Using a key from a different environment
+    
+    **Solution**: Verify your key in the Console and ensure you're copying it correctly
+  </Accordion>
+
+  <Accordion title="BILLING_001: Monthly page limit exceeded">
+    **Solution**: 
+    - Check your usage in the Console
+    - Upgrade your plan for higher limits
+    - Contact support for temporary limit increases
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Start making your first API calls
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore available endpoints
+  </Card>
+</CardGroup> 

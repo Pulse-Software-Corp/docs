@@ -1,126 +1,83 @@
 ---
-title: API Overview
-description: Welcome to Pulse API
+title: 'Introduction'
+description: 'Transform complex documents into structured, AI-ready data'
 ---
-Say hi to your new production-grade document extraction service, turning complex information into LLM-ready inputs. No training required. Our documentation provides an overview of our API endpoints, as well as templates on how to best utilize Pulse. 
 
-## Key Capabilities
+## Welcome to Pulse API
 
-- **AI-Ready Output**: Structured JSON perfect for LLM training and RAG systems
-- **Computer Vision**: Built-in support for diagrams, tables, and complex layouts
-- **Multimodal Processing**: Handles text, images, and mixed-content documents
+Pulse API is a production-grade document extraction service that transforms complex documents into structured, AI-ready data. Extract content from PDFs, images, and office documents with high accuracy using advanced AI models.
 
-
-<CardGroup cols={2}>
-  <Card
-    title="AI Training"
-    icon="robot"
-    href="/use-cases/ai-training"
-  >
-    Extract clean training data for fine-tuning LLMs and building RAG systems
+<CardGroup cols={3}>
+  <Card title="Console" icon="browser" href="https://console.runpulse.com">
+    Generate API keys and monitor usage
   </Card>
-  <Card
-    title="Document Analysis"
-    icon="magnifying-glass-chart"
-    href="/use-cases/analysis"
-  >
-    Process financial reports, contracts, and technical documentation at scale
+  <Card title="Platform" icon="window" href="https://platform.runpulse.com">
+    Access the web platform
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore our endpoints
   </Card>
 </CardGroup>
 
-## Endpoints
-
-We have two main processing endpoints, /extract and /convert. More information can be found in the [API Reference](/api-reference).
+## Key Features
 
 <CardGroup cols={2}>
-  <Card
-    title="/extract"
-    icon="file-export"
-    href="/api-reference/endpoint/extract"
-  >
-    Parse unstructured data into structured Markdown or JSON, specifying your own schema and chunking strategy. 
+  <Card title="Multiple File Types" icon="file">
+    Support for PDF, images (JPG/PNG), Office documents (DOCX/PPTX/XLSX), and HTML
   </Card>
-  <Card
-    title="/convert"
-    icon="cloud-arrow-up"
-    href="/api-reference/endpoint/convert"
-  >
-    For direct file uploads up to 6MB, get a presigned URL into our secure S3 storage system for processing.
+  <Card title="Structured Extraction" icon="table">
+    Define schemas to extract specific data in structured JSON format
+  </Card>
+  <Card title="High Accuracy" icon="sparkles">
+    Advanced AI models ensure accurate text extraction and layout understanding
+  </Card>
+  <Card title="Async Processing" icon="clock">
+    Handle large documents efficiently with asynchronous processing
   </Card>
 </CardGroup>
 
-## Supported Documents
+## Why Choose Pulse API?
 
-Our API supports all documents, here are some examples:
+- **🚀 Production-Ready**: Battle-tested infrastructure with 99.9% uptime
+- **🔒 Enterprise Security**: SOC 2 Type II and HIPAA compliant
+- **⚡ Fast Processing**: Optimized for speed without sacrificing accuracy
+- **🎯 Flexible Output**: Get markdown, HTML, or structured JSON
+- **📊 Layout Understanding**: Preserve document structure with bounding boxes
+- **🔄 Easy Integration**: Simple REST API with comprehensive SDKs
 
-- **Business Documents**: Contracts, invoices, purchase orders
-- **Financial Documents**: Annual reports, balance sheets, bank statements
-- **Technical Content**: Research papers, patents, technical specifications
-- **Healthcare Records**: Clinical notes, lab reports, medical histories
-- **Legal Documents**: Agreements, court filings, regulatory submissions
-
-## Getting Started
+## Quick Links
 
 <CardGroup cols={2}>
-  <Card
-    title="Quick Start Guide"
-    icon="rocket"
-    href="/quickstart"
-  >
-    Get up and running with our API in minutes
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
   </Card>
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference"
-  >
-    Detailed API specifications and examples
+  <Card title="Authentication" icon="key" href="/authentication">
+    Set up your API credentials
+  </Card>
+  <Card title="Schema Extraction" icon="code" href="/core-concepts/schema-extraction">
+    Extract structured data
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
+    Handle errors gracefully
   </Card>
 </CardGroup>
 
-## What will you build?
+## Base URL
 
-Here are some examples of AI-powered tools you can build with the Pulse API:
+All API requests should be made to:
 
-<div className="build-examples">
-  <div className="example">
-    <div className="icon-container">
-      <i className="fas fa-heartbeat"></i>
-    </div>
-    <div className="content">
-      <h3>Medical Research Assistant</h3>
-      <p>Process thousands of patient records, clinical trials, and medical journals to create a specialized healthcare knowledge base. Extract key medical findings, drug interactions, and treatment outcomes into vector embeddings for instant clinical decision support.</p>
-    </div>
-  </div>
+```
+https://dev.api.runpulse.com
+```
 
-  <div className="example">
-    <div className="icon-container">
-      <i className="fas fa-gavel"></i>
-    </div>
-    <div className="content">
-      <h3>Legal Case Analyzer</h3>
-      <p>Transform your firm's decades of case files, precedents, and legal opinions into a searchable knowledge base. Extract citations, legal arguments, and court decisions to help attorneys find relevant cases and build stronger arguments in minutes, not hours.</p>
-    </div>
-  </div>
+## Need Help?
 
-  <div className="example">
-    <div className="icon-container">
-      <i className="fas fa-receipt"></i>
-    </div>
-    <div className="content">
-      <h3>Three-Way Match Automation</h3>
-      <p>Streamline accounts payable workflows by automatically extracting and comparing data from purchase orders, receiving documents, and invoices. Our API processes these documents in real-time, identifying discrepancies in quantities, prices, and terms while maintaining an audit trail of all matches and exceptions for accounting compliance.</p>
-    </div>
-  </div>
-
-  <div className="example">
-    <div className="icon-container">
-      <i className="fas fa-robot"></i>
-    </div>
-    <div className="content">
-      <h3>Autonomous Research Agent</h3>
-      <p>Build an AI agent that can autonomously analyze new documents, extract key information, and update its knowledge base. Perfect for staying current with regulatory changes, market research, or competitive analysis while maintaining context across millions of documents.</p>
-    </div>
-  </div>
-</div>
+<CardGroup cols={2}>
+  <Card title="Email Support" icon="envelope" href="mailto:support@trypulse.ai">
+    support@trypulse.ai
+  </Card>
+  <Card title="Contact Founders" icon="users" href="mailto:founders@trypulse.ai">
+    founders@trypulse.ai
+  </Card>
+</CardGroup>
 

@@ -1,0 +1,366 @@
+---
+title: 'Support'
+description: 'Get help with Pulse API'
+---
+
+## Support Resources
+
+<CardGroup cols={2}>
+  <Card title="Documentation" icon="book" href="/">
+    Comprehensive guides and API reference
+  </Card>
+  <Card title="Console" icon="browser" href="https://console.runpulse.com">
+    Manage API keys and monitor usage
+  </Card>
+  <Card title="Platform" icon="window" href="https://platform.runpulse.com">
+    Web interface for document processing
+  </Card>
+  <Card title="Status Page" icon="signal" href="https://status.runpulse.com">
+    Check service status and incidents
+  </Card>
+</CardGroup>
+
+## Contact Support
+
+### Email Support
+
+<CardGroup cols={2}>
+  <Card title="General Support" icon="envelope">
+    **support@runpulse.com**
+    
+    - Technical questions
+    - Integration help
+    - Bug reports
+    - Feature requests
+  </Card>
+  <Card title="Founders Direct" icon="users">
+    **founders@trypulse.ai**
+    
+    - Strategic partnerships
+    - Enterprise inquiries
+    - Product feedback
+    - Special requests
+  </Card>
+</CardGroup>
+
+### Response Times
+
+| Plan | First Response | Resolution Target |
+|------|----------------|-------------------|
+| Starter | 48 hours | Best effort |
+| Professional | 24 hours | 2 business days |
+| Enterprise | 2 hours | 24 hours |
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Authentication Issues">
+    **Problem**: Getting AUTH_002 Invalid API key error
+    
+    **Solutions**:
+    1. Verify your API key in the [Console](https://console.runpulse.com)
+    2. Check you're using the correct environment (production vs test)
+    3. Ensure the `x-api-key` header is properly formatted
+    4. Regenerate your API key if needed
+    
+    ```bash
+    # Correct header format
+    curl -H "x-api-key: YOUR_API_KEY" https://api.runpulse.com/extract
+    ```
+  </Accordion>
+
+  <Accordion title="File Processing Errors">
+    **Problem**: FILE_001 Invalid file type
+    
+    **Solutions**:
+    1. Check supported formats: PDF, JPG/JPEG, PNG, DOCX, PPTX, XLSX, HTML
+    2. Verify file extension matches content
+    3. Ensure file isn't corrupted
+    
+    **Problem**: FILE_002 File too large
+    
+    **Solutions**:
+    1. Contact support for large files
+    2. Consider using async processing
+    3. Split very large documents if needed
+  </Accordion>
+
+  <Accordion title="Async Job Issues">
+    **Problem**: Job timing out or failing
+    
+    **Solutions**:
+    1. Use smaller page ranges for complex documents
+    2. Check job status regularly
+    3. Implement proper error handling
+    
+    ```python
+    # Robust job polling
+    while status == 'processing':
+        time.sleep(5)
+        status = check_job_status(job_id)
+    ```
+  </Accordion>
+
+  <Accordion title="Schema Extraction Problems">
+    **Problem**: Missing or incorrect data in schema extraction
+    
+    **Solutions**:
+    1. Use descriptive field names matching document terminology
+    2. Provide schema prompts for context
+    3. Start with simple schemas and add complexity
+    4. Make optional fields nullable
+    
+    ```python
+    schema = {
+        "invoice_number": "string",
+        "optional_field": "string|null"  # Nullable field
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Rate Limiting">
+    **Problem**: Getting rate limited or BILLING_001 errors
+    
+    **Solutions**:
+    1. Check current usage in Console
+    2. Implement client-side rate limiting
+    3. Use caching to avoid reprocessing
+    4. Upgrade plan for higher limits
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+### Before Contacting Support
+
+<Steps>
+  <Step title="Check Documentation">
+    Review relevant documentation sections for your issue
+  </Step>
+  <Step title="Verify Error Details">
+    Note the exact error code and message
+  </Step>
+  <Step title="Test with Simple Case">
+    Try a basic example to isolate the issue
+  </Step>
+  <Step title="Gather Information">
+    Collect request/response details, file samples, and code snippets
+  </Step>
+</Steps>
+
+### What to Include in Support Requests
+
+```markdown
+## Support Request Template
+
+**Issue Description**: 
+[Clear description of the problem]
+
+**Expected Behavior**: 
+[What should happen]
+
+**Actual Behavior**: 
+[What actually happens]
+
+**Error Details**:
+- Error Code: [e.g., FILE_001]
+- Error Message: [Full error message]
+- Timestamp: [When it occurred]
+
+**Environment**:
+- API Endpoint: [e.g., /extract]
+- File Type: [e.g., PDF]
+- File Size: [e.g., 5MB]
+- Programming Language: [e.g., Python 3.9]
+
+**Code Sample**:
+```python
+# Minimal code to reproduce
+```
+
+**Additional Context**:
+[Any other relevant information]
+```
+
+## Developer Resources
+
+### Code Examples
+
+<CardGroup cols={2}>
+  <Card title="Python Client" icon="python" href="/quickstart#step-5-production-ready-client">
+    Production-ready Python implementation
+  </Card>
+  <Card title="Error Handling" icon="shield" href="/advanced/error-handling">
+    Comprehensive error handling guide
+  </Card>
+  <Card title="Schema Examples" icon="code" href="/core-concepts/schema-extraction#complex-schema-examples">
+    Real-world schema patterns
+  </Card>
+  <Card title="Large Documents" icon="file-lines" href="/core-concepts/large-documents">
+    Best practices for big files
+  </Card>
+</CardGroup>
+
+### Integration Guides
+
+Coming soon:
+- Node.js/TypeScript SDK
+- Java Client Library
+- .NET Integration Guide
+- Ruby Gem
+- Go Package
+
+## Community
+
+### Stay Updated
+
+- **Changelog**: Check [changelog](/changelog/overview) for latest updates
+- **Status Page**: Monitor [status.runpulse.com](https://status.runpulse.com)
+- **LinkedIn**: Follow us on [LinkedIn](https://www.linkedin.com/company/pulse-ai-corp/)
+- **Twitter/X**: Follow [@Pulse__AI](https://x.com/Pulse__AI)
+
+### Feature Requests
+
+We actively consider feature requests from our users. When submitting a request:
+
+1. **Check existing features** - Review docs to ensure it doesn't exist
+2. **Describe use case** - Explain the problem you're solving
+3. **Provide examples** - Show how you'd use the feature
+4. **Email details** - Send to support@runpulse.com
+
+## Enterprise Support
+
+### Premium Support Benefits
+
+<CardGroup cols={2}>
+  <Card title="Dedicated Slack Channel" icon="slack">
+    Direct access to engineering team
+  </Card>
+  <Card title="Priority Queue" icon="bolt">
+    Fast-track processing for urgent requests
+  </Card>
+  <Card title="Custom Solutions" icon="wand-magic-sparkles">
+    Tailored features for your use case
+  </Card>
+  <Card title="Training Sessions" icon="graduation-cap">
+    Onboarding and best practices training
+  </Card>
+</CardGroup>
+
+### SLA Guarantees
+
+Enterprise customers receive:
+- 99.9% uptime SLA
+- 2-hour response time
+- Dedicated account manager
+- Quarterly business reviews
+- Custom integration support
+
+Contact [sales@runpulse.com](mailto:sales@runpulse.com) for enterprise options.
+
+## Troubleshooting Tools
+
+### API Health Check
+
+```python
+def check_api_health():
+    """Verify API connectivity and authentication."""
+    
+    try:
+        response = requests.get(
+            "https://dev.api.runpulse.com/health",
+            headers={"x-api-key": API_KEY},
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            print("✅ API is healthy")
+            print(f"✅ API key is valid")
+            return True
+        else:
+            print(f"❌ API returned status {response.status_code}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Connection failed: {e}")
+        return False
+
+# Run health check
+check_api_health()
+```
+
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
+
+```python
+import logging
+
+# Configure debug logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Log all requests/responses
+def debug_extract(file_path):
+    logging.debug(f"Extracting from: {file_path}")
+    
+    try:
+        result = client.extract(file_path=file_path)
+        logging.debug(f"Success: {len(result)} characters extracted")
+        return result
+    except Exception as e:
+        logging.error(f"Extraction failed: {e}")
+        raise
+```
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="How do I get started?">
+    1. Sign up at [console.runpulse.com](https://console.runpulse.com)
+    2. Generate an API key
+    3. Follow the [Quickstart Guide](/quickstart)
+    4. Start with simple extractions before adding complexity
+  </Accordion>
+
+  <Accordion title="What's the difference between /extract and /extract_async?">
+    - `/extract`: Synchronous, best for documents under 50 pages
+    - `/extract_async`: Asynchronous, required for large documents
+    - The client library automatically chooses based on file size
+  </Accordion>
+
+  <Accordion title="How accurate is the extraction?">
+    Accuracy depends on:
+    - Document quality (resolution, clarity)
+    - Content type (typed vs handwritten)
+    - Schema complexity
+    
+    Typical accuracy: 95-99% for high-quality documents
+  </Accordion>
+
+  <Accordion title="Can I process documents in other languages?">
+    Yes! Pulse API supports 100+ languages including:
+    - European languages (Spanish, French, German, etc.)
+    - Asian languages (Chinese, Japanese, Korean, etc.)
+    - RTL languages (Arabic, Hebrew)
+    - And many more
+  </Accordion>
+
+  <Accordion title="Is my data secure?">
+    Yes, we take security seriously:
+    - SOC 2 Type II certified
+    - HIPAA compliant
+    - Data encrypted in transit and at rest
+    - Automatic deletion after 48 hours
+    - No data used for training
+  </Accordion>
+</AccordionGroup>
+
+## Quick Links
+
+- **API Reference**: [/api-reference/introduction](/api-reference/introduction)
+- **Console**: [console.runpulse.com](https://console.runpulse.com)
+- **Status Page**: [status.runpulse.com](https://status.runpulse.com)
+- **Email Support**: [support@runpulse.com](mailto:support@runpulse.com) 

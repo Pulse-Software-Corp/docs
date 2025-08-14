@@ -1,0 +1,517 @@
+---
+title: 'Error Handling'
+description: 'Handle API errors gracefully and build resilient applications'
+---
+
+## Overview
+
+Proper error handling is crucial for building reliable document processing applications. This guide covers all Pulse API error codes, retry strategies, and best practices for graceful error recovery.
+
+## Error Response Format
+
+All errors follow a consistent JSON structure:
+
+```json
+{
+  "error": {
+    "code": "FILE_001",
+    "message": "Invalid file type",
+    "details": {
+      "supported_types": ["PDF", "JPG", "PNG", "DOCX", "PPTX", "XLSX", "HTML"],
+      "received_type": "DOC"
+    }
+  }
+}
+```
+
+## Error Categories
+
+<CardGroup cols={2}>
+  <Card title="Authentication Errors" icon="key">
+    **AUTH_XXX** - API key issues
+  </Card>
+  <Card title="File Errors" icon="file">
+    **FILE_XXX** - File format/size issues
+  </Card>
+  <Card title="Request Errors" icon="code">
+    **REQ_XXX** - Invalid parameters
+  </Card>
+  <Card title="Job Errors" icon="clock">
+    **JOB_XXX** - Async job issues
+  </Card>
+  <Card title="Billing Errors" icon="credit-card">
+    **BILLING_XXX** - Usage limit issues
+  </Card>
+  <Card title="Server Errors" icon="server">
+    **5XX** - Internal server errors
+  </Card>
+</CardGroup>
+
+## Complete Error Code Reference
+
+### Authentication Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| `AUTH_001` | API key is required | Include `x-api-key` header in request |
+| `AUTH_002` | Invalid API key | Verify key in [Console](https://console.runpulse.com) |
+| `AUTH_003` | API key expired | Generate new key in Console |
+| `AUTH_004` | API key revoked | Contact support if unexpected |
+
+### File Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| `FILE_001` | Invalid file type | Use supported formats: PDF, JPG/JPEG, PNG, DOCX, PPTX, XLSX, HTML |
+| `FILE_002` | File too large | Contact support for large files |
+| `FILE_003` | File corrupted | Verify file integrity, re-save if needed |
+| `FILE_004` | Empty file | Ensure file has content |
+| `FILE_005` | Failed to download from URL | Check URL accessibility and permissions |
+| `FILE_006` | Password-protected file | Provide password parameter |
+
+### Request Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| `REQ_001` | No file or URL provided | Include either `file` or `file-url` parameter |
+| `REQ_002` | Both file and URL provided | Use only one input method |
+| `REQ_003` | Invalid schema format | Validate JSON schema syntax |
+| `REQ_004` | Schema too complex | Simplify nested structures |
+| `REQ_005` | Invalid chunk size | Use chunk size between 100-10000 |
+| `REQ_006` | Invalid page range | Check page numbers exist in document |
+| `REQ_007` | Missing required parameter | Check API documentation for requirements |
+
+### Job Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| `JOB_001` | Job not found | Verify job ID is correct |
+| `JOB_002` | Job already cancelled | Job cannot be modified |
+| `JOB_003` | Job timeout | Retry with smaller document or pages |
+| `JOB_004` | Job failed | Check error details for specific issue |
+
+### Billing Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| `BILLING_001` | Monthly page limit exceeded | Upgrade plan or wait for reset |
+| `BILLING_002` | Payment method required | Add payment method in Console |
+| `BILLING_003` | Subscription expired | Renew subscription |
+
+## Handling Errors in Code
+
+### Basic Error Handling
+
+```python
+import requests
+import json
+
+def extract_with_error_handling(file_path):
+    """Extract document with proper error handling."""
+    
+    try:
+        response = requests.post(
+            "https://api.runpulse.com/extract",
+            headers={"x-api-key": API_KEY},
+            files={"file": open(file_path, "rb")}
+        )
+        
+        # Check HTTP status
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error = response.json().get("error", {})
+            error_code = error.get("code", "UNKNOWN")
+            error_message = error.get("message", "Unknown error")
+            
+            # Handle specific errors
+            if error_code == "AUTH_002":
+                raise ValueError("Invalid API key. Please check your credentials.")
+            elif error_code == "FILE_001":
+                raise ValueError(f"Unsupported file type. Supported: {error['details']['supported_types']}")
+            elif error_code == "FILE_002":
+                raise ValueError("File too large.")
+            elif error_code == "BILLING_001":
+                raise ValueError("Monthly page limit exceeded. Please upgrade your plan.")
+            else:
+                raise Exception(f"API Error {error_code}: {error_message}")
+                
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {str(e)}")
+    except FileNotFoundError:
+        raise ValueError(f"File not found: {file_path}")
+```
+
+### Comprehensive Error Handler
+
+```python
+class PulseAPIError(Exception):
+    """Custom exception for Pulse API errors."""
+    
+    def __init__(self, code, message, details=None):
+        self.code = code
+        self.message = message
+        self.details = details or {}
+        super().__init__(f"{code}: {message}")
+
+class ErrorHandler:
+    """Centralized error handling for Pulse API."""
+    
+    # Retryable error codes
+    RETRYABLE_CODES = {
+        "FILE_005",  # Download failed
+        "JOB_003",   # Timeout
+        "500",       # Server error
+        "502",       # Bad gateway
+        "503",       # Service unavailable
+        "504"        # Gateway timeout
+    }
+    
+    @staticmethod
+    def handle_response(response):
+        """Process API response and raise appropriate errors."""
+        
+        if response.status_code == 200:
+            return response.json()
+        
+        # Parse error response
+        try:
+            error_data = response.json().get("error", {})
+            code = error_data.get("code", str(response.status_code))
+            message = error_data.get("message", "Unknown error")
+            details = error_data.get("details", {})
+        except:
+            code = str(response.status_code)
+            message = response.text or "Unknown error"
+            details = {}
+        
+        # Determine if retryable
+        is_retryable = code in ErrorHandler.RETRYABLE_CODES
+        
+        # Create appropriate exception
+        error = PulseAPIError(code, message, details)
+        error.is_retryable = is_retryable
+        
+        raise error
+```
+
+## Retry Strategies
+
+### Exponential Backoff
+
+```python
+import time
+import random
+
+def exponential_backoff_retry(func, max_retries=3, base_delay=1):
+    """Retry with exponential backoff and jitter."""
+    
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except PulseAPIError as e:
+            if not e.is_retryable or attempt == max_retries - 1:
+                raise
+            
+            # Calculate delay with jitter
+            delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+            print(f"Retry {attempt + 1}/{max_retries} after {delay:.1f}s")
+            time.sleep(delay)
+    
+    raise Exception("Max retries exceeded")
+
+# Usage
+result = exponential_backoff_retry(
+    lambda: client.extract(file_path="document.pdf")
+)
+```
+
+### Circuit Breaker Pattern
+
+```python
+from datetime import datetime, timedelta
+
+class CircuitBreaker:
+    """Prevent cascading failures with circuit breaker."""
+    
+    def __init__(self, failure_threshold=5, recovery_timeout=60):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = "closed"  # closed, open, half-open
+    
+    def call(self, func):
+        """Execute function with circuit breaker protection."""
+        
+        if self.state == "open":
+            if datetime.now() - self.last_failure_time > timedelta(seconds=self.recovery_timeout):
+                self.state = "half-open"
+                self.failure_count = 0
+            else:
+                raise Exception("Circuit breaker is open")
+        
+        try:
+            result = func()
+            if self.state == "half-open":
+                self.state = "closed"
+            return result
+        except Exception as e:
+            self.failure_count += 1
+            self.last_failure_time = datetime.now()
+            
+            if self.failure_count >= self.failure_threshold:
+                self.state = "open"
+                print(f"Circuit breaker opened after {self.failure_count} failures")
+            
+            raise
+
+# Usage
+breaker = CircuitBreaker()
+try:
+    result = breaker.call(lambda: client.extract(file_path="document.pdf"))
+except Exception as e:
+    print(f"Failed: {e}")
+```
+
+### Intelligent Retry Logic
+
+```python
+class SmartRetry:
+    """Intelligent retry with different strategies per error type."""
+    
+    def __init__(self):
+        self.strategies = {
+            "FILE_005": self.retry_with_backoff,      # Download failed
+            "BILLING_001": self.handle_rate_limit,    # Rate limited
+            "JOB_003": self.retry_with_smaller_chunk, # Timeout
+            "503": self.retry_with_backoff            # Service unavailable
+        }
+    
+    def execute(self, func, context=None):
+        """Execute with smart retry logic."""
+        
+        max_attempts = 3
+        
+        for attempt in range(max_attempts):
+            try:
+                return func()
+            except PulseAPIError as e:
+                if attempt == max_attempts - 1:
+                    raise
+                
+                strategy = self.strategies.get(e.code, self.retry_with_backoff)
+                strategy(e, attempt, context)
+    
+    def retry_with_backoff(self, error, attempt, context):
+        """Standard exponential backoff."""
+        delay = 2 ** attempt
+        print(f"Retrying after {delay}s due to {error.code}")
+        time.sleep(delay)
+    
+    def handle_rate_limit(self, error, attempt, context):
+        """Handle rate limiting with longer delay."""
+        print("Rate limited. Waiting 60 seconds...")
+        time.sleep(60)
+    
+    def retry_with_smaller_chunk(self, error, attempt, context):
+        """Retry with smaller page range for timeouts."""
+        if context and 'pages' in context:
+            # Reduce page range
+            current_pages = context['pages']
+            # Logic to split page range
+            print(f"Retrying with smaller page range")
+        time.sleep(5)
+```
+
+## Error Recovery Patterns
+
+### Graceful Degradation
+
+```python
+def extract_with_fallback(file_path, preferred_mode="full"):
+    """Extract with graceful degradation."""
+    
+    strategies = [
+        # Try full extraction with schema
+        lambda: client.extract(
+            file_path=file_path,
+            schema=complex_schema,
+            extract_figure=True
+        ),
+        # Fallback to simple extraction
+        lambda: client.extract(
+            file_path=file_path,
+            schema=simple_schema
+        ),
+        # Last resort: text only
+        lambda: client.extract(
+            file_path=file_path
+        )
+    ]
+    
+    for i, strategy in enumerate(strategies):
+        try:
+            print(f"Attempting strategy {i + 1}/{len(strategies)}")
+            return strategy()
+        except PulseAPIError as e:
+            if i == len(strategies) - 1:
+                raise
+            print(f"Strategy {i + 1} failed: {e.code}, trying next...")
+```
+
+### Partial Success Handling
+
+```python
+def process_large_document_with_recovery(file_path, total_pages=100):
+    """Process document in chunks with partial success."""
+    
+    chunk_size = 10
+    results = []
+    failed_chunks = []
+    
+    for start in range(0, total_pages, chunk_size):
+        end = min(start + chunk_size - 1, total_pages - 1)
+        page_range = f"{start + 1}-{end + 1}"
+        
+        try:
+            result = client.extract(
+                file_path=file_path,
+                pages=page_range
+            )
+            results.append({
+                "pages": page_range,
+                "content": result
+            })
+        except PulseAPIError as e:
+            print(f"Failed to process pages {page_range}: {e}")
+            failed_chunks.append(page_range)
+    
+    # Retry failed chunks with different strategy
+    for chunk in failed_chunks:
+        try:
+            # Try with smaller chunks or different parameters
+            result = client.extract(
+                file_path=file_path,
+                pages=chunk
+            )
+            results.append({
+                "pages": chunk,
+                "content": result,
+                "recovered": True
+            })
+        except:
+            print(f"Permanently failed: {chunk}")
+    
+    return results
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Handle Errors">
+    - Never assume API calls will succeed
+    - Catch and handle specific error codes
+    - Provide meaningful error messages to users
+    - Log errors for debugging
+  </Accordion>
+
+  <Accordion title="Implement Retry Logic">
+    - Use exponential backoff for transient errors
+    - Set reasonable retry limits
+    - Only retry retryable errors
+    - Add jitter to prevent thundering herd
+  </Accordion>
+
+  <Accordion title="Monitor Error Patterns">
+    - Track error frequencies
+    - Alert on error spikes
+    - Analyze patterns for optimization
+    - Review logs regularly
+  </Accordion>
+
+  <Accordion title="Graceful Degradation">
+    - Have fallback strategies
+    - Accept partial success
+    - Inform users of degraded functionality
+    - Queue for later retry if appropriate
+  </Accordion>
+</AccordionGroup>
+
+## Common Error Scenarios
+
+### Scenario 1: File Upload Issues
+
+```python
+def upload_with_validation(file_path):
+    """Upload file with pre-validation."""
+    
+    # Check file extension
+    valid_extensions = ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.pptx', '.xlsx', '.html']
+    file_ext = os.path.splitext(file_path)[1].lower()
+    
+    if file_ext not in valid_extensions:
+        raise ValueError(f"Unsupported file type: {file_ext}")
+    
+    # Attempt upload with retry
+    return exponential_backoff_retry(
+        lambda: client.upload_file(file_path)
+    )
+```
+
+### Scenario 2: Async Job Management
+
+```python
+def manage_async_job(job_id):
+    """Robustly manage async job lifecycle."""
+    
+    max_poll_time = 600  # 10 minutes
+    poll_interval = 5
+    start_time = time.time()
+    
+    while time.time() - start_time < max_poll_time:
+        try:
+            status = client.get_job_status(job_id)
+            
+            if status['status'] == 'completed':
+                return status['result']
+            elif status['status'] == 'failed':
+                raise PulseAPIError(
+                    "JOB_004",
+                    f"Job failed: {status.get('error', 'Unknown error')}"
+                )
+            elif status['status'] == 'cancelled':
+                raise PulseAPIError("JOB_002", "Job was cancelled")
+            
+            time.sleep(poll_interval)
+            
+        except PulseAPIError as e:
+            if e.code == "JOB_001":
+                # Job not found - might be eventual consistency issue
+                time.sleep(10)
+                continue
+            raise
+        except requests.exceptions.RequestException:
+            # Network error - retry
+            time.sleep(poll_interval)
+            continue
+    
+    # Timeout - attempt to cancel
+    try:
+        client.cancel_job(job_id)
+    except:
+        pass
+    
+    raise TimeoutError(f"Job {job_id} timed out after {max_poll_time}s")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Rate Limits" icon="gauge" href="/advanced/rate-limits">
+    Understand usage limits
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    See endpoint details
+  </Card>
+</CardGroup> 
