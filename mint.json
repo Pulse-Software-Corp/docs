@@ -30,7 +30,7 @@
   "topbarLinks": [
     {
       "name": "Console",
-      "url": "https://console.runpulse.com"
+      "url": "https://runpulse.com/pricing-studio-pulse"
     },
     {
       "name": "Platform",
@@ -43,7 +43,7 @@
   ],
   "topbarCtaButton": {
     "name": "Get API Key",
-    "url": "https://console.runpulse.com"
+    "url": "https://runpulse.com/pricing-studio-pulse"
   },
   "tabs": [
     {
