@@ -416,12 +416,6 @@ schema = {
 
 result = client.extract(file_path="order.pdf", schema=schema)
 
-# Send to order processing API
-response = requests.post(
-    "https://api.example.com/orders",
-    json=result
-)
-```
 
 ## Next Steps
 

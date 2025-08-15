@@ -43,16 +43,12 @@
   ],
   "topbarCtaButton": {
     "name": "Get API Key",
-    "url": "https://runpulse.com/pricing-studio-pulse"
+    "url": "https://www.runpulse.com/pricing-studio-pulse"
   },
   "tabs": [
     {
       "name": "API Reference",
       "url": "api-reference"
-    },
-    {
-      "name": "Changelog",
-      "url": "changelog"
     }
   ],
   "navigation": [
@@ -71,6 +67,12 @@
         "core-concepts/schema-extraction",
         "core-concepts/large-documents",
         "core-concepts/bounding-boxes"
+      ]
+    },
+    {
+      "group": "Svix Webhooks",
+      "pages": [
+        "svix-webhooks"
       ]
     },
     {
@@ -102,8 +104,7 @@
     {
       "group": "Resources",
       "pages": [
-        "support",
-        "changelog/overview"
+        "support"
       ]
     }
   ],

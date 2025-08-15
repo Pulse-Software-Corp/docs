@@ -111,7 +111,7 @@ def extract_with_error_handling(file_path):
     
     try:
         response = requests.post(
-            "https://api.runpulse.com/extract",
+            "https://dev.api.runpulse.com/extract",
             headers={"x-api-key": API_KEY},
             files={"file": open(file_path, "rb")}
         )
@@ -507,11 +507,6 @@ def manage_async_job(job_id):
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Rate Limits" icon="gauge" href="/advanced/rate-limits">
-    Understand usage limits
-  </Card>
-  <Card title="API Reference" icon="book" href="/api-reference/introduction">
-    See endpoint details
-  </Card>
-</CardGroup> 
+<Card title="API Reference" icon="book" href="/api-reference/introduction">
+  See endpoint details
+</Card> 

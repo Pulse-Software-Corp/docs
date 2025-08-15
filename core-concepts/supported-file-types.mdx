@@ -131,7 +131,7 @@ Upload files directly in your API request:
 # Direct file upload (recommended for files < 10MB)
 with open("document.pdf", "rb") as f:
     response = requests.post(
-        "https://api.runpulse.com/extract",
+        "https://dev.api.runpulse.com/extract",
         headers={"x-api-key": API_KEY},
         files={"file": f}
     )
@@ -144,7 +144,7 @@ For larger files or reusable uploads:
 ```python
 # Upload to S3 first
 upload_response = requests.post(
-    "https://api.runpulse.com/convert",
+    "https://dev.api.runpulse.com/convert",
     headers={"x-api-key": API_KEY},
     files={"file": open("large_file.pdf", "rb")}
 )
@@ -153,7 +153,7 @@ file_url = upload_response.json()["s3_object_url"]
 
 # Then extract using the URL
 extract_response = requests.post(
-    "https://api.runpulse.com/extract",
+    "https://dev.api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
     json={"file-url": file_url}
 )
@@ -166,7 +166,7 @@ Process files from public URLs:
 ```python
 # Extract from URL
 response = requests.post(
-    "https://api.runpulse.com/extract",
+    "https://dev.api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
     json={"file-url": "https://example.com/document.pdf"}
 )
@@ -184,7 +184,7 @@ The following formats are **not** currently supported:
 - Executable files (`.exe`, `.app`)
 
 <Info>
-  Need support for a specific format? Contact us at support@runpulse.com
+  Need support for a specific format? Contact us at hello@trypulse.ai
 </Info>
 
 ## Format Detection
