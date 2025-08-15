@@ -1,6 +1,6 @@
 ---
 title: 'Security & Compliance'
-description: 'Enterprise-grade security infrastructure and compliance standards at Pulse STUDIO'
+description: 'Security infrastructure and compliance standards'
 ---
 
 <PageHeader>
@@ -9,11 +9,11 @@ description: 'Enterprise-grade security infrastructure and compliance standards 
     <Heading>Security & Compliance</Heading>
   </div>
   <Text className="mt-2">
-    Enterprise-grade security infrastructure protecting your data at every layer
+    Security infrastructure protecting your data at every layer
   </Text>
 </PageHeader>
 
-<CardGroup cols={2}>
+<CardGroup cols={4}>
   <Card title="SOC 2 Type II" icon="shield-check">
     <div className="space-y-2">
       <Button variant="outline" href="mailto:founders@trypulse.ai">
@@ -23,9 +23,25 @@ description: 'Enterprise-grade security infrastructure and compliance standards 
   </Card>
   <Card title="HIPAA Compliance" icon="hospital" iconType="duotone">
     <div className="space-y-2">
-      <Text>Enterprise-ready with full HIPAA compliance</Text>
+      <Text>Full HIPAA compliance ready</Text>
       <Button variant="outline" href="mailto:founders@trypulse.ai">
         Request BAA Documentation
+      </Button>
+    </div>
+  </Card>
+  <Card title="ISO 27001" icon="certificate" iconType="duotone">
+    <div className="space-y-2">
+      <Text>ISO 27001 certified</Text>
+      <Button variant="outline" href="https://www.runpulse.com/security">
+        View certification
+      </Button>
+    </div>
+  </Card>
+  <Card title="GDPR" icon="shield-check" iconType="duotone">
+    <div className="space-y-2">
+      <Text>GDPR compliant</Text>
+      <Button variant="outline" href="https://www.runpulse.com/security">
+        Learn more
       </Button>
     </div>
   </Card>
@@ -67,73 +83,16 @@ description: 'Enterprise-grade security infrastructure and compliance standards 
   </Card>
 </Grid>
 
-## Security Controls
+## Compliance
 
-<Tabs>
-  <Tab title="Data Protection">
-    ### Zero Data Retention Policy
-    - 48-hour automatic deletion policy for all customer data
-    - Zero-retention agreements with OpenAI and Anthropic
-    - Data never used for model training
-    - Verified deletion process with audit trails
-
-    ### Processing Security
-    - Self-hosted ML models and OCR processing
-    - Isolated container environments
-    - Zero-trust security model
-    - End-to-end encryption
-    - Real-time threat monitoring
-
-    ### Storage Security
-    - AWS S3 with enterprise security
-    - AES-256 encryption at rest
-    - TLS 1.3 encryption in transit
-    - Granular bucket policies
-    - Comprehensive audit logging
-  </Tab>
-
-  <Tab title="Access Controls">
-    ### Authentication
-    - Multi-factor authentication required
-    - Strong password policies
-    - Session management and timeouts
-    - Regular credential rotation
-
-    ### Authorization
-    - Role-based access control (RBAC)
-    - Least privilege enforcement
-    - Regular access reviews
-    - Automated access revocation
-
-    ### Monitoring & Audit
-    - Real-time activity monitoring
-    - Threat detection systems
-    - Detailed audit logs
-    - Regular security reviews
-    - Incident response procedures
-  </Tab>
-
-  <Tab title="Compliance">
-    ### SOC 2 Type II
-    - Fully certified and compliant
-    - Comprehensive security controls audit
-    - Email founders@trypulse.ai for Letter of Engagement
-    - Regular control assessments
-
-    ### HIPAA Compliance
-    - Full HIPAA compliance infrastructure
-    - Security Rule compliance
-    - Privacy Rule compliance
-    - BAA availability
-    - Protected health information safeguards
-
-    ### Data Processing
-    - Zero data retention agreements
-    - Strict privacy controls
-    - Regular compliance audits
-    - Data processing transparency
-  </Tab>
-</Tabs>
+<Card>
+  <div className="space-y-4">
+    <Text>For comprehensive details about our security practices, compliance certifications, and data protection measures:</Text>
+    <Button href="https://www.runpulse.com/security" variant="primary">
+      View our security page here →
+    </Button>
+  </div>
+</Card>
 
 ## Data Lifecycle
 
@@ -152,6 +111,19 @@ description: 'Enterprise-grade security infrastructure and compliance standards 
   </Step>
 </Steps>
 
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Is my data secure?">
+    Yes, your data is protected with multiple layers of security:
+    - **Encryption**: All data is encrypted in transit (TLS 1.3) and at rest (AES-256)
+    - **Compliance**: We're SOC 2 Type II certified, HIPAA compliant, ISO 27001 certified, and GDPR compliant
+    - **Data Retention**: Automatic deletion after 48 hours with zero-retention agreements
+    - **Infrastructure**: Self-hosted ML models, isolated containers, and zero-trust security
+    
+    For full details, visit our <Link href="https://www.runpulse.com/security">security page</Link>.
+  </Accordion>
+</AccordionGroup>
 
 <Note>
   For detailed implementation guidelines and security best practices, see our <Link href="/security/authentication">Authentication</Link> documentation. 
