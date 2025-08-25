@@ -1,0 +1,334 @@
+---
+title: 'Databricks Integration Guide'
+description: 'Guide for integrating Pulse API with Databricks'
+---
+
+## Databricks Integration Guide
+
+Pulse API is a production-grade document extraction service that transforms complex documents into structured, AI-ready data. Extract content from PDFs, images, and office documents with high accuracy using advanced AI models.
+
+This guide demonstrates how to integrate Pulse API with Databricks to create a seamless document processing pipeline that can read files from Delta tables, process them through Pulse API, and store the structured results back into Delta tables.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- Databricks workspace access
+- Pulse API key ([Get one here](https://console.runpulse.com))
+- Python libraries: `requests`, `python-dotenv`
+
+## Setup Environment
+
+First, install the required libraries in your Databricks cluster:
+
+```python
+%pip install requests python-dotenv
+```
+
+Set up your API credentials using Databricks secrets or environment variables:
+
+```python
+# Using Databricks secrets (recommended)
+PULSE_API_KEY = dbutils.secrets.get(scope="pulse-api", key="api-key")
+
+# Or using environment variables
+import os
+PULSE_API_KEY = os.getenv("PULSE_API_KEY")
+```
+
+## Core Integration Functions
+
+Here are the core functions for integrating Pulse API with Databricks:
+
+```python
+import requests
+import json
+import time
+from pyspark.sql import functions as F
+from pyspark.sql.types import *
+
+# Set up proper UserAgent for API calls
+USER_AGENT = "Pulse-Databricks-Integration/1.0 (https://docs.runpulse.com/databricks-integration-guide)"
+
+def convert_pdf(pdf_path, api_key):
+    """
+    Convert PDF using Pulse API
+    """
+    url = "https://dev.api.runpulse.com/convert"
+    headers = { 
+        'Content-Type': 'application/pdf',
+        'x-api-key': api_key,
+        'User-Agent': USER_AGENT
+    }
+    
+    try:
+        with open(pdf_path, 'rb') as pdf_file:
+            response = requests.post(url, headers=headers, data=pdf_file)
+    except Exception as e:
+        raise Exception(f"PDF conversion failed: {str(e)}")
+    
+    if not response.ok:
+        raise Exception(f"PDF conversion failed: {response.text}")
+        
+    response_data = response.json()
+    return response_data['s3_object_url']
+
+def extract_document(file_url, api_key, schema=None, schema_prompt=None, chunking=None, 
+                    extract_figure=False, figure_description=False, return_html=False):
+    """
+    Extract structured data from document using Pulse API
+    """
+    url = "https://dev.api.runpulse.com/extract"
+    data = {
+        'file-url': file_url,
+        'schema': schema,
+        'schema_prompt': schema_prompt,
+        'chunking': chunking,
+        'extract_figure': extract_figure,
+        'figure_description': figure_description,
+        'return_html': return_html
+    }
+    
+    response = requests.post(
+        url,
+        headers={
+            'x-api-key': api_key, 
+            'Content-Type': 'application/json',
+            'User-Agent': USER_AGENT
+        },
+        json=data,
+    )
+    
+    if response.ok:
+        return response.json()
+    else:
+        raise Exception(f"Extraction failed: {response.text}")
+
+def process_document_batch(file_paths, api_key, schema):
+    """
+    Process multiple documents and return results
+    """
+    results = []
+    
+    for file_path in file_paths:
+        try:
+            # Convert PDF to URL
+            converted_url = convert_pdf(file_path, api_key)
+            
+            # Extract structured data
+            extraction_result = extract_document(converted_url, api_key, schema=schema)
+            
+            results.append({
+                'file_path': file_path,
+                'status': 'success',
+                'extracted_data': extraction_result['schema-json'],
+                'markdown': extraction_result['markdown'],
+                'bounding_boxes': extraction_result['bounding_boxes']
+            })
+            
+        except Exception as e:
+            results.append({
+                'file_path': file_path,
+                'status': 'error',
+                'error_message': str(e)
+            })
+    
+    return results
+```
+
+## Reading Input Files from Delta Tables
+
+To process documents stored in Delta tables:
+
+```python
+# Read file paths from Delta table
+input_df = spark.read.table("your_catalog.your_schema.documents_table")
+
+# Get list of file paths to process
+file_paths = [row.file_path for row in input_df.select("file_path").collect()]
+
+# Define your extraction schema
+schema = {
+    "name": "string",
+    "age": "integer", 
+    "email": "string",
+    "phone": "string",
+    "address": "string",
+    "city": "string",
+    "state": "string",
+    "zip": "string"
+}
+
+# Process documents
+results = process_document_batch(file_paths, PULSE_API_KEY, schema)
+```
+
+## Storing Results in Delta Tables
+
+After processing, store the structured results back into Delta tables:
+
+```python
+# Convert results to DataFrame
+results_data = []
+for result in results:
+    if result['status'] == 'success':
+        # Flatten the extracted data
+        extracted = result['extracted_data']
+        results_data.append({
+            'file_path': result['file_path'],
+            'processing_status': result['status'],
+            'name': extracted.get('name'),
+            'age': extracted.get('age'),
+            'email': extracted.get('email'),
+            'phone': extracted.get('phone'),
+            'address': extracted.get('address'),
+            'city': extracted.get('city'),
+            'state': extracted.get('state'),
+            'zip': extracted.get('zip'),
+            'markdown_content': result['markdown'],
+            'processed_at': F.current_timestamp()
+        })
+    else:
+        results_data.append({
+            'file_path': result['file_path'],
+            'processing_status': result['status'],
+            'error_message': result.get('error_message'),
+            'processed_at': F.current_timestamp()
+        })
+
+# Create DataFrame
+results_df = spark.createDataFrame(results_data)
+
+# Write to Delta table
+results_df.write \
+    .format("delta") \
+    .mode("append") \
+    .saveAsTable("your_catalog.your_schema.extraction_results")
+```
+
+## Complete Pipeline Example
+
+Here's a complete end-to-end pipeline:
+
+```python
+def pulse_databricks_pipeline(input_table, output_table, schema, api_key):
+    """
+    Complete pipeline for processing documents from Delta table
+    """
+    # Read input files
+    input_df = spark.read.table(input_table)
+    file_paths = [row.file_path for row in input_df.select("file_path").collect()]
+    
+    # Process documents
+    print(f"Processing {len(file_paths)} documents...")
+    results = process_document_batch(file_paths, api_key, schema)
+    
+    # Prepare results for Delta table
+    results_data = []
+    for result in results:
+        record = {
+            'file_path': result['file_path'],
+            'processing_status': result['status'],
+            'processed_at': time.time()
+        }
+        
+        if result['status'] == 'success':
+            # Add extracted fields
+            extracted = result['extracted_data']
+            for key, value in extracted.items():
+                record[f'extracted_{key}'] = value
+            record['markdown_content'] = result['markdown']
+        else:
+            record['error_message'] = result.get('error_message')
+        
+        results_data.append(record)
+    
+    # Save to Delta table
+    results_df = spark.createDataFrame(results_data)
+    results_df.write \
+        .format("delta") \
+        .mode("append") \
+        .saveAsTable(output_table)
+    
+    print(f"Pipeline completed. Results saved to {output_table}")
+    return results_df
+
+# Run the pipeline
+schema = {
+    "name": "string",
+    "age": "integer",
+    "email": "string",
+    "phone": "string"
+}
+
+results_df = pulse_databricks_pipeline(
+    input_table="your_catalog.your_schema.documents_input",
+    output_table="your_catalog.your_schema.pulse_extraction_results", 
+    schema=schema,
+    api_key=PULSE_API_KEY
+)
+
+# Display results
+display(results_df)
+```
+
+<Note type="warning">
+**Large Document Processing**: For documents over 50 pages, consider using the [async extraction endpoint](/api-reference/endpoint/extract_async) to prevent timeout issues.
+</Note>
+
+## Using as a Custom Library
+
+You can package this integration as a custom Python library for use across multiple Databricks notebooks:
+
+```python
+# Create a Python module file: pulse_databricks_lib.py
+"""
+Pulse-Databricks Integration Library
+Custom library for document extraction in Databricks notebooks
+"""
+
+import requests
+import json
+import time
+from pyspark.sql import functions as F
+from pyspark.sql.types import *
+
+USER_AGENT = "Pulse-Databricks-Integration/1.0 (https://docs.runpulse.com/databricks-integration-guide)"
+
+class PulseDatabricksIntegration:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.user_agent = USER_AGENT
+    
+    # Include all the functions from above here...
+    # convert_pdf, extract_document, process_document_batch, etc.
+
+# Usage in notebook:
+# from pulse_databricks_lib import PulseDatabricksIntegration
+# pulse = PulseDatabricksIntegration(PULSE_API_KEY)
+```
+
+To install as a library:
+1. Upload the Python file to your Databricks workspace
+2. Install it in your cluster libraries
+3. Import and use in any notebook
+
+## Best Practices
+
+1. **Error Handling**: Always implement robust error handling for API calls
+2. **Batch Processing**: Process documents in batches to optimize performance
+3. **Schema Design**: Design your extraction schema carefully to match your document structure
+4. **Delta Table Optimization**: Use Delta table features like partitioning for better query performance
+5. **Monitoring**: Track processing status and errors in your pipeline
+6. **User-Agent**: Always include proper User-Agent headers in API calls for tracking and support
+
+## Troubleshooting
+
+**Common Issues:**
+
+- **API Key Authentication**: Ensure your API key is properly configured in Databricks secrets
+- **File Access**: Verify that your Databricks cluster has access to the file storage locations
+- **Large Documents**: Use async endpoints for documents over 50 pages
+- **Schema Validation**: Ensure your extraction schema matches the expected document structure
+
+For additional help, contact [hello@trypulse.ai](mailto:hello@trypulse.ai). 
