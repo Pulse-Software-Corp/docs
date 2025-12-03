@@ -124,5 +124,11 @@
     "posthog": {
       "apiKey": "phc_FutnpUqAQasGvZ2zQSA1mt9uu14YLiO85JV69tm0cYz"
     }
-  }
+  },
+  "head": [
+    {
+      "tag": "script",
+      "innerHTML": "!function(){var e=[\"identify\",\"page\",\"startAutoPage\",\"stopAutoPage\",\"startAutoIdentify\",\"stopAutoIdentify\"];function t(o){return Object.assign([],e.reduce(function(r,n){return r[n]=function(){return o.push([n,[].slice.call(arguments)]),o},r},{}))}window.unify||(window.unify=t(window.unify)),window.unifyBrowser||(window.unifyBrowser=t(window.unifyBrowser));var n=document.createElement(\"script\");n.async=!0,n.setAttribute(\"src\",\"https://tag.unifyintent.com/v1/MKrFdNpq2WAqcfTwhpcb7Y/script.js\"),n.setAttribute(\"data-api-key\",\"wk_L1Zy2sp7_3MZUe8uqxfk5ZXxmBzCH4Tk5R8PrmWV4\"),n.setAttribute(\"id\",\"unifytag\"),(document.body||document.head).appendChild(n)}();"
+    }
+  ]
 }
