@@ -90,11 +90,11 @@ result = client.extract(
 )
 ```
 
-**Page Range Syntax**:
-- Single page: `"5"`
-- Range: `"10-20"`
-- Multiple ranges: `"1-5,10-15,20"`
-- Mixed: `"1,3,5-10,15"`
+**Page Range Syntax** (1-indexed, page 1 is the first page):
+- Single page: `"5"` — extracts the 5th page
+- Range: `"10-20"` — extracts pages 10 through 20 (inclusive)
+- Multiple ranges: `"1-5,10-15,20"` — extracts pages 1-5, 10-15, and page 20
+- Mixed: `"1,3,5-10,15"` — extracts pages 1, 3, 5-10, and 15
 
 ### 3. Chunked Processing
 

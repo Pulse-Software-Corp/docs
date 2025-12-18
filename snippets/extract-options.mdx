@@ -3,7 +3,7 @@
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `structuredOutput` | object | - | Recommended method for schema-guided extraction. Contains `schema` (JSON schema) and optional `schemaPrompt` (natural language instructions). |
-| `pages` | string | - | Page range filter. Supports segments like `1-2` or mixed ranges like `1-2,5`. |
+| `pages` | string | - | Page range filter (1-indexed). Supports segments like `1-2` or mixed ranges like `1-2,5`. Page 1 is the first page. |
 | `chunking` | string | - | Comma-separated list of chunking strategies (e.g., `semantic,header,page,recursive`). |
 | `chunkSize` | integer | - | Maximum characters per chunk when chunking is enabled. |
 | `extractFigure` | boolean | `false` | Enable figure extraction in results. |

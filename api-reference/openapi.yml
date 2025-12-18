@@ -274,8 +274,8 @@ components:
         pages:
           type: string
           description: >-
-            Page range filter supporting segments such as `1-2` or mixed ranges
-            like `1-2,5`.
+            Page range filter (1-indexed, where page 1 is the first page).
+            Supports segments such as `1-2` or mixed ranges like `1-2,5`.
           pattern: '^[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*$'
         chunking:
           type: string
