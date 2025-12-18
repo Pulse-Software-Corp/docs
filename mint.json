@@ -70,8 +70,7 @@
       "group": "Advanced Topics",
       "pages": [
         "advanced/error-handling",
-        "security/overview",
-        "security/best-practices"
+        "security/overview"
       ]
     },
     {
