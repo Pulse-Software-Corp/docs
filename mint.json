@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Pulse API",
   "logo": {
-    "dark": "/pulse 1024-2.png",
-    "light": "/pulse 1024-2.png"
+    "dark": "/logo_with_text_-removebg-preview.png",
+    "light": "/logo_with_text_-removebg-preview.png"
   },
   "favicon": "/pulse 1024-2.png",
   "colors": {
@@ -116,7 +116,8 @@
     "css": "/style.css"
   },
   "modeToggle": {
-    "default": "dark"
+    "default": "light",
+    "isHidden": true
   },
   "fontAwesome": true,
   "theme": "prism",
