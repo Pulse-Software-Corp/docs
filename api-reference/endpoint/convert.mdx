@@ -1,7 +1,11 @@
 ---
-title: 'Retrieve URL'
+title: 'Retrieve URL (Deprecated)'
 openapi: 'POST /convert'
 ---
+
+<Note type="warning">
+  **Deprecated**: This endpoint is deprecated and will be removed in a future version.
+</Note>
 
 <Note type="warning">
   **Temporary Storage**: /convert is purely for temporary file storage into Pulse's S3 bucket (auto-deletes in 24 hours), and returns a presigned URL for use in /extract. For more robust processing please use your own cloud storage.

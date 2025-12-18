@@ -162,11 +162,11 @@ for section in toc_result["sections"]:
 ```python
 # Start async extraction
 response = requests.post(
-    "https://dev.api.runpulse.com/extract_async",
+    "https://api.runpulse.com/extract_async",
     headers={"x-api-key": API_KEY},
     files={"file": open("large_doc.pdf", "rb")},
     data={
-        "schema": json.dumps(schema),
+        "structuredOutput": json.dumps({"schema": schema}),
         "pages": "1-100"
     }
 )
@@ -186,7 +186,7 @@ def poll_job_with_backoff(job_id, max_wait=600):
     
     while total_waited < max_wait:
         response = requests.get(
-            f"https://dev.api.runpulse.com/job/{job_id}",
+            f"https://api.runpulse.com/job/{job_id}",
             headers={"x-api-key": API_KEY}
         )
         
@@ -287,7 +287,7 @@ summary = client.extract(
 # Option 2: Use custom chunk size
 result = client.extract(
     file_path="report.pdf",
-    chunk_size=5000,  # Larger chunks for better context
+    chunkSize=5000,  # Larger chunks for better context
     pages="1-50"  # Process only relevant section
 )
 ```
@@ -438,7 +438,7 @@ def robust_large_document_processing(file_path, max_retries=3):
 
   <Accordion title="Handle S3 URLs Properly">
     - Check for `is_url` in responses
-    - Download results promptly (URLs expire in 24 hours)
+    - Download results promptly (URLs expire in 7 days)
     - Implement retry logic for S3 downloads
   </Accordion>
 
@@ -458,4 +458,5 @@ def robust_large_document_processing(file_path, max_retries=3):
   <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
     Handle errors in large documents
   </Card>
-</CardGroup> 
+</CardGroup>
+

@@ -3,32 +3,158 @@ title: 'Extract File'
 openapi: 'POST /extract'
 ---
 
-<Note type="warning">
-  **Large Document Processing**: For documents over 50 pages, we strongly recommend using the [/extract_async](/api-reference/endpoint/extract_async) endpoint instead. The async endpoint prevents timeout issues and provides better handling of extensive processing tasks.
+import ExtractDocumentSource from '/snippets/extract-document-source.mdx';
+import ExtractOptions from '/snippets/extract-options.mdx';
+import ExtractStorageOptions from '/snippets/extract-storage-options.mdx';
+import ExtractDeprecatedFields from '/snippets/extract-deprecated-fields.mdx';
+
+## Overview
+
+Synchronously extract content from documents. Best for files under 50 pages. Returns markdown or HTML formatted content with optional structured data extraction.
+
+For documents over 70 pages, results are returned via S3 URL.
+
+<Note>
+  For large documents or batch processing workflows, consider using the [/extract_async](/api-reference/endpoint/extract_async) endpoint to avoid timeout issues.
 </Note>
 
-## Large Document Response Structure
+## Request
 
-For documents exceeding 70 pages, the API returns a URL structure instead of the direct response:
+<ExtractDocumentSource />
+
+<ExtractOptions />
+
+<ExtractStorageOptions />
+
+<ExtractDeprecatedFields />
+
+## Response
+
+The response structure varies based on document size to optimize for different use cases.
+
+### Standard Response (Under 70 Pages)
+
+For documents under 70 pages, results are returned directly in the response body:
+
+```json
+{
+  "markdown": "# Document Title\n\nExtracted content...",
+  "page_count": 15,
+  "job_id": "abc123-def456-ghi789",
+  "plan-info": {
+    "pages_used": 15,
+    "tier": "standard",
+    "note": "Pulse Ultra"
+  },
+  "bounding_boxes": {
+    "Title": [...],
+    "Paragraphs": [...],
+    "Tables": [...],
+    "Images": [...],
+    "markdown_with_ids": "<p data-bb-text-id=\"txt-1\">..."
+  },
+  "extraction_url": "https://platform.runpulse.com/dashboard/extractions/abc123"
+}
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `markdown` | string | Clean markdown content extracted from the document. |
+| `page_count` | integer | Total number of pages processed. |
+| `job_id` | string | Unique identifier for the extraction job. |
+| `plan-info` | object | Billing information including pages used and plan tier. |
+| `bounding_boxes` | object | Detailed bounding box data for document elements. See [Bounding Boxes](/api-reference/bounding-boxes) for details. |
+| `extraction_url` | string | URL to view the extraction in the Pulse Platform (when storage is enabled). |
+| `html` | string | HTML representation of the document (when `returnHtml` is `true`). |
+| `structured_output` | object | Extracted data matching your schema (when `structuredOutput` is provided). |
+| `chunks` | array | Document chunks (when `chunking` is enabled). |
+| `figures` | array | Extracted figures (when `extractFigure` is `true`). |
+
+### Large Document Response (70+ Pages)
+
+For documents with 70 or more pages, the API returns a URL to fetch the complete results. This prevents timeout issues and reduces response payload size.
 
 ```json
 {
   "is_url": true,
-  "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
+  "url": "https://pulse-studio-api.s3.amazonaws.com/results/abc123.json",
   "plan-info": {
-    "pages_used": 0,
-    "tier": "foundation"
+    "pages_used": 150,
+    "tier": "standard"
   }
 }
 ```
 
-### Key Points:
-- Documents over 70 pages return a URL containing the complete response
-- URLs automatically expire after 24 hours
-- No changes required to your API request structure
-- For documents under 70 pages, the API continues to return results directly
+#### Large Document Response Fields
 
-### Implementation Tips:
-1. Check if response contains `"is_url": true`
-2. If true, fetch the complete document data from the provided URL
-3. Store URLs securely as they contain your processed results
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_url` | boolean | Always `true` for large document responses. Use this to detect URL-based responses. |
+| `url` | string | Pre-signed S3 URL containing the complete extraction results. Expires after 24 hours. |
+| `plan-info` | object | Billing information including pages used and plan tier. |
+
+#### Handling Large Document Responses
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.runpulse.com/extract",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    files={"file": open("large_document.pdf", "rb")}
+)
+
+result = response.json()
+
+# Check if response is a URL reference
+if result.get("is_url"):
+    # Fetch the complete results from S3
+    full_result = requests.get(result["url"]).json()
+else:
+    # Results are directly in the response
+    full_result = result
+
+# Process the extraction
+print(full_result["markdown"])
+```
+
+<Note>
+  The S3 URL expires after 24 hours. If you need to access results after this period, ensure `storage.enabled` is `true` and retrieve results from your extraction library.
+</Note>
+
+## Example Usage
+
+```bash
+# Extract with file upload
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf"
+
+# Extract from URL
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"fileUrl": "https://example.com/document.pdf"}'
+
+# Extract with structured output schema
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@invoice.pdf" \
+  -F 'structuredOutput={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schemaPrompt": "Extract the invoice total and vendor name"}'
+
+# Extract specific pages with chunking
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf" \
+  -F "pages=1-5,10" \
+  -F "chunking=semantic,page" \
+  -F "chunkSize=1000"
+
+# Extract without storage (temporary extraction)
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf" \
+  -F 'storage={"enabled": false}'
+```

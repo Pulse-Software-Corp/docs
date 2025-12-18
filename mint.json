@@ -43,7 +43,7 @@
   ],
   "topbarCtaButton": {
     "name": "Get API Key",
-    "url": "https://www.runpulse.com/pricing-studio-pulse"
+    "url": "https://console.runpulse.com/"
   },
   "tabs": [
     {
@@ -58,15 +58,6 @@
         "introduction",
         "authentication",
         "quickstart"
-      ]
-    },
-    {
-      "group": "Core Concepts",
-      "pages": [
-        "core-concepts/supported-file-types",
-        "core-concepts/schema-extraction",
-        "core-concepts/large-documents",
-        "core-concepts/bounding-boxes"
       ]
     },
     {
@@ -87,7 +78,10 @@
       "group": "API Reference",
       "pages": [
         "api-reference/introduction",
-        "api-reference/schema-guidelines"
+        "api-reference/structured-output-guidelines",
+        "api-reference/bounding-boxes",
+        "api-reference/supported-file-types",
+        "api-reference/large-documents"
       ]
     },
     {
@@ -95,10 +89,11 @@
       "pages": [
         "api-reference/endpoint/extract",
         "api-reference/endpoint/extract_async",
-        "api-reference/endpoint/convert",
         "api-reference/endpoint/poll",
-        "api-reference/endpoint/cancel",
-        "api-reference/endpoint/webhook"
+        "api-reference/endpoint/delete-job",
+        "api-reference/endpoint/webhook",
+        "api-reference/endpoint/convert",
+        "api-reference/endpoint/cancel"
       ]
     },
     {

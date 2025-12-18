@@ -26,77 +26,139 @@ All errors follow a consistent JSON structure:
 
 ## Error Categories
 
-<CardGroup cols={2}>
-  <Card title="Authentication Errors" icon="key">
+<CardGroup cols={3}>
+  <Card title="Authentication" icon="key">
     **AUTH_XXX** - API key issues
   </Card>
-  <Card title="File Errors" icon="file">
-    **FILE_XXX** - File format/size issues
-  </Card>
-  <Card title="Request Errors" icon="code">
+  <Card title="Request" icon="code">
     **REQ_XXX** - Invalid parameters
   </Card>
-  <Card title="Job Errors" icon="clock">
-    **JOB_XXX** - Async job issues
+  <Card title="File" icon="file">
+    **FILE_XXX** - File format/size issues
   </Card>
-  <Card title="Billing Errors" icon="credit-card">
+  <Card title="Schema" icon="brackets-curly">
+    **SCHEMA_XXX** - Schema validation
+  </Card>
+  <Card title="Billing" icon="credit-card">
     **BILLING_XXX** - Usage limit issues
   </Card>
-  <Card title="Server Errors" icon="server">
-    **5XX** - Internal server errors
+  <Card title="Processing" icon="gears">
+    **PROC_XXX** - Processing failures
+  </Card>
+  <Card title="Job" icon="clock">
+    **JOB_XXX** - Async job issues
+  </Card>
+  <Card title="Storage" icon="database">
+    **STORAGE_XXX** - Storage issues
+  </Card>
+  <Card title="General" icon="server">
+    **GENERAL_XXX** - Server errors
   </Card>
 </CardGroup>
 
 ## Complete Error Code Reference
 
-### Authentication Errors
+### Authentication Errors (AUTH_XXX)
 
-| Code | Description | Solution |
-|------|-------------|----------|
-| `AUTH_001` | API key is required | Include `x-api-key` header in request |
-| `AUTH_002` | Invalid API key | Verify key in [Console](https://runpulse.com/pricing-studio-pulse) |
-| `AUTH_003` | API key expired | Generate new key in Console |
-| `AUTH_004` | API key revoked | Contact support if unexpected |
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `AUTH_001` | 401 | API key is required | Include `x-api-key` header in request |
+| `AUTH_002` | 401 | Invalid API key | Verify key in [Console](https://console.runpulse.com/) |
+| `AUTH_003` | 401 | API key expired | Generate new key in Console |
+| `AUTH_004` | 403 | Insufficient permissions | Check API key permissions |
+| `AUTH_005` | 401 | Organization not found | Verify your organization exists |
+| `AUTH_006` | 403 | Access restricted to whitelisted domains | Contact support for domain whitelisting |
 
-### File Errors
+### Request Errors (REQ_XXX)
 
-| Code | Description | Solution |
-|------|-------------|----------|
-| `FILE_001` | Invalid file type | Use supported formats: PDF, JPG/JPEG, PNG, DOCX, PPTX, XLSX, HTML |
-| `FILE_002` | File too large | Contact support for large files |
-| `FILE_003` | File corrupted | Verify file integrity, re-save if needed |
-| `FILE_004` | Empty file | Ensure file has content |
-| `FILE_005` | Failed to download from URL | Check URL accessibility and permissions |
-| `FILE_006` | Password-protected file | Provide password parameter |
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `REQ_001` | 400 | No file or URL provided | Include either `file` or `fileUrl` parameter |
+| `REQ_002` | 400 | Invalid request body | Validate JSON syntax and structure |
+| `REQ_003` | 400 | Invalid parameter value | Check parameter format and allowed values |
+| `REQ_004` | 400 | Missing required parameter | Check API documentation for requirements |
+| `REQ_005` | 400 | Invalid chunk size | Use chunk size between 100-10000 |
+| `REQ_006` | 400 | Invalid page range | Use format like `1-5` or `1,3,5` |
 
-### Request Errors
+### File Errors (FILE_XXX)
 
-| Code | Description | Solution |
-|------|-------------|----------|
-| `REQ_001` | No file or URL provided | Include either `file` or `file-url` parameter |
-| `REQ_002` | Both file and URL provided | Use only one input method |
-| `REQ_003` | Invalid schema format | Validate JSON schema syntax |
-| `REQ_004` | Schema too complex | Simplify nested structures |
-| `REQ_005` | Invalid chunk size | Use chunk size between 100-10000 |
-| `REQ_006` | Invalid page range | Check page numbers exist in document |
-| `REQ_007` | Missing required parameter | Check API documentation for requirements |
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `FILE_001` | 400 | Invalid file type | Use supported formats: PDF, JPG/JPEG, PNG, DOCX, PPTX, XLSX, HTML |
+| `FILE_002` | 413 | File too large | Maximum file size is 100MB |
+| `FILE_003` | 400 | File corrupted | Verify file integrity, re-save if needed |
+| `FILE_004` | 400 | Empty file | Ensure file has content |
+| `FILE_005` | 400 | Failed to download from URL | Check URL accessibility and permissions |
+| `FILE_006` | 408 | Timeout downloading file | Use a faster hosting service or upload directly |
+| `FILE_007` | 400 | Invalid file URL | Provide a valid, accessible URL |
 
-### Job Errors
+### Schema Errors (SCHEMA_XXX)
 
-| Code | Description | Solution |
-|------|-------------|----------|
-| `JOB_001` | Job not found | Verify job ID is correct |
-| `JOB_002` | Job already cancelled | Job cannot be modified |
-| `JOB_003` | Job timeout | Retry with smaller document or pages |
-| `JOB_004` | Job failed | Check error details for specific issue |
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `SCHEMA_001` | 400 | Invalid schema format | Ensure schema conforms to JSON Schema spec |
+| `SCHEMA_002` | 400 | Schema processing failed | Simplify schema or check document compatibility |
+| `SCHEMA_003` | 400 | Schema too complex | Reduce nesting depth (max 5 levels) |
+| `SCHEMA_004` | 400 | Unsupported schema type | Use supported data types only |
+| `SCHEMA_005` | 400 | Schema validation timeout | Simplify schema or reduce document size |
 
-### Billing Errors
+### Billing Errors (BILLING_XXX)
 
-| Code | Description | Solution |
-|------|-------------|----------|
-| `BILLING_001` | Monthly page limit exceeded | Upgrade plan or wait for reset |
-| `BILLING_002` | Payment method required | Add payment method in Console |
-| `BILLING_003` | Subscription expired | Renew subscription |
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `BILLING_001` | 403 | Trial expired | Upgrade to a paid plan |
+| `BILLING_002` | 403 | Page limit exceeded | Upgrade plan or wait for monthly reset |
+| `BILLING_003` | 402 | Payment required | Add payment method in Console |
+| `BILLING_004` | 403 | Plan limit reached | Upgrade to a higher tier |
+| `BILLING_005` | 402 | Billing status unknown | Contact support |
+| `BILLING_006` | 403 | Account suspended | Resolve billing issues in Console |
+| `BILLING_007` | 402 | Payment failed | Update payment method |
+| `BILLING_008` | 402 | Payment requires authentication | Complete 3D Secure verification |
+| `BILLING_009` | 403 | Subscription canceled | Resubscribe to continue |
+| `BILLING_010` | 402 | Subscription past due | Update payment method |
+| `BILLING_011` | 403 | No active subscription | Subscribe to a plan |
+| `BILLING_012` | 402 | Free tier limit exceeded | Upgrade required to continue |
+| `BILLING_013` | 402 | Storage settings restricted on free tier | Upgrade to use storage features |
+
+### Processing Errors (PROC_XXX)
+
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `PROC_001` | 500 | Document processing failed | Retry or contact support if persistent |
+| `PROC_002` | 408 | Processing timeout | Use async endpoint or process fewer pages |
+| `PROC_003` | 500 | Service temporarily unavailable | Retry after a few minutes |
+| `PROC_004` | 503 | Rate limit exceeded | Implement exponential backoff |
+| `PROC_005` | 500 | Partial extraction failure | Some elements couldn't be processed |
+
+### Job Errors (JOB_XXX)
+
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `JOB_001` | 404 | Job not found | Verify job ID; jobs expire after 48 hours |
+| `JOB_002` | 409 | Job already cancelled | Job cannot be modified |
+| `JOB_003` | 410 | Job expired | Resubmit the extraction request |
+| `JOB_004` | 409 | Job still processing | Wait and poll again |
+| `JOB_005` | 500 | Job failed | Check error details; retry if transient |
+
+### Storage Errors (STORAGE_XXX)
+
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `STORAGE_001` | 500 | Failed to store results | Retry the extraction |
+| `STORAGE_002` | 404 | Results not found | Results may have expired |
+| `STORAGE_003` | 500 | Storage service unavailable | Retry after a few minutes |
+| `STORAGE_004` | 507 | Storage limit exceeded | Delete old extractions or upgrade |
+| `STORAGE_005` | 404 | Extraction expired | Reprocess the document |
+
+### General Errors (GENERAL_XXX)
+
+| Code | HTTP | Description | Solution |
+|------|------|-------------|----------|
+| `GENERAL_001` | 500 | Internal server error | Retry; contact support if persistent |
+| `GENERAL_002` | 503 | Service unavailable | Check status page; retry later |
+| `GENERAL_003` | 504 | Gateway timeout | Use async endpoint for large documents |
+| `GENERAL_004` | 429 | Too many requests | Implement rate limiting with backoff |
+| `GENERAL_005` | 501 | Feature not implemented | Feature not yet available |
 
 ## Handling Errors in Code
 
@@ -128,11 +190,17 @@ def extract_with_error_handling(file_path):
             if error_code == "AUTH_002":
                 raise ValueError("Invalid API key. Please check your credentials.")
             elif error_code == "FILE_001":
-                raise ValueError(f"Unsupported file type. Supported: {error['details']['supported_types']}")
+                raise ValueError(f"Unsupported file type. Supported: {error.get('details', {}).get('supported_types', [])}")
             elif error_code == "FILE_002":
-                raise ValueError("File too large.")
+                raise ValueError("File too large. Maximum size is 100MB.")
             elif error_code == "BILLING_001":
-                raise ValueError("Monthly page limit exceeded. Please upgrade your plan.")
+                raise ValueError("Trial expired. Please upgrade your plan.")
+            elif error_code == "BILLING_002":
+                raise ValueError("Page limit exceeded. Please upgrade your plan.")
+            elif error_code == "SCHEMA_001":
+                raise ValueError("Invalid schema format. Check JSON Schema syntax.")
+            elif error_code.startswith("PROC_"):
+                raise Exception(f"Processing error: {error_message}. Retry may help.")
             else:
                 raise Exception(f"API Error {error_code}: {error_message}")
                 
@@ -159,12 +227,18 @@ class ErrorHandler:
     
     # Retryable error codes
     RETRYABLE_CODES = {
-        "FILE_005",  # Download failed
-        "JOB_003",   # Timeout
-        "500",       # Server error
-        "502",       # Bad gateway
-        "503",       # Service unavailable
-        "504"        # Gateway timeout
+        "FILE_005",     # Download failed
+        "FILE_006",     # Download timeout
+        "PROC_001",     # Processing failed
+        "PROC_002",     # Processing timeout
+        "PROC_003",     # Service unavailable
+        "PROC_004",     # Rate limit
+        "JOB_003",      # Job expired
+        "STORAGE_003",  # Storage unavailable
+        "GENERAL_001",  # Server error
+        "GENERAL_002",  # Service unavailable
+        "GENERAL_003",  # Gateway timeout
+        "GENERAL_004",  # Rate limit
     }
     
     @staticmethod
@@ -282,10 +356,13 @@ class SmartRetry:
     
     def __init__(self):
         self.strategies = {
-            "FILE_005": self.retry_with_backoff,      # Download failed
-            "BILLING_001": self.handle_rate_limit,    # Rate limited
-            "JOB_003": self.retry_with_smaller_chunk, # Timeout
-            "503": self.retry_with_backoff            # Service unavailable
+            "FILE_005": self.retry_with_backoff,       # Download failed
+            "FILE_006": self.retry_with_backoff,       # Download timeout
+            "PROC_002": self.retry_with_smaller_chunk, # Processing timeout
+            "PROC_004": self.handle_rate_limit,        # Rate limit exceeded
+            "JOB_003": self.retry_with_smaller_chunk,  # Job expired
+            "GENERAL_004": self.handle_rate_limit,     # Too many requests
+            "GENERAL_002": self.retry_with_backoff,    # Service unavailable
         }
     
     def execute(self, func, context=None):

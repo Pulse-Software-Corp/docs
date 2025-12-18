@@ -1,4 +1,94 @@
 ---
 title: 'Poll Job'
-openapi: 'GET /job/{job_id}'
+openapi: 'GET /job/{jobId}'
 ---
+
+## Overview
+
+Check the status and retrieve results of an asynchronous job (e.g., submitted via `/extract_async`).
+
+Poll this endpoint periodically until the job reaches a terminal state (`completed`, `failed`, or `canceled`).
+
+## Response
+
+The response includes job metadata and, when completed, the full extraction results.
+
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "status": "completed",
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-15T10:31:45Z",
+  "result": {
+    "markdown": "# Document Title\n\nExtracted content...",
+    "page_count": 15,
+    "bounding_boxes": { ... },
+    "plan-info": { ... }
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | Unique identifier for the extraction job. |
+| `status` | string | Current job status: `pending`, `processing`, `completed`, `failed`, or `canceled`. |
+| `created_at` | string | ISO 8601 timestamp when the job was submitted. |
+| `updated_at` | string | ISO 8601 timestamp of the last status update. |
+| `result` | object | Extraction output (only present when `status` is `completed`). See [Extract](/api-reference/endpoint/extract) for result structure. |
+| `error` | string | Error message (only present when `status` is `failed`). |
+
+### Job Status Values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Job is queued and waiting to be processed. |
+| `processing` | Job is currently being processed. |
+| `completed` | Job finished successfully. Results are available in the `result` field. |
+| `failed` | Job encountered an error. See `error` field for details. |
+| `canceled` | Job was canceled before completion. |
+
+## Polling Strategy
+
+We recommend polling with exponential backoff:
+
+```python
+import time
+import requests
+
+def poll_job(job_id: str, api_key: str, max_attempts: int = 60):
+    url = f"https://api.runpulse.com/job/{job_id}"
+    headers = {"x-api-key": api_key}
+    
+    delay = 1  # Start with 1 second
+    
+    for attempt in range(max_attempts):
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        
+        if data["status"] == "completed":
+            return data["result"]
+        elif data["status"] == "failed":
+            raise Exception(f"Job failed: {data.get('error')}")
+        elif data["status"] == "canceled":
+            raise Exception("Job was canceled")
+        
+        # Still pending or processing - wait and retry
+        time.sleep(delay)
+        delay = min(delay * 1.5, 10)  # Cap at 10 seconds
+    
+    raise Exception("Polling timeout")
+```
+
+## Example Usage
+
+```bash
+# Poll for job status
+curl https://api.runpulse.com/job/abc123-def456 \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+<Note>
+  For webhook-based notifications instead of polling, see the [Webhooks](/api-reference/endpoint/webhook) documentation.
+</Note>

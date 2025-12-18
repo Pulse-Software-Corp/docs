@@ -131,32 +131,10 @@ Upload files directly in your API request:
 # Direct file upload (recommended for files < 10MB)
 with open("document.pdf", "rb") as f:
     response = requests.post(
-        "https://dev.api.runpulse.com/extract",
+        "https://api.runpulse.com/extract",
         headers={"x-api-key": API_KEY},
         files={"file": f}
     )
-```
-
-### Pre-upload to S3
-
-For larger files or reusable uploads:
-
-```python
-# Upload to S3 first
-upload_response = requests.post(
-    "https://dev.api.runpulse.com/convert",
-    headers={"x-api-key": API_KEY},
-    files={"file": open("large_file.pdf", "rb")}
-)
-
-file_url = upload_response.json()["s3_object_url"]
-
-# Then extract using the URL
-extract_response = requests.post(
-    "https://dev.api.runpulse.com/extract",
-    headers={"x-api-key": API_KEY},
-    json={"file-url": file_url}
-)
 ```
 
 ### URL-Based Processing
@@ -166,9 +144,9 @@ Process files from public URLs:
 ```python
 # Extract from URL
 response = requests.post(
-    "https://dev.api.runpulse.com/extract",
+    "https://api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
-    json={"file-url": "https://example.com/document.pdf"}
+    json={"fileUrl": "https://example.com/document.pdf"}
 )
 ```
 
@@ -223,7 +201,7 @@ result = client.extract(file_path="document")  # Works even without extension
   <Accordion title="Technical Documents">
     **Manuals, Specifications, Diagrams**
     
-    - Use `extract_figure=True` for diagrams
+    - Use `extractFigure=true` for diagrams
     - Process in smaller chunks if very large
     - Maintain original format for tables
     - Consider HTML output for preservation
@@ -277,10 +255,11 @@ result = client.extract(file_path="document")  # Works even without extension
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Schema Extraction" icon="code" href="/core-concepts/schema-extraction">
+  <Card title="Structured Output" icon="code" href="/api-reference/structured-output-guidelines">
     Extract structured data from any format
   </Card>
-  <Card title="Large Documents" icon="file-lines" href="/core-concepts/large-documents">
+  <Card title="Large Documents" icon="file-lines" href="/api-reference/large-documents">
     Handle big files efficiently
   </Card>
-</CardGroup> 
+</CardGroup>
+

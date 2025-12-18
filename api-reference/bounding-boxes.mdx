@@ -27,17 +27,20 @@ Where:
 
 ## Response Structure
 
-The extraction response includes the following arrays:
+The `bounding_boxes` object in the extraction response contains:
 
 ```json
 {
-  "Footer": [],
-  "Header": [],
-  "Images": [],
-  "Tables": [],
-  "Text": [],
-  "Title": [],
-  "Page Number": []
+  "bounding_boxes": {
+    "Footer": [],
+    "Header": [],
+    "Images": [],
+    "Tables": [],
+    "Text": [],
+    "Title": [],
+    "Page Number": [],
+    "markdown_with_ids": "..."
+  }
 }
 ```
 
@@ -45,20 +48,25 @@ The extraction response includes the following arrays:
   Not all fields will be present in every response. The API only includes arrays for elements that were detected in the document.
 </Note>
 
+### Markdown Fields
+
+| Field | Location | Description |
+|-------|----------|-------------|
+| `markdown` | Top-level response | Clean markdown content without any ID attributes |
+| `markdown_with_ids` | Inside `bounding_boxes` | Markdown with `data-bb-*` ID attributes that link text to bounding box elements |
+
+Use `bounding_boxes.markdown_with_ids` when you need to correlate text positions with bounding boxes. Use the top-level `markdown` for clean content display or export.
+
 ## Example Response
 
-Here's a real example of bounding box data:
+Here's a real example of the `bounding_boxes` object:
 
 ```json
 {
   "Images": [
     {
-      "bounding_box": [0.01014957264957265, 0.01744186046511628, 0.09241452991452992, 0.01744186046511628, 0.09241452991452992, 0.10719476744186046, 0.01014957264957265, 0.10719476744186046],
-      "confidence": "N/A",
-      "page_number": 1
-    },
-    {
-      "bounding_box": [0.2013888888888889, 0.005813953488372093, 0.32425213675213677, 0.005087209302325582, 0.3247863247863248, 0.08829941860465117, 0.20192307692307693, 0.08866279069767442],
+      "id": "img-1",
+      "bounding_box": [0.0101, 0.0174, 0.0924, 0.0174, 0.0924, 0.1072, 0.0101, 0.1072],
       "confidence": "N/A",
       "page_number": 1
     }
@@ -66,24 +74,22 @@ Here's a real example of bounding box data:
   "Tables": [],
   "Text": [
     {
-      "average_word_confidence": 0.973,
-      "bounding_box": [0.026709401709401708, 0.0872093023255814, 0.06891025641025642, 0.07885174418604651, 0.07425213675213675, 0.09084302325581395, 0.03205128205128205, 0.09956395348837209],
+      "id": "txt-2",
       "content": "0a-NCRI",
-      "page_number": 1
-    },
-    {
-      "average_word_confidence": 0.994,
-      "bounding_box": [0.2548076923076923, 0.1587936046511628, 0.3680555555555556, 0.16388081395348839, 0.36698717948717946, 0.17732558139534885, 0.2537393162393162, 0.17223837209302326],
-      "content": "0a-Dalia Kundu",
-      "page_number": 1
+      "original_content": "NCRI",
+      "bounding_box": [0.0267, 0.0872, 0.0689, 0.0789, 0.0743, 0.0908, 0.0321, 0.0996],
+      "page_number": 1,
+      "average_word_confidence": 0.973
     }
   ],
   "Title": [
     {
-      "average_word_confidence": 0.995,
-      "bounding_box": [0.21955128205128205, 0.1224563953488372, 0.4577991452991453, 0.1348110465116279, 0.45566239316239315, 0.1537063953488372, 0.21741452991452992, 0.14171511627906977],
+      "id": "txt-1",
       "content": "0a-Doctor Prescription",
-      "page_number": 1
+      "original_content": "Doctor Prescription",
+      "bounding_box": [0.2196, 0.1225, 0.4578, 0.1348, 0.4557, 0.1537, 0.2174, 0.1417],
+      "page_number": 1,
+      "average_word_confidence": 0.995
     }
   ]
 }
@@ -93,53 +99,69 @@ Here's a real example of bounding box data:
 
 ### Text Array
 Each text element contains:
-- `content`: The extracted text
-- `bounding_box`: 8-point coordinate array
+- `id`: Unique identifier (e.g., `txt-1`) that links to `markdown_with_ids` via `data-bb-text-id`
+- `content`: The extracted text with prefix (e.g., `0a-NCRI`)
+- `original_content`: The clean extracted text without prefix
+- `bounding_box`: 8-point coordinate array (may be `null` for some document types)
 - `page_number`: Page where the text appears
 - `average_word_confidence`: OCR confidence score (0-1)
 
 ### Title Array
 Each title element contains:
-- `content`: The title text
+- `id`: Unique identifier linking to markdown
+- `content`: The title text with prefix
+- `original_content`: The clean title text
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where the title appears
 - `average_word_confidence`: OCR confidence score (0-1)
 
 ### Header Array
 Each header element contains:
-- `content`: The header text
+- `id`: Unique identifier linking to markdown
+- `content`: The header text with prefix
+- `original_content`: The clean header text
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where the header appears
 - `average_word_confidence`: OCR confidence score (0-1)
 
 ### Footer Array
 Each footer element contains:
-- `content`: The footer text
+- `id`: Unique identifier linking to markdown
+- `content`: The footer text with prefix
+- `original_content`: The clean footer text
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where the footer appears
 - `average_word_confidence`: OCR confidence score (0-1)
 
 ### Images Array
 Each image element contains:
+- `id`: Unique identifier (e.g., `img-1`)
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where the image appears
 - `confidence`: Detection confidence (if available)
 
 ### Tables Array
 Each table element contains:
+- `id`: Unique identifier (e.g., `tbl-1`)
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where the table appears
 - `content`: Table content (in HTML format)
 
 ### Page Number Array
 Each page number element contains:
+- `id`: Unique identifier
 - `content`: The page number text
+- `original_content`: The clean page number text
 - `bounding_box`: 8-point coordinate array
 - `page_number`: Page where it appears
 - `average_word_confidence`: OCR confidence score (0-1)
 
 <Note>
   Tables are extracted and returned in HTML format, preserving the structure and making it easy to parse or display.
+</Note>
+
+<Note>
+  The `id` field allows you to link bounding box elements to specific locations in the `markdown_with_ids` field via `data-bb-text-id` attributes.
 </Note>
 
 ## Converting Coordinates
@@ -174,7 +196,8 @@ pixel_bbox = normalize_to_pixels(normalized_bbox, page_width, page_height)
   <Card title="Extract Endpoint" icon="code" href="/api-reference/endpoint/extract">
     Enable bounding box extraction
   </Card>
-  <Card title="Schema Extraction" icon="table" href="/core-concepts/schema-extraction">
+  <Card title="Structured Output" icon="table" href="/api-reference/structured-output-guidelines">
     Combine with structured data
   </Card>
-</CardGroup> 
+</CardGroup>
+

@@ -9,7 +9,7 @@ Before you begin, make sure there is:
 
 <CardGroup cols={2}>
   <Card title="API Key" icon="key">
-    Get your API key from [runpulse.com/pricing-studio-pulse](https://runpulse.com/pricing-studio-pulse)
+    Get your API key from the [Console](https://console.runpulse.com)
   </Card>
   <Card title="Python 3.7+" icon="python">
     Install Python and the requests library
@@ -66,7 +66,7 @@ def extract_document_from_file(file_path, schema=None, pages=None):
         data = {}
         
         if schema:
-            data['schema'] = json.dumps(schema)
+            data['structuredOutput'] = json.dumps({'schema': schema})
         if pages:
             data['pages'] = pages
             
@@ -111,75 +111,60 @@ if __name__ == "__main__":
     print(json.dumps(result, indent=2))
 ```
 
-## Step 3: Using /convert When You Don't Have a Presigned URL
+## Step 3: Uploading Files Directly
 
-If you need to upload a file first before processing, use the `/convert` endpoint:
+Both `/extract` and `/extract_async` accept file uploads directly via multipart/form-data. Use the `file` parameter to upload your document:
 
-```python upload_and_extract.py
-def upload_and_extract(file_path, schema=None):
+```python direct_upload.py
+def extract_with_file_upload(file_path, schema=None, pages=None):
     """
-    Upload a file to S3 first, then extract content.
-    Use this when:
-    - You want to reuse the uploaded file multiple times
-    - You need to share the file URL with other services
-    - You're processing the same file with different parameters
+    Upload and extract a file in a single request.
+    This is the simplest approach for most use cases.
     
     Args:
         file_path: Path to the local file
         schema: Optional JSON schema for structured extraction
+        pages: Optional page range (e.g., "1-5" or "1,3,5")
     
     Returns:
         Extracted content
     """
-    
-    # Step 1: Upload file to S3
-    upload_url = f"{BASE_URL}/convert"
+    url = f"{BASE_URL}/extract"
     headers = {"x-api-key": API_KEY}
     
     with open(file_path, 'rb') as f:
         files = {'file': f}
-        upload_response = requests.post(upload_url, files=files, headers=headers)
+        data = {}
+        
+        if schema:
+            data['structuredOutput'] = json.dumps({
+                'schema': schema
+            })
+        if pages:
+            data['pages'] = pages
+        
+        response = requests.post(url, files=files, data=data, headers=headers)
     
-    if upload_response.status_code != 200:
-        print(f"Upload failed: {upload_response.status_code}")
-        return None
-    
-    upload_result = upload_response.json()
-    file_url = upload_result['s3_object_url']
-    print(f"File uploaded to: {file_url}")
-    
-    # Step 2: Extract content using the uploaded file URL
-    extract_url = f"{BASE_URL}/extract"
-    extract_data = {
-        "file-url": file_url
-    }
-    
-    if schema:
-        extract_data["schema"] = schema
-    
-    extract_response = requests.post(
-        extract_url,
-        json=extract_data,
-        headers=headers
-    )
-    
-    if extract_response.status_code == 200:
-        result = extract_response.json()
+    if response.status_code == 200:
+        result = response.json()
         
         # Handle large document response
         if result.get('is_url'):
             print(f"Large document detected. Fetching from: {result['url']}")
-            content_response = requests.get(result['url'])
-            return content_response.json()
-        else:
-            return result
+            return requests.get(result['url']).json()
+        return result
     else:
-        print(f"Extraction failed: {extract_response.status_code}")
-        return extract_response.json()
+        print(f"Extraction failed: {response.status_code}")
+        return response.json()
 
 # Example usage
-result = upload_and_extract("large_document.pdf", schema={"title": "string", "content": "string"})
+result = extract_with_file_upload("invoice.pdf", pages="1-5")
+print(result['markdown'])
 ```
+
+<Tip>
+Use `file` for direct uploads or `fileUrl` when you have a public/presigned URL. Both work with `/extract` and `/extract_async`.
+</Tip>
 
 ## Step 4: Asynchronous Processing for Large Documents
 
@@ -212,7 +197,7 @@ def extract_async_with_polling(file_path, schema=None, pages=None):
         data = {}
         
         if schema:
-            data['schema'] = json.dumps(schema)
+            data['structuredOutput'] = json.dumps({'schema': schema})
         if pages:
             data['pages'] = pages
             
@@ -347,11 +332,11 @@ class PulseAPIClient:
             data = {}
             
             if schema:
-                data['schema'] = json.dumps(schema)
+                data['structuredOutput'] = json.dumps({'schema': schema})
             if pages:
                 data['pages'] = pages
             if extract_figure:
-                data['extract_figure'] = 'true'
+                data['extractFigure'] = 'true'
             
             response = requests.post(url, files=files, data=data, headers=self.headers)
         
@@ -376,14 +361,14 @@ class PulseAPIClient:
         """Extract from URL."""
         
         url = f"{self.base_url}{endpoint}"
-        data = {"file-url": file_url}
+        data = {"fileUrl": file_url}
         
         if schema:
-            data['schema'] = schema
+            data['structuredOutput'] = {'schema': schema}
         if pages:
             data['pages'] = pages
         if extract_figure:
-            data['extract_figure'] = extract_figure
+            data['extractFigure'] = extract_figure
         
         response = requests.post(url, json=data, headers=self.headers)
         
@@ -436,25 +421,11 @@ class PulseAPIClient:
             raise Exception(f"Failed to fetch content from URL: {response.status_code}")
         return response.json()
     
-    def upload_file(self, file_path: str) -> str:
-        """Upload file to S3 and return URL."""
-        
-        url = f"{self.base_url}/convert"
-        
-        with open(file_path, 'rb') as f:
-            files = {'file': f}
-            response = requests.post(url, files=files, headers=self.headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"Upload failed: {response.text}")
-        
-        return response.json()['s3_object_url']
-    
     def cancel_job(self, job_id: str) -> bool:
         """Cancel a running job."""
         
-        url = f"{self.base_url}/cancel/{job_id}"
-        response = requests.post(url, headers=self.headers)
+        url = f"{self.base_url}/job/{job_id}"
+        response = requests.delete(url, headers=self.headers)
         
         return response.status_code == 200
 
@@ -552,10 +523,10 @@ if __name__ == "__main__":
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Schema Extraction" icon="code" href="/core-concepts/schema-extraction">
+  <Card title="Structured Output" icon="code" href="/api-reference/structured-output-guidelines">
     Learn advanced schema techniques
   </Card>
-  <Card title="Large Documents" icon="file-lines" href="/core-concepts/large-documents">
+  <Card title="Large Documents" icon="file-lines" href="/api-reference/large-documents">
     Best practices for big files
   </Card>
   <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">

@@ -3,34 +3,87 @@ title: 'Extract File Async'
 openapi: 'POST /extract_async'
 ---
 
-## Large Document Response Structure
+import ExtractDocumentSource from '/snippets/extract-document-source.mdx';
+import ExtractOptions from '/snippets/extract-options.mdx';
+import ExtractStorageOptions from '/snippets/extract-storage-options.mdx';
+import ExtractDeprecatedFields from '/snippets/extract-deprecated-fields.mdx';
 
-For documents exceeding 70 pages, the completed job result includes a URL structure:
+## Overview
+
+The asynchronous extraction endpoint accepts the same input parameters as the synchronous `/extract` endpoint but returns immediately with a job identifier. Use this endpoint for:
+
+- Large documents that may take longer to process
+- Batch processing workflows
+- Non-blocking integrations
+
+## Request
+
+<ExtractDocumentSource />
+
+<ExtractOptions />
+
+<ExtractStorageOptions />
+
+<ExtractDeprecatedFields />
+
+## Response
+
+When you submit a document for async extraction, you'll receive a response containing the job metadata:
 
 ```json
 {
-  "created_at": "timestamp",
-  "job_id": "job-id",
-  "result": {
-    "is_url": true,
-    "url": "https://pulse-studio-api.s3.region.amazonaws.com/results/...",
-    "plan-info": {
-      "pages_used": 0,
-      "tier": "foundation"
-    }
-  },
-  "status": "completed",
-  "updated_at": "timestamp"
+  "job_id": "abc123-def456-ghi789",
+  "status": "pending",
+  "queuedAt": "2025-01-15T10:30:00Z"
 }
 ```
 
-### Key Points:
-- Documents over 70 pages return a URL containing the complete response
-- URLs automatically expire after 24 hours
-- No changes required to your API request structure
-- For documents under 70 pages, the API continues to return results directly in the `result` field
+### Response Fields
 
-### Implementation Tips:
-1. Check if `result` contains `"is_url": true`
-2. If true, fetch the complete document data from the provided URL
-3. Store URLs securely as they contain your processed results
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | Unique identifier for the extraction job. Use this to poll for results with the [Poll Job](/api-reference/endpoint/poll) endpoint. |
+| `status` | string | Initial job status. Typically `pending` when first submitted. |
+| `queuedAt` | string | ISO 8601 timestamp indicating when the job was accepted. |
+
+## Retrieving Results
+
+After submitting an async extraction, poll the job status endpoint to retrieve results:
+
+```bash
+GET /job/{job_id}
+```
+
+The job status endpoint will return the extraction results once the job is completed. See the [Poll Job](/api-reference/endpoint/poll) documentation for details on the response structure.
+
+<Note>
+For detailed information on the extraction output format (markdown, bounding boxes, chunks, etc.), see the [Extract](/api-reference/endpoint/extract) documentation.
+</Note>
+
+## Example Usage
+
+```bash
+# Submit async extraction with file upload
+curl -X POST https://api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf"
+
+# Submit async extraction with URL
+curl -X POST https://api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"fileUrl": "https://example.com/document.pdf"}'
+
+# Submit with structured output schema
+curl -X POST https://api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@invoice.pdf" \
+  -F 'structuredOutput={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schemaPrompt": "Extract the invoice total"}'
+
+# Response
+# {"job_id": "abc123", "status": "pending", "queuedAt": "2025-01-15T10:30:00Z"}
+
+# Poll for results
+curl https://api.runpulse.com/job/abc123 \
+  -H "x-api-key: YOUR_API_KEY"
+```

@@ -65,7 +65,6 @@ description: 'Security infrastructure and compliance standards'
       </List>
     </div>
   </Card>
-
   <Card>
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -94,22 +93,69 @@ description: 'Security infrastructure and compliance standards'
   </div>
 </Card>
 
+### Compliance Standards
+
+| Certification | Status | Details |
+|---------------|--------|---------|
+| **SOC 2 Type II** | ✓ Certified | Audited controls for security, availability, and confidentiality |
+| **HIPAA** | ✓ Compliant | BAA available upon request for enterprise customers |
+| **ISO 27001** | ✓ Certified | Information security management certification |
+| **GDPR** | ✓ Compliant | Full compliance with EU data protection regulations |
+
+### Data Residency
+
+- **Processing Region**: All document processing occurs in US-based AWS regions (us-east-1)
+- **Data Sovereignty**: Enterprise customers can request dedicated processing in specific regions
+- **Cross-Border Transfers**: Standard Contractual Clauses (SCCs) available for EU data transfers
+
 ## Data Lifecycle
 
 <Steps>
-  <Step title="Ingestion">
-    Data is encrypted immediately upon upload using TLS 1.3
+  <Step title="Upload & Ingestion">
+    Documents are encrypted immediately upon upload using TLS 1.3. Files are validated for type and size before processing begins.
   </Step>
   <Step title="Processing">
-    Processed in isolated containers with self-hosted ML models
+    Documents are processed in isolated container environments using self-hosted ML models. No data leaves our infrastructure during processing.
   </Step>
-  <Step title="Storage">
-    Temporarily stored in encrypted S3 with strict access controls
+  <Step title="Results Storage">
+    When `storage.enabled` is `true` (default), extraction results are persisted to your organization's secure storage with AES-256 encryption. Presigned URLs for accessing results expire after 7 days.
   </Step>
-  <Step title="Deletion">
-    Automatic deletion after 48 hours with verification
+  <Step title="Temporary File Cleanup">
+    When `storage.enabled` is `false`, temporary files are automatically deleted immediately after processing completes. No persistent copies remain.
+  </Step>
+  <Step title="Retention & Deletion">
+    Saved extractions remain until manually deleted by users. Unsaved extractions and temporary files are purged within 48 hours. API logs are retained for 30 days; audit logs for 1 year.
   </Step>
 </Steps>
+
+### Data Retention Summary
+
+| Data Type | Retention Period | Notes |
+|-----------|------------------|-------|
+| Saved extractions | Until deleted | User-controlled, persisted to org storage |
+| Unsaved extractions | 48 hours | Auto-deleted when `storage.enabled=false` |
+| Temporary processing files | Immediate | Deleted after processing completes |
+| Presigned URLs | 7 days | For accessing stored results |
+| Download URLs | 1 hour | For file downloads |
+| API request logs | 30 days | For debugging and support |
+| Audit logs | 1 year | For compliance and security |
+
+### Storage Control
+
+You can control whether extractions are persisted using the `storage` parameter:
+
+```json
+{
+  "storage": {
+    "enabled": true,      // Set to false for zero-retention
+    "folderName": "invoices"  // Optional: organize into folders
+  }
+}
+```
+
+<Note>
+  Free tier users cannot disable storage. Upgrade to a paid plan for zero-retention processing.
+</Note>
 
 ## Frequently Asked Questions
 

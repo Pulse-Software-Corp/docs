@@ -1,5 +1,5 @@
 ---
-title: 'API Reference'
+title: 'Overview'
 description: 'Complete reference for all Pulse API endpoints'
 ---
 
@@ -19,174 +19,54 @@ All endpoints require authentication via API key in the request header:
 x-api-key: YOUR_API_KEY
 ```
 
-Get your API key from [runpulse.com/pricing-studio-pulse](https://runpulse.com/pricing-studio-pulse).
+Get your API key from the [Pulse Console](https://console.runpulse.com/).
 
 ## Available Endpoints
+
+### Core Endpoints
 
 <CardGroup cols={2}>
   <Card title="Extract" icon="file-export" href="/api-reference/endpoint/extract">
     **POST** `/extract`
     
-    Synchronously extract content from documents. Best for files under 50 pages.
+    The primary endpoint. Synchronously extract content from documents.
   </Card>
   
   <Card title="Extract Async" icon="clock" href="/api-reference/endpoint/extract_async">
     **POST** `/extract_async`
     
-    Asynchronously process large documents. Returns job ID for polling.
+    Asynchronously process documents. Returns job ID for polling.
   </Card>
   
-  <Card title="Convert" icon="cloud-arrow-up" href="/api-reference/endpoint/convert">
-    **POST** `/convert`
-    
-    Upload files to S3 and get a URL for processing.
-  </Card>
-  
-  <Card title="Get Job Status" icon="magnifying-glass" href="/api-reference/endpoint/poll">
-    **GET** `/job/{job_id}`
+  <Card title="Poll Job" icon="magnifying-glass" href="/api-reference/endpoint/poll">
+    **GET** `/job/{jobId}`
     
     Check status and retrieve results of async jobs.
   </Card>
   
-  <Card title="Cancel Job" icon="xmark" href="/api-reference/endpoint/cancel">
-    **POST** `/cancel/{job_id}`
+  <Card title="Cancel Job" icon="xmark" href="/api-reference/endpoint/delete-job">
+    **DELETE** `/job/{jobId}`
     
     Cancel a pending or processing async job.
   </Card>
   
-  <Card title="Configure Webhooks" icon="webhook" href="/api-reference/endpoint/webhook">
+  <Card title="Webhooks" icon="webhook" href="/api-reference/endpoint/webhook">
     **POST** `/webhook`
     
     Get portal link to configure webhook endpoints.
   </Card>
 </CardGroup>
 
-## Request Format
+### Deprecated Endpoints
 
-### Extract and Extract Async Endpoints
+<Warning>
+  The following endpoints are deprecated and will be removed in a future version.
+</Warning>
 
-The `/extract` and `/extract_async` endpoints accept `application/json` content type:
-
-```bash
-curl -X POST https://dev.api.runpulse.com/extract \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "file-url": "https://example.com/document.pdf",
-    "schema": {"invoice_number": "string"},
-    "pages": "1-10"
-  }'
-```
-
-They also support direct file upload via `multipart/form-data`:
-
-```bash
-curl -X POST https://dev.api.runpulse.com/extract \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@document.pdf" \
-  -F "schema={\"invoice_number\":\"string\"}" \
-  -F "pages=1-10"
-```
-
-### Convert Endpoint
-
-The `/convert` endpoint accepts files via `multipart/form-data`:
-
-```bash
-curl -X POST https://dev.api.runpulse.com/convert \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@document.pdf"
-```
-
-## Response Format
-
-### Successful Response
-
-```json
-{
-  "content": "# Extracted Content\n\nDocument text in markdown format...",
-  "metadata": {
-    "page_count": 10,
-    "processing_time": 2.34,
-    "source_file": "document.pdf"
-  }
-}
-```
-
-### Large Document Response
-
-For documents over 70 pages, content is delivered via S3 URL:
-
-```json
-{
-  "is_url": true,
-  "url": "https://pulse-studio-api.s3.amazonaws.com/results/...",
-  "expires_at": "2024-01-16T12:00:00Z",
-  "plan-info": {
-    "pages_used": 150,
-    "tier": "professional"
-  }
-}
-```
-
-### Error Response
-
-```json
-{
-  "error": {
-    "code": "FILE_001",
-    "message": "Invalid file type",
-    "details": {
-      "supported_types": ["PDF", "JPG", "PNG", "DOCX", "PPTX", "XLSX", "HTML"],
-      "received_type": "DOC"
-    }
-  }
-}
-```
-
-## Common Parameters
-
-### Schema Parameter
-
-Define structured data extraction:
-
-```json
-{
-  "field_name": "data_type",
-  "nested_object": {
-    "field": "string"
-  },
-  "array_field": ["string"]
-}
-```
-
-Supported data types:
-- `string` - Text values
-- `integer` - Whole numbers
-- `float` - Decimal numbers
-- `date` - Date values
-- `boolean` - True/false
-- `array` - Lists
-- `object` - Nested structures
-
-### Pages Parameter
-
-Specify page ranges to process:
-
-- Single page: `"5"`
-- Range: `"1-10"`
-- Multiple: `"1,3,5-7,10"`
-- All pages: Omit parameter
-
-### Output Options
-
-Control extraction output:
-
-- `return_html`: Return HTML instead of markdown (default: false)
-- `extract_figure`: Extract images and figures (default: false)
-- `figure_description`: Generate AI descriptions for figures
-- `chunk_size`: Custom chunk size in characters
-
+| Endpoint | Status | Replacement |
+|----------|--------|-------------|
+| `POST /convert` | Deprecated | Use `fileUrl` parameter in `/extract` instead |
+| `POST /cancel/{job_id}` | Deprecated | Use `DELETE /job/{jobId}` instead |
 
 ## Status Codes
 
@@ -206,9 +86,9 @@ Control extraction output:
 
 <AccordionGroup>
   <Accordion title="Use Appropriate Endpoints">
-    - Use `/extract` for documents under 50 pages
-    - Use `/extract_async` for large documents
-    - Use `/convert` when you need to reuse file URLs
+    - Use `/extract` for most documents - it's the primary endpoint
+    - Use `/extract_async` for large documents or batch processing
+    - Use `fileUrl` parameter when you have documents hosted online
   </Accordion>
 
   <Accordion title="Handle Errors Gracefully">

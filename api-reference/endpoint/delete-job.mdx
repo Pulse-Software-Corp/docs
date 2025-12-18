@@ -1,0 +1,73 @@
+---
+title: 'Cancel Job'
+openapi: 'DELETE /job/{jobId}'
+---
+
+## Overview
+
+Cancel an asynchronous job that is currently pending or processing. 
+
+Jobs that have already completed, failed, or been canceled will remain unchanged.
+
+## Response
+
+A successful cancellation returns a confirmation message:
+
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "message": "Job cancelled successfully"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | Identifier of the job that was cancelled. |
+| `message` | string | Human-readable confirmation message. |
+
+## When to Cancel Jobs
+
+Cancel jobs when:
+- The extraction is no longer needed
+- You submitted a job with incorrect parameters
+- You want to stop processing to conserve page usage
+
+<Note>
+  Cancellation is best-effort. If a job is already mid-processing, it may complete before the cancellation takes effect. Pages used before cancellation are still counted toward your usage.
+</Note>
+
+## Example Usage
+
+```bash
+# Cancel a pending or processing job
+curl -X DELETE https://api.runpulse.com/job/abc123-def456 \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+```python
+import requests
+
+def cancel_job(job_id: str, api_key: str):
+    response = requests.delete(
+        f"https://api.runpulse.com/job/{job_id}",
+        headers={"x-api-key": api_key}
+    )
+    
+    if response.status_code == 200:
+        print(f"Job {job_id} cancelled successfully")
+    elif response.status_code == 404:
+        print(f"Job {job_id} not found")
+    else:
+        print(f"Failed to cancel: {response.text}")
+```
+
+## Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `401` | Invalid or missing API key. |
+| `403` | You don't have access to this job. |
+| `404` | Job not found. |
+| `500` | Job could not be cancelled or internal server error. |

@@ -59,13 +59,15 @@ Pulse API is built with security at its core. We implement industry-leading secu
 
 | Data Type | Retention Period | Notes |
 |-----------|------------------|-------|
-| Uploaded files | 48 hours | Automatic deletion |
-| Extraction results | 48 hours | Unless saved by user |
-| API logs | 30 days | For debugging only |
+| Saved extractions | Until deleted | Persisted to org storage when `storage.enabled=true` |
+| Unsaved extractions | 48 hours | Auto-deleted when `storage.enabled=false` |
+| Temporary files | Immediate | Deleted after processing completes |
+| Presigned URLs | 7 days | For accessing stored results |
+| API logs | 30 days | For debugging and support |
 | Audit logs | 1 year | Compliance requirement |
 
 <Info>
-  Enterprise customers can configure custom retention policies to meet their compliance requirements.
+  Control data retention using the `storage.enabled` parameter. Set to `false` for zero-retention processing where no data persists after extraction. Enterprise customers can configure custom retention policies.
 </Info>
 
 ## Infrastructure Security
@@ -131,10 +133,16 @@ graph TD
 
 ### GDPR Compliance
 
-- **Right to Access**: Export all your data
-- **Right to Deletion**: Immediate purge available
-- **Data Portability**: Standard formats
-- **Privacy by Design**: Built-in from day one
+- **Right to Access**: Export all your data via the Console or API
+- **Right to Deletion**: Immediate purge available; use `storage.enabled=false` for zero-retention
+- **Right to Rectification**: Update extraction metadata through the API
+- **Data Portability**: Export in standard JSON and markdown formats
+- **Data Minimization**: Process only the pages you need with `pages` parameter
+- **Privacy by Design**: Built-in from day one with encryption and access controls
+
+### Data Processing Agreement
+
+For enterprise customers requiring a Data Processing Agreement (DPA) or Business Associate Agreement (BAA), contact our team at [founders@trypulse.ai](mailto:founders@trypulse.ai).
 
 ## Security Monitoring
 

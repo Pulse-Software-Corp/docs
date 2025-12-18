@@ -1,0 +1,579 @@
+---
+title: 'Structured Output Guidelines'
+description: 'Best practices for defining extraction schemas using structuredOutput'
+---
+
+## Overview
+
+The `structuredOutput` parameter allows you to extract structured data from documents in a consistent format. This guide provides comprehensive guidelines for creating effective schemas.
+
+<Note>
+  **Migration Notice**: The `structuredOutput` parameter replaces the deprecated `schema` and `schemaPrompt` top-level parameters. See [Migration from Legacy Parameters](#migration-from-legacy-parameters) for details.
+</Note>
+
+## Schema Format
+
+The `structuredOutput.schema` field uses the [JSON Schema](https://json-schema.org/) specification (OpenAPI 3.1 compatible). This is the same schema format used by OpenAI's structured outputs and other LLM providers.
+
+### Key JSON Schema Properties
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `type` | Data type of the field | `"string"`, `"number"`, `"boolean"`, `"object"`, `"array"` |
+| `properties` | Define fields for an object | `{"name": {"type": "string"}}` |
+| `items` | Define schema for array elements | `{"type": "object", "properties": {...}}` |
+| `required` | List of required field names | `["name", "email"]` |
+| `description` | Human-readable description to guide extraction | `"Customer's full name"` |
+| `format` | Hint for string formatting | `"date"`, `"email"`, `"uri"` |
+
+## Schema Editor (Recommended)
+
+<Tip>
+  **Don't write schemas by hand!** Use the Schema Editor in the [Pulse Platform](https://platform.runpulse.com) to generate and refine schemas interactively.
+</Tip>
+
+The Schema Editor provides two powerful ways to create schemas:
+
+### 1. Generate from Prompt
+
+Describe what you want to extract in natural language, and the editor will generate a properly formatted JSON Schema for you.
+
+> "Extract the account holder name, account number, statement period, opening and closing balances, and all transactions with date, description, and amount."
+
+### 2. Interactive Editor
+
+- Visually add, remove, and reorder fields
+- Set field types and descriptions
+- Mark fields as required
+- Preview the generated schema in real-time
+- Test against sample documents
+
+Once you're happy with your schema, copy it directly into your API requests.
+
+## Using structuredOutput
+
+The `structuredOutput` parameter is an object containing:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schema` | object | JSON schema defining the structure of data to extract |
+| `schemaPrompt` | string | Natural language instructions to guide extraction |
+
+### Bank Statement Example
+
+Here's an example extracting key fields from a bank statement:
+
+**Request Schema:**
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "account_holder": {
+          "type": "string",
+          "description": "Name of the account holder"
+        },
+        "account_number": {
+          "type": "string",
+          "description": "Bank account number"
+        },
+        "opening_balance": {
+          "type": "number",
+          "description": "Balance at the start of the statement period"
+        },
+        "closing_balance": {
+          "type": "number",
+          "description": "Balance at the end of the statement period"
+        }
+      },
+      "required": ["account_holder", "account_number", "opening_balance", "closing_balance"]
+    }
+  }
+}
+```
+
+**Response (structured_output field):**
+
+When you include a `structuredOutput` schema in your request, the API response will include a `structured_output` field containing the extracted data matching your schema:
+
+```json
+{
+  "markdown": "SAMPLE\nStatement of Account\n12345678\n\nJAMES C. MORRISON\n...",
+  "page_count": 2,
+  "structured_output": {
+    "account_holder": "JAMES C. MORRISON",
+    "account_number": "12345678",
+    "opening_balance": 69.96,
+    "closing_balance": 586.71
+  },
+  "bounding_boxes": { ... },
+  "plan-info": { ... }
+}
+```
+
+The `structured_output` object will always match the structure defined in your `structuredOutput.schema` request parameter.
+
+### curl Example
+
+```bash
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@bank_statement.pdf" \
+  -F 'structuredOutput={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'
+```
+
+## Schema Format
+
+Schemas follow the [JSON Schema](https://json-schema.org/) specification. Each field is defined with:
+
+| Property | Description |
+|----------|-------------|
+| `type` | Data type: `string`, `number`, `boolean`, `object`, `array` |
+| `description` | Human-readable description to guide extraction |
+| `format` | Optional format hint (e.g., `date`, `email`, `uri`) |
+| `required` | Array of required field names (for objects) |
+| `items` | Schema for array elements |
+| `properties` | Nested field definitions (for objects) |
+
+### Data Types
+
+| Type | Description | Example Value |
+|------|-------------|---------------|
+| `string` | Text values | `"John Doe"` |
+| `number` | Numeric values (integer or decimal) | `99.99` |
+| `boolean` | True/false values | `true` |
+| `object` | Nested structures with `properties` | `{"name": {"type": "string"}}` |
+| `array` | Lists with `items` defining element schema | `{"type": "array", "items": {...}}` |
+
+## Schema Design Principles
+
+### 1. Start Simple
+
+Begin with basic fields and gradually add complexity:
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {"type": "string"},
+        "total": {"type": "number"}
+      },
+      "required": ["invoice_number", "total"]
+    }
+  }
+}
+```
+
+Then expand with nested objects and arrays:
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {"type": "string", "description": "Invoice ID"},
+        "date": {"type": "string", "format": "date"},
+        "vendor": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "address": {"type": "string"}
+          }
+        },
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {"type": "string"},
+              "amount": {"type": "number"}
+            }
+          }
+        },
+        "total": {"type": "number"}
+      },
+      "required": ["invoice_number", "total"]
+    },
+    "schemaPrompt": "Extract all invoice details including vendor information and itemized charges."
+  }
+}
+```
+
+### 2. Use Descriptions
+
+Add `description` fields to guide extraction:
+
+```json
+{
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "The unique invoice identifier, usually at the top of the document"
+    },
+    "bill_to": {
+      "type": "string", 
+      "description": "Customer billing address"
+    },
+    "remit_to": {
+      "type": "string",
+      "description": "Payment remittance address"
+    }
+  }
+}
+```
+
+### 3. Use schemaPrompt for Context
+
+The `schemaPrompt` field provides natural language guidance to help the model understand nuances:
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "contract_type": {"type": "string"},
+        "effective_date": {"type": "string", "format": "date"},
+        "parties": {"type": "array", "items": {"type": "string"}},
+        "key_terms": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "schemaPrompt": "Extract contract details. For key_terms, focus on payment terms, termination clauses, and liability limitations. Format dates as YYYY-MM-DD."
+  }
+}
+```
+
+## Common Schema Patterns
+
+### Invoice / Financial Documents
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "document_type": {"type": "string"},
+        "document_number": {"type": "string"},
+        "date": {"type": "string", "format": "date"},
+        "due_date": {"type": "string", "format": "date"},
+        "vendor": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "address": {"type": "string"},
+            "tax_id": {"type": "string"}
+          }
+        },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "account_number": {"type": "string"}
+          }
+        },
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {"type": "string"},
+              "quantity": {"type": "number"},
+              "unit_price": {"type": "number"},
+              "amount": {"type": "number"}
+            },
+            "required": ["description", "amount"]
+          }
+        },
+        "subtotal": {"type": "number"},
+        "tax": {"type": "number"},
+        "total": {"type": "number"}
+      },
+      "required": ["document_number", "total"]
+    },
+    "schemaPrompt": "Extract all invoice details. Include all line items. Format currency as numbers without symbols."
+  }
+}
+```
+
+### Legal Documents
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "document_title": {"type": "string"},
+        "case_number": {"type": "string"},
+        "parties": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "role": {"type": "string"},
+              "representation": {"type": "string"}
+            },
+            "required": ["name", "role"]
+          }
+        },
+        "dates": {
+          "type": "object",
+          "properties": {
+            "filed": {"type": "string", "format": "date"},
+            "effective": {"type": "string", "format": "date"},
+            "expiration": {"type": "string", "format": "date"}
+          }
+        },
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "title": {"type": "string"},
+              "date": {"type": "string", "format": "date"}
+            }
+          }
+        }
+      },
+      "required": ["document_title"]
+    },
+    "schemaPrompt": "Extract legal document details. Include all parties and their roles."
+  }
+}
+```
+
+### Medical Records
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "patient": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "dob": {"type": "string", "format": "date", "description": "Date of birth"},
+            "mrn": {"type": "string", "description": "Medical record number"}
+          },
+          "required": ["name", "mrn"]
+        },
+        "encounter": {
+          "type": "object",
+          "properties": {
+            "date": {"type": "string", "format": "date"},
+            "provider": {"type": "string"},
+            "location": {"type": "string"}
+          }
+        },
+        "chief_complaint": {"type": "string"},
+        "medications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "dosage": {"type": "string"},
+              "frequency": {"type": "string"}
+            }
+          }
+        },
+        "diagnoses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {"type": "string", "description": "ICD-10 code"},
+              "description": {"type": "string"}
+            }
+          }
+        },
+        "plan": {"type": "string"}
+      },
+      "required": ["patient", "encounter"]
+    },
+    "schemaPrompt": "Extract patient encounter details. Include all medications and diagnoses with their codes."
+  }
+}
+```
+
+## Advanced Techniques
+
+### Conditional Extraction
+
+Use `schemaPrompt` to guide conditional extraction:
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "contract_type": {"type": "string", "description": "Type of contract: lease, purchase, service, etc."},
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string"},
+              "value": {"type": "string"}
+            }
+          }
+        }
+      },
+      "required": ["contract_type"]
+    },
+    "schemaPrompt": "First identify the contract_type. If it's a 'lease', extract rental amount and duration as terms. If it's a 'purchase', extract price and closing date as terms."
+  }
+}
+```
+
+### Hierarchical Data
+
+For documents with deeply nested structures:
+
+```json
+{
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "organization": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "departments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "head": {"type": "string"},
+                  "employee_count": {"type": "number"}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemaPrompt": "Extract the organizational hierarchy including all departments."
+  }
+}
+```
+
+## Performance Tips
+
+### Keep Schemas Focused
+
+Extract only what you need. Avoid extracting entire documents as single fields.
+
+### Use Descriptions
+
+Add `description` fields to guide the model on ambiguous fields or specific formats.
+
+### Leverage schemaPrompt
+
+Use `schemaPrompt` to provide context that can't be expressed in the schema structure alone.
+
+## Migration from Legacy Parameters
+
+<Warning>
+  The `schema` and `schemaPrompt` top-level parameters are deprecated and will be removed in a future version.
+</Warning>
+
+### Before (Deprecated)
+
+```json
+{
+  "file": "@document.pdf",
+  "schema": {"invoice_number": "string", "total": "number"},
+  "schemaPrompt": "Extract invoice details"
+}
+```
+
+### After (Recommended)
+
+```json
+{
+  "file": "@document.pdf",
+  "structuredOutput": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {
+          "type": "string",
+          "description": "The unique invoice identifier"
+        },
+        "total": {
+          "type": "number",
+          "description": "Total invoice amount"
+        }
+      },
+      "required": ["invoice_number", "total"]
+    },
+    "schemaPrompt": "Extract invoice details"
+  }
+}
+```
+
+The API currently supports both formats for backward compatibility, but new integrations should use `structuredOutput`.
+
+## Error Handling
+
+### Common Schema Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Invalid JSON | Syntax error in schema | Validate JSON syntax |
+| Unknown type | Using unsupported data type | Use `string`, `number`, `boolean`, or nested objects/arrays |
+| Too complex | Deeply nested structure | Simplify schema, flatten where possible |
+| No matches | Fields don't match document | Adjust field names, use schemaPrompt for guidance |
+
+### Debugging Tips
+
+1. **Start with a minimal schema** and add fields incrementally
+2. **Use schemaPrompt** to provide context and clarify ambiguous fields
+3. **Check extracted markdown** without schema first to see available content
+4. **Verify field names** match document terminology
+
+## Best Practices Summary
+
+<AccordionGroup>
+  <Accordion title="DO">
+    - Use `structuredOutput` for all new integrations
+    - Provide descriptive `schemaPrompt` instructions
+    - Use descriptive field names matching document terminology
+    - Start simple and iterate
+    - Test with real documents
+    - Use appropriate data types (`number` for numeric values)
+  </Accordion>
+
+  <Accordion title="DON'T">
+    - Use deprecated `schema` top-level parameter
+    - Create overly complex nested structures
+    - Use generic field names
+    - Extract entire documents as single fields
+    - Assume all fields will always exist
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    See more examples
+  </Card>
+  <Card title="Extract Endpoint" icon="book" href="/api-reference/endpoint/extract">
+    Try structured output extraction
+  </Card>
+</CardGroup>
