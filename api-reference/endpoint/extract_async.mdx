@@ -72,13 +72,13 @@ curl -X POST https://api.runpulse.com/extract_async \
 curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"fileUrl": "https://example.com/document.pdf"}'
+  -d '{"file_url": "https://example.com/document.pdf"}'
 
 # Submit with structured output schema
 curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
-  -F 'structuredOutput={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schemaPrompt": "Extract the invoice total"}'
+  -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schema_prompt": "Extract the invoice total"}'
 
 # Response
 # {"job_id": "abc123", "status": "pending", "queuedAt": "2025-01-15T10:30:00Z"}

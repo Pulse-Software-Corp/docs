@@ -1,19 +1,19 @@
 ---
 title: 'Structured Output Guidelines'
-description: 'Best practices for defining extraction schemas using structuredOutput'
+description: 'Best practices for defining extraction schemas using structured_output'
 ---
 
 ## Overview
 
-The `structuredOutput` parameter allows you to extract structured data from documents in a consistent format. This guide provides comprehensive guidelines for creating effective schemas.
+The `structured_output` parameter allows you to extract structured data from documents in a consistent format. This guide provides comprehensive guidelines for creating effective schemas.
 
 <Note>
-  **Migration Notice**: The `structuredOutput` parameter replaces the deprecated `schema` and `schemaPrompt` top-level parameters. See [Migration from Legacy Parameters](#migration-from-legacy-parameters) for details.
+  **Migration Notice**: The `structured_output` parameter replaces the deprecated `schema` and `schema_prompt` top-level parameters. See [Migration from Legacy Parameters](#migration-from-legacy-parameters) for details.
 </Note>
 
 ## Schema Format
 
-The `structuredOutput.schema` field uses the [JSON Schema](https://json-schema.org/) specification (OpenAPI 3.1 compatible). This is the same schema format used by OpenAI's structured outputs and other LLM providers.
+The `structured_output.schema` field uses the [JSON Schema](https://json-schema.org/) specification (OpenAPI 3.1 compatible). This is the same schema format used by OpenAI's structured outputs and other LLM providers.
 
 ### Key JSON Schema Properties
 
@@ -50,14 +50,14 @@ Describe what you want to extract in natural language, and the editor will gener
 
 Once you're happy with your schema, copy it directly into your API requests.
 
-## Using structuredOutput
+## Using structured_output
 
-The `structuredOutput` parameter is an object containing:
+The `structured_output` parameter is an object containing:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema` | object | JSON schema defining the structure of data to extract |
-| `schemaPrompt` | string | Natural language instructions to guide extraction |
+| `schema_prompt` | string | Natural language instructions to guide extraction |
 
 ### Bank Statement Example
 
@@ -67,7 +67,7 @@ Here's an example extracting key fields from a bank statement:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -96,7 +96,7 @@ Here's an example extracting key fields from a bank statement:
 
 **Response (structured_output field):**
 
-When you include a `structuredOutput` schema in your request, the API response will include a `structured_output` field containing the extracted data matching your schema:
+When you include a `structured_output` schema in your request, the API response will include a `structured_output` field containing the extracted data matching your schema:
 
 ```json
 {
@@ -113,7 +113,7 @@ When you include a `structuredOutput` schema in your request, the API response w
 }
 ```
 
-The `structured_output` object will always match the structure defined in your `structuredOutput.schema` request parameter.
+The `structured_output` object will always match the structure defined in your `structured_output.schema` request parameter.
 
 ### curl Example
 
@@ -121,7 +121,7 @@ The `structured_output` object will always match the structure defined in your `
 curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@bank_statement.pdf" \
-  -F 'structuredOutput={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'
+  -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'
 ```
 
 ## Schema Format
@@ -155,7 +155,7 @@ Begin with basic fields and gradually add complexity:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -172,7 +172,7 @@ Then expand with nested objects and arrays:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -199,7 +199,7 @@ Then expand with nested objects and arrays:
       },
       "required": ["invoice_number", "total"]
     },
-    "schemaPrompt": "Extract all invoice details including vendor information and itemized charges."
+    "schema_prompt": "Extract all invoice details including vendor information and itemized charges."
   }
 }
 ```
@@ -227,13 +227,13 @@ Add `description` fields to guide extraction:
 }
 ```
 
-### 3. Use schemaPrompt for Context
+### 3. Use schema_prompt for Context
 
-The `schemaPrompt` field provides natural language guidance to help the model understand nuances:
+The `schema_prompt` field provides natural language guidance to help the model understand nuances:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -243,7 +243,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
         "key_terms": {"type": "array", "items": {"type": "string"}}
       }
     },
-    "schemaPrompt": "Extract contract details. For key_terms, focus on payment terms, termination clauses, and liability limitations. Format dates as YYYY-MM-DD."
+    "schema_prompt": "Extract contract details. For key_terms, focus on payment terms, termination clauses, and liability limitations. Format dates as YYYY-MM-DD."
   }
 }
 ```
@@ -254,7 +254,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -296,7 +296,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
       },
       "required": ["document_number", "total"]
     },
-    "schemaPrompt": "Extract all invoice details. Include all line items. Format currency as numbers without symbols."
+    "schema_prompt": "Extract all invoice details. Include all line items. Format currency as numbers without symbols."
   }
 }
 ```
@@ -305,7 +305,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -345,7 +345,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
       },
       "required": ["document_title"]
     },
-    "schemaPrompt": "Extract legal document details. Include all parties and their roles."
+    "schema_prompt": "Extract legal document details. Include all parties and their roles."
   }
 }
 ```
@@ -354,7 +354,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -401,7 +401,7 @@ The `schemaPrompt` field provides natural language guidance to help the model un
       },
       "required": ["patient", "encounter"]
     },
-    "schemaPrompt": "Extract patient encounter details. Include all medications and diagnoses with their codes."
+    "schema_prompt": "Extract patient encounter details. Include all medications and diagnoses with their codes."
   }
 }
 ```
@@ -410,11 +410,11 @@ The `schemaPrompt` field provides natural language guidance to help the model un
 
 ### Conditional Extraction
 
-Use `schemaPrompt` to guide conditional extraction:
+Use `schema_prompt` to guide conditional extraction:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -432,7 +432,7 @@ Use `schemaPrompt` to guide conditional extraction:
       },
       "required": ["contract_type"]
     },
-    "schemaPrompt": "First identify the contract_type. If it's a 'lease', extract rental amount and duration as terms. If it's a 'purchase', extract price and closing date as terms."
+    "schema_prompt": "First identify the contract_type. If it's a 'lease', extract rental amount and duration as terms. If it's a 'purchase', extract price and closing date as terms."
   }
 }
 ```
@@ -443,7 +443,7 @@ For documents with deeply nested structures:
 
 ```json
 {
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -466,7 +466,7 @@ For documents with deeply nested structures:
         }
       }
     },
-    "schemaPrompt": "Extract the organizational hierarchy including all departments."
+    "schema_prompt": "Extract the organizational hierarchy including all departments."
   }
 }
 ```
@@ -481,14 +481,14 @@ Extract only what you need. Avoid extracting entire documents as single fields.
 
 Add `description` fields to guide the model on ambiguous fields or specific formats.
 
-### Leverage schemaPrompt
+### Leverage schema_prompt
 
-Use `schemaPrompt` to provide context that can't be expressed in the schema structure alone.
+Use `schema_prompt` to provide context that can't be expressed in the schema structure alone.
 
 ## Migration from Legacy Parameters
 
 <Warning>
-  The `schema` and `schemaPrompt` top-level parameters are deprecated and will be removed in a future version.
+  The `schema` and `schema_prompt` top-level parameters are deprecated and will be removed in a future version.
 </Warning>
 
 ### Before (Deprecated)
@@ -497,7 +497,7 @@ Use `schemaPrompt` to provide context that can't be expressed in the schema stru
 {
   "file": "@document.pdf",
   "schema": {"invoice_number": "string", "total": "number"},
-  "schemaPrompt": "Extract invoice details"
+  "schema_prompt": "Extract invoice details"
 }
 ```
 
@@ -506,7 +506,7 @@ Use `schemaPrompt` to provide context that can't be expressed in the schema stru
 ```json
 {
   "file": "@document.pdf",
-  "structuredOutput": {
+  "structured_output": {
     "schema": {
       "type": "object",
       "properties": {
@@ -521,12 +521,12 @@ Use `schemaPrompt` to provide context that can't be expressed in the schema stru
       },
       "required": ["invoice_number", "total"]
     },
-    "schemaPrompt": "Extract invoice details"
+    "schema_prompt": "Extract invoice details"
   }
 }
 ```
 
-The API currently supports both formats for backward compatibility, but new integrations should use `structuredOutput`.
+The API currently supports both formats for backward compatibility, but new integrations should use `structured_output`.
 
 ## Error Handling
 
@@ -537,12 +537,12 @@ The API currently supports both formats for backward compatibility, but new inte
 | Invalid JSON | Syntax error in schema | Validate JSON syntax |
 | Unknown type | Using unsupported data type | Use `string`, `number`, `boolean`, or nested objects/arrays |
 | Too complex | Deeply nested structure | Simplify schema, flatten where possible |
-| No matches | Fields don't match document | Adjust field names, use schemaPrompt for guidance |
+| No matches | Fields don't match document | Adjust field names, use schema_prompt for guidance |
 
 ### Debugging Tips
 
 1. **Start with a minimal schema** and add fields incrementally
-2. **Use schemaPrompt** to provide context and clarify ambiguous fields
+2. **Use schema_prompt** to provide context and clarify ambiguous fields
 3. **Check extracted markdown** without schema first to see available content
 4. **Verify field names** match document terminology
 
@@ -550,8 +550,8 @@ The API currently supports both formats for backward compatibility, but new inte
 
 <AccordionGroup>
   <Accordion title="DO">
-    - Use `structuredOutput` for all new integrations
-    - Provide descriptive `schemaPrompt` instructions
+    - Use `structured_output` for all new integrations
+    - Provide descriptive `schema_prompt` instructions
     - Use descriptive field names matching document terminology
     - Start simple and iterate
     - Test with real documents

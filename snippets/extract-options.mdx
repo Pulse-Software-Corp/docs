@@ -2,12 +2,12 @@
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `structuredOutput` | object | - | Recommended method for schema-guided extraction. Contains `schema` (JSON schema) and optional `schemaPrompt` (natural language instructions). |
+| `structured_output` | object | - | Recommended method for schema-guided extraction. Contains `schema` (JSON schema) and optional `schema_prompt` (natural language instructions). |
 | `pages` | string | - | Page range filter (1-indexed). Supports segments like `1-2` or mixed ranges like `1-2,5`. Page 1 is the first page. |
 | `chunking` | string | - | Comma-separated list of chunking strategies (e.g., `semantic,header,page,recursive`). |
-| `chunkSize` | integer | - | Maximum characters per chunk when chunking is enabled. |
-| `extractFigure` | boolean | `false` | Enable figure extraction in results. |
-| `figureDescription` | boolean | `false` | Generate descriptive captions for extracted figures. |
-| `returnHtml` | boolean | `false` | Include HTML representation alongside markdown in the response. |
+| `chunk_size` | integer | - | Maximum characters per chunk when chunking is enabled. |
+| `extract_figure` | boolean | `false` | Enable figure extraction in results. |
+| `figure_description` | boolean | `false` | Generate descriptive captions for extracted figures. |
+| `return_html` | boolean | `false` | Include HTML representation alongside markdown in the response. |
 | `storage` | object | - | Options for persisting extraction artifacts. See [Storage Options](#storage-options). |
 

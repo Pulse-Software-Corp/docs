@@ -259,7 +259,7 @@ components:
       description: Common extraction options shared by synchronous and asynchronous endpoints.
       properties:
         # === RECOMMENDED OPTIONS ===
-        structuredOutput:
+        structured_output:
           type: object
           description: >-
             **Recommended** method for schema-guided extraction. Contains the schema
@@ -268,7 +268,7 @@ components:
             schema:
               type: object
               description: JSON schema describing the structured data to extract.
-            schemaPrompt:
+            schema_prompt:
               type: string
               description: Natural language prompt with additional extraction instructions.
         pages:
@@ -282,20 +282,20 @@ components:
           description: >-
             Comma-separated list of chunking strategies to apply (for example
             `semantic,header,page,recursive`).
-        chunkSize:
+        chunk_size:
           type: integer
           minimum: 1
           description: >-
             Override for maximum characters per chunk when chunking is enabled.
-        extractFigure:
+        extract_figure:
           type: boolean
           description: Toggle to enable figure extraction in results.
           default: false
-        figureDescription:
+        figure_description:
           type: boolean
           description: Toggle to generate descriptive captions for extracted figures.
           default: false
-        returnHtml:
+        return_html:
           type: boolean
           description: Whether to include HTML representation alongside markdown in the response.
           default: false
@@ -311,7 +311,7 @@ components:
                 Whether to persist extraction artifacts. Set to false for
                 temporary extractions with no storage or database record.
               default: true
-            folderName:
+            folder_name:
               type: string
               description: >-
                 Target folder name to save the extraction to. Creates the folder
@@ -319,27 +319,27 @@ components:
         # === DEPRECATED OPTIONS ===
         schema:
           description: >-
-            **⚠️ DEPRECATED** - Use `structuredOutput.schema` instead.
+            **⚠️ DEPRECATED** - Use `structured_output.schema` instead.
             JSON schema describing structured data to extract.
           oneOf:
             - type: object
             - type: string
           deprecated: true
-        schemaPrompt:
+        schema_prompt:
           type: string
           description: >-
-            **⚠️ DEPRECATED** - Use `structuredOutput.schemaPrompt` instead.
+            **⚠️ DEPRECATED** - Use `structured_output.schema_prompt` instead.
             Natural language prompt for schema-guided extraction.
           deprecated: true
-        experimentalSchema:
+        experimental_schema:
           description: >-
-            **⚠️ DEPRECATED** - Use `structuredOutput.schema` instead.
+            **⚠️ DEPRECATED** - Use `structured_output.schema` instead.
             Experimental schema definition.
           oneOf:
             - type: object
             - type: string
           deprecated: true
-        customPrompt:
+        custom_prompt:
           type: string
           description: >-
             **⚠️ DEPRECATED** - No replacement. Custom instructions that augment 
@@ -361,8 +361,8 @@ components:
           type: string
           format: binary
           description: >-
-            Document to upload directly. Required unless fileUrl is specified.
-        fileUrl:
+            Document to upload directly. Required unless file_url is specified.
+        file_url:
           type: string
           format: uri
           description: >-
@@ -374,22 +374,22 @@ components:
       type: object
       description: Document source definition for JSON requests.
       properties:
-        fileUrl:
+        file_url:
           type: string
           format: uri
           description: >-
             Public or pre-signed URL that Pulse will download and extract.
       required:
-        - fileUrl
+        - file_url
 
     ExtractMultipartInput:
-      description: Input schema for multipart/form-data requests (file upload or fileUrl).
+      description: Input schema for multipart/form-data requests (file upload or file_url).
       allOf:
         - $ref: '#/components/schemas/ExtractSourceMultipart'
         - $ref: '#/components/schemas/ExtractOptions'
 
     ExtractJsonInput:
-      description: Input schema for JSON requests (fileUrl only).
+      description: Input schema for JSON requests (file_url only).
       allOf:
         - $ref: '#/components/schemas/ExtractSourceJson'
         - $ref: '#/components/schemas/ExtractOptions'
@@ -403,7 +403,7 @@ components:
           description: Primary markdown content extracted from the document.
         html:
           type: string
-          description: Optional HTML representation when returnHtml is true.
+          description: Optional HTML representation when return_html is true.
         job_id:
           type: string
           description: Identifier assigned to the extraction job.
