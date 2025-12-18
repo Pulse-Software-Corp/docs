@@ -66,7 +66,7 @@ def extract_document_from_file(file_path, schema=None, pages=None):
         data = {}
         
         if schema:
-            data['structuredOutput'] = json.dumps({'schema': schema})
+            data['structured_output'] = json.dumps({'schema': schema})
         if pages:
             data['pages'] = pages
             
@@ -137,7 +137,7 @@ def extract_with_file_upload(file_path, schema=None, pages=None):
         data = {}
         
         if schema:
-            data['structuredOutput'] = json.dumps({
+            data['structured_output'] = json.dumps({
                 'schema': schema
             })
         if pages:
@@ -163,7 +163,7 @@ print(result['markdown'])
 ```
 
 <Tip>
-Use `file` for direct uploads or `fileUrl` when you have a public/presigned URL. Both work with `/extract` and `/extract_async`.
+Use `file` for direct uploads or `file_url` when you have a public/presigned URL. Both work with `/extract` and `/extract_async`.
 </Tip>
 
 ## Step 4: Asynchronous Processing for Large Documents
@@ -197,7 +197,7 @@ def extract_async_with_polling(file_path, schema=None, pages=None):
         data = {}
         
         if schema:
-            data['structuredOutput'] = json.dumps({'schema': schema})
+            data['structured_output'] = json.dumps({'schema': schema})
         if pages:
             data['pages'] = pages
             
@@ -332,11 +332,11 @@ class PulseAPIClient:
             data = {}
             
             if schema:
-                data['structuredOutput'] = json.dumps({'schema': schema})
+                data['structured_output'] = json.dumps({'schema': schema})
             if pages:
                 data['pages'] = pages
             if extract_figure:
-                data['extractFigure'] = 'true'
+                data['extract_figure'] = 'true'
             
             response = requests.post(url, files=files, data=data, headers=self.headers)
         
@@ -361,14 +361,14 @@ class PulseAPIClient:
         """Extract from URL."""
         
         url = f"{self.base_url}{endpoint}"
-        data = {"fileUrl": file_url}
+        data = {"file_url": file_url}
         
         if schema:
-            data['structuredOutput'] = {'schema': schema}
+            data['structured_output'] = {'schema': schema}
         if pages:
             data['pages'] = pages
         if extract_figure:
-            data['extractFigure'] = extract_figure
+            data['extract_figure'] = extract_figure
         
         response = requests.post(url, json=data, headers=self.headers)
         

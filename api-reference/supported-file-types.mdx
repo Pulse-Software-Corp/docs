@@ -146,7 +146,7 @@ Process files from public URLs:
 response = requests.post(
     "https://api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
-    json={"fileUrl": "https://example.com/document.pdf"}
+    json={"file_url": "https://example.com/document.pdf"}
 )
 ```
 
@@ -201,7 +201,7 @@ result = client.extract(file_path="document")  # Works even without extension
   <Accordion title="Technical Documents">
     **Manuals, Specifications, Diagrams**
     
-    - Use `extractFigure=true` for diagrams
+    - Use `extract_figure=true` for diagrams
     - Process in smaller chunks if very large
     - Maintain original format for tables
     - Consider HTML output for preservation

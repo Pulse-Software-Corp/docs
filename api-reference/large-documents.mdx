@@ -166,7 +166,7 @@ response = requests.post(
     headers={"x-api-key": API_KEY},
     files={"file": open("large_doc.pdf", "rb")},
     data={
-        "structuredOutput": json.dumps({"schema": schema}),
+        "structured_output": json.dumps({"schema": schema}),
         "pages": "1-100"
     }
 )
@@ -287,7 +287,7 @@ summary = client.extract(
 # Option 2: Use custom chunk size
 result = client.extract(
     file_path="report.pdf",
-    chunkSize=5000,  # Larger chunks for better context
+    chunk_size=5000,  # Larger chunks for better context
     pages="1-50"  # Process only relevant section
 )
 ```

@@ -65,7 +65,7 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
 
 | Endpoint | Status | Replacement |
 |----------|--------|-------------|
-| `POST /convert` | Deprecated | Use `fileUrl` parameter in `/extract` instead |
+| `POST /convert` | Deprecated | Use `file_url` parameter in `/extract` instead |
 | `POST /cancel/{job_id}` | Deprecated | Use `DELETE /job/{jobId}` instead |
 
 ## Status Codes
@@ -88,7 +88,7 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
   <Accordion title="Use Appropriate Endpoints">
     - Use `/extract` for most documents - it's the primary endpoint
     - Use `/extract_async` for large documents or batch processing
-    - Use `fileUrl` parameter when you have documents hosted online
+    - Use `file_url` parameter when you have documents hosted online
   </Accordion>
 
   <Accordion title="Handle Errors Gracefully">

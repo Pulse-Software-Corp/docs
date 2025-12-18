@@ -67,10 +67,10 @@ For documents under 70 pages, results are returned directly in the response body
 | `plan-info` | object | Billing information including pages used and plan tier. |
 | `bounding_boxes` | object | Detailed bounding box data for document elements. See [Bounding Boxes](/api-reference/bounding-boxes) for details. |
 | `extraction_url` | string | URL to view the extraction in the Pulse Platform (when storage is enabled). |
-| `html` | string | HTML representation of the document (when `returnHtml` is `true`). |
-| `structured_output` | object | Extracted data matching your schema (when `structuredOutput` is provided). |
+| `html` | string | HTML representation of the document (when `return_html` is `true`). |
+| `structured_output` | object | Extracted data matching your schema (when `structured_output` is provided). |
 | `chunks` | array | Document chunks (when `chunking` is enabled). |
-| `figures` | array | Extracted figures (when `extractFigure` is `true`). |
+| `figures` | array | Extracted figures (when `extract_figure` is `true`). |
 
 ### Large Document Response (70+ Pages)
 
@@ -136,13 +136,13 @@ curl -X POST https://api.runpulse.com/extract \
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"fileUrl": "https://example.com/document.pdf"}'
+  -d '{"file_url": "https://example.com/document.pdf"}'
 
 # Extract with structured output schema
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
-  -F 'structuredOutput={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schemaPrompt": "Extract the invoice total and vendor name"}'
+  -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schema_prompt": "Extract the invoice total and vendor name"}'
 
 # Extract specific pages with chunking
 curl -X POST https://api.runpulse.com/extract \
@@ -150,7 +150,7 @@ curl -X POST https://api.runpulse.com/extract \
   -F "file=@document.pdf" \
   -F "pages=1-5,10" \
   -F "chunking=semantic,page" \
-  -F "chunkSize=1000"
+  -F "chunk_size=1000"
 
 # Extract without storage (temporary extraction)
 curl -X POST https://api.runpulse.com/extract \
