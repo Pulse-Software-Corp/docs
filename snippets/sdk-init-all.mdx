@@ -1,0 +1,23 @@
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+```
+
+```typescript TypeScript
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+    headers: { 'x-api-key': "YOUR_API_KEY" }
+});
+```
+
+```bash curl
+# Include in all requests:
+-H "x-api-key: YOUR_API_KEY"
+```
+
+</CodeGroup>
+

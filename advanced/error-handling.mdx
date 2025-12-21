@@ -164,51 +164,86 @@ All errors follow a consistent JSON structure:
 
 ### Basic Error Handling
 
-```python
-import requests
-import json
+<CodeGroup>
 
-def extract_with_error_handling(file_path):
-    """Extract document with proper error handling."""
+```python Python
+from pulse import Pulse
+from pulse.core.api_error import ApiError
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+try:
+    response = client.extract(
+        file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
+    )
+    print(f"Success! Job ID: {response.job_id}")
     
-    try:
-        response = requests.post(
-            "https://dev.api.runpulse.com/extract",
-            headers={"x-api-key": API_KEY},
-            files={"file": open(file_path, "rb")}
-        )
+except ApiError as e:
+    error_code = e.body.get("error", {}).get("code", "UNKNOWN")
+    error_message = e.body.get("error", {}).get("message", "Unknown error")
+    
+    if error_code == "AUTH_002":
+        print("Invalid API key. Check your credentials.")
+    elif error_code == "FILE_001":
+        print("Unsupported file type.")
+    elif error_code == "FILE_002":
+        print("File too large. Maximum is 100MB.")
+    elif error_code.startswith("BILLING_"):
+        print(f"Billing issue: {error_message}")
+    elif error_code.startswith("PROC_"):
+        print(f"Processing error (retry may help): {error_message}")
+    else:
+        print(f"API Error {error_code}: {error_message}")
         
-        # Check HTTP status
-        if response.status_code == 200:
-            return response.json()
-        else:
-            error = response.json().get("error", {})
-            error_code = error.get("code", "UNKNOWN")
-            error_message = error.get("message", "Unknown error")
-            
-            # Handle specific errors
-            if error_code == "AUTH_002":
-                raise ValueError("Invalid API key. Please check your credentials.")
-            elif error_code == "FILE_001":
-                raise ValueError(f"Unsupported file type. Supported: {error.get('details', {}).get('supported_types', [])}")
-            elif error_code == "FILE_002":
-                raise ValueError("File too large. Maximum size is 100MB.")
-            elif error_code == "BILLING_001":
-                raise ValueError("Trial expired. Please upgrade your plan.")
-            elif error_code == "BILLING_002":
-                raise ValueError("Page limit exceeded. Please upgrade your plan.")
-            elif error_code == "SCHEMA_001":
-                raise ValueError("Invalid schema format. Check JSON Schema syntax.")
-            elif error_code.startswith("PROC_"):
-                raise Exception(f"Processing error: {error_message}. Retry may help.")
-            else:
-                raise Exception(f"API Error {error_code}: {error_message}")
-                
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Network error: {str(e)}")
-    except FileNotFoundError:
-        raise ValueError(f"File not found: {file_path}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
 ```
+
+```typescript TypeScript
+import { PulseClient, Pulse } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+try {
+    const response = await client.extract({
+        fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+    });
+    console.log(`Success! Job ID: ${response.job_id}`);
+    
+} catch (error) {
+    if (error instanceof Pulse.UnauthorizedError) {
+        console.log("Invalid API key. Check your credentials.");
+    } else if (error instanceof Pulse.BadRequestError) {
+        const body = error.body as any;
+        const errorCode = body?.error?.code || "UNKNOWN";
+        console.log(`Bad request: ${errorCode}`);
+    } else if (error instanceof Pulse.TooManyRequestsError) {
+        console.log("Rate limited. Retry after a delay.");
+    } else {
+        console.log(`Unexpected error: ${error}`);
+    }
+}
+```
+
+```bash curl
+# Errors return JSON with error details
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: INVALID_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
+
+# Response:
+# {
+#   "error": {
+#     "code": "AUTH_002",
+#     "message": "Invalid API key"
+#   }
+# }
+```
+
+</CodeGroup>
 
 ### Comprehensive Error Handler
 
@@ -273,21 +308,31 @@ class ErrorHandler:
 
 ### Exponential Backoff
 
-```python
+<CodeGroup>
+
+```python Python
 import time
 import random
+from pulse import Pulse
+from pulse.core.api_error import ApiError
 
-def exponential_backoff_retry(func, max_retries=3, base_delay=1):
-    """Retry with exponential backoff and jitter."""
+client = Pulse(api_key="YOUR_API_KEY")
+
+RETRYABLE_CODES = {"PROC_001", "PROC_002", "PROC_003", "PROC_004", 
+                   "GENERAL_001", "GENERAL_002", "GENERAL_004"}
+
+def extract_with_retry(file_url, max_retries=3, base_delay=1):
+    """Extract with exponential backoff retry."""
     
     for attempt in range(max_retries):
         try:
-            return func()
-        except PulseAPIError as e:
-            if not e.is_retryable or attempt == max_retries - 1:
+            return client.extract(file_url=file_url)
+        except ApiError as e:
+            error_code = e.body.get("error", {}).get("code", "")
+            
+            if error_code not in RETRYABLE_CODES or attempt == max_retries - 1:
                 raise
             
-            # Calculate delay with jitter
             delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
             print(f"Retry {attempt + 1}/{max_retries} after {delay:.1f}s")
             time.sleep(delay)
@@ -295,10 +340,50 @@ def exponential_backoff_retry(func, max_retries=3, base_delay=1):
     raise Exception("Max retries exceeded")
 
 # Usage
-result = exponential_backoff_retry(
-    lambda: client.extract(file_path="document.pdf")
-)
+result = extract_with_retry("https://www.impact-bank.com/user/file/dummy_statement.pdf")
 ```
+
+```typescript TypeScript
+import { PulseClient, Pulse } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const RETRYABLE_CODES = new Set([
+    "PROC_001", "PROC_002", "PROC_003", "PROC_004",
+    "GENERAL_001", "GENERAL_002", "GENERAL_004"
+]);
+
+async function extractWithRetry(
+    fileUrl: string,
+    maxRetries = 3,
+    baseDelay = 1000
+): Promise<Pulse.ExtractResponse> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            return await client.extract({ fileUrl });
+        } catch (error: any) {
+            const errorCode = error.body?.error?.code || "";
+            
+            if (!RETRYABLE_CODES.has(errorCode) || attempt === maxRetries - 1) {
+                throw error;
+            }
+            
+            const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+            console.log(`Retry ${attempt + 1}/${maxRetries} after ${delay.toFixed(0)}ms`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    
+    throw new Error("Max retries exceeded");
+}
+
+// Usage
+const result = await extractWithRetry("https://www.impact-bank.com/user/file/dummy_statement.pdf");
+```
+
+</CodeGroup>
 
 ### Circuit Breaker Pattern
 

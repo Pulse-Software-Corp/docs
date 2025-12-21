@@ -53,41 +53,326 @@ The response includes job metadata and, when completed, the full extraction resu
 
 We recommend polling with exponential backoff:
 
-```python
-import time
-import requests
+<CodeGroup>
 
-def poll_job(job_id: str, api_key: str, max_attempts: int = 60):
-    url = f"https://api.runpulse.com/job/{job_id}"
-    headers = {"x-api-key": api_key}
+```python Python SDK
+from pulse import Pulse
+import time
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+def poll_job(job_id: str, max_attempts: int = 60):
+    """
+    Poll for job completion with exponential backoff.
     
+    Args:
+        job_id: The job ID returned from extract_async
+        max_attempts: Maximum number of polling attempts
+        
+    Returns:
+        The extraction result when job completes
+    """
     delay = 1  # Start with 1 second
     
     for attempt in range(max_attempts):
-        response = requests.get(url, headers=headers)
-        data = response.json()
+        # Get job status using the SDK
+        response = client.jobs.get_job(job_id=job_id)
         
-        if data["status"] == "completed":
-            return data["result"]
-        elif data["status"] == "failed":
-            raise Exception(f"Job failed: {data.get('error')}")
-        elif data["status"] == "canceled":
+        if response.status == "completed":
+            return response.result
+        elif response.status == "failed":
+            raise Exception(f"Job failed: {response.error}")
+        elif response.status == "canceled":
             raise Exception("Job was canceled")
         
         # Still pending or processing - wait and retry
+        print(f"Status: {response.status}, waiting {delay}s...")
         time.sleep(delay)
         delay = min(delay * 1.5, 10)  # Cap at 10 seconds
     
     raise Exception("Polling timeout")
+
+# Example usage
+job_id = "abc123-def456-ghi789"
+result = poll_job(job_id)
+print(f"Extraction complete! Content: {result.content[:100]}...")
 ```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+async function pollJob(jobId: string, maxAttempts: number = 60): Promise<any> {
+    /**
+     * Poll for job completion with exponential backoff.
+     */
+    let delay = 1; // Start with 1 second
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // Get job status using the SDK
+        const response = await client.jobs.getJob({ jobId });
+        
+        if (response.status === "completed") {
+            return response.result;
+        } else if (response.status === "failed") {
+            throw new Error(`Job failed: ${response.error}`);
+        } else if (response.status === "canceled") {
+            throw new Error("Job was canceled");
+        }
+        
+        // Still pending or processing - wait and retry
+        console.log(`Status: ${response.status}, waiting ${delay}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        delay = Math.min(delay * 1.5, 10); // Cap at 10 seconds
+    }
+    
+    throw new Error("Polling timeout");
+}
+
+// Example usage
+const jobId = "abc123-def456-ghi789";
+pollJob(jobId).then(result => {
+    console.log(`Extraction complete! Content: ${result.content?.slice(0, 100)}...`);
+});
+```
+
+```bash curl
+#!/bin/bash
+
+JOB_ID="abc123-def456-ghi789"
+API_KEY="YOUR_API_KEY"
+MAX_ATTEMPTS=60
+DELAY=1
+
+for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
+    response=$(curl -s "https://dev.api.runpulse.com/job/${JOB_ID}" \
+        -H "x-api-key: ${API_KEY}")
+    
+    status=$(echo "$response" | jq -r '.status')
+    
+    case "$status" in
+        "completed")
+            echo "Job completed!"
+            echo "$response" | jq '.result'
+            exit 0
+            ;;
+        "failed")
+            error=$(echo "$response" | jq -r '.error')
+            echo "Job failed: $error"
+            exit 1
+            ;;
+        "canceled")
+            echo "Job was canceled"
+            exit 1
+            ;;
+        *)
+            echo "Status: $status, waiting ${DELAY}s... (attempt $attempt)"
+            sleep $DELAY
+            DELAY=$(echo "$DELAY * 1.5" | bc)
+            if (( $(echo "$DELAY > 10" | bc -l) )); then
+                DELAY=10
+            fi
+            ;;
+    esac
+done
+
+echo "Polling timeout"
+exit 1
+```
+
+</CodeGroup>
 
 ## Example Usage
 
-```bash
-# Poll for job status
-curl https://api.runpulse.com/job/abc123-def456 \
+### Check Job Status
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Check job status
+job_id = "abc123-def456-ghi789"
+response = client.jobs.get_job(job_id=job_id)
+
+print(f"Job ID: {response.job_id}")
+print(f"Status: {response.status}")
+print(f"Created: {response.created_at}")
+
+if response.status == "completed":
+    print(f"Content: {response.result.content[:100]}...")
+elif response.status == "failed":
+    print(f"Error: {response.error}")
+```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Check job status
+const jobId = "abc123-def456-ghi789";
+const response = await client.jobs.getJob({ jobId });
+
+console.log(`Job ID: ${response.jobId}`);
+console.log(`Status: ${response.status}`);
+console.log(`Created: ${response.createdAt}`);
+
+if (response.status === "completed") {
+    console.log(`Content: ${response.result?.content?.slice(0, 100)}...`);
+} else if (response.status === "failed") {
+    console.log(`Error: ${response.error}`);
+}
+```
+
+```bash curl
+# Check job status
+curl https://dev.api.runpulse.com/job/abc123-def456-ghi789 \
   -H "x-api-key: YOUR_API_KEY"
 ```
+
+</CodeGroup>
+
+### Complete Async Workflow
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+import time
+import json
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Step 1: Submit async extraction
+print("Submitting async extraction...")
+submit_response = client.extract_async(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output=json.dumps({
+        "schema": {
+            "type": "object",
+            "properties": {
+                "account_holder": {"type": "string"},
+                "balance": {"type": "number"}
+            }
+        }
+    })
+)
+
+job_id = submit_response.job_id
+print(f"Job submitted: {job_id}")
+
+# Step 2: Poll for completion
+delay = 1
+while True:
+    status_response = client.jobs.get_job(job_id=job_id)
+    
+    if status_response.status == "completed":
+        print("Extraction complete!")
+        print(f"Structured output: {status_response.result.structured_output}")
+        break
+    elif status_response.status in ["failed", "canceled"]:
+        print(f"Job ended with status: {status_response.status}")
+        break
+    
+    print(f"Status: {status_response.status}")
+    time.sleep(delay)
+    delay = min(delay * 1.5, 10)
+```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Step 1: Submit async extraction
+console.log("Submitting async extraction...");
+const submitResponse = await client.extractAsync({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: {
+        schema: {
+            type: "object",
+            properties: {
+                account_holder: { type: "string" },
+                balance: { type: "number" }
+            }
+        }
+    }
+});
+
+const jobId = submitResponse.jobId;
+console.log(`Job submitted: ${jobId}`);
+
+// Step 2: Poll for completion
+let delay = 1;
+while (true) {
+    const statusResponse = await client.jobs.getJob({ jobId });
+    
+    if (statusResponse.status === "completed") {
+        console.log("Extraction complete!");
+        console.log(`Structured output: ${JSON.stringify(statusResponse.result?.structuredOutput)}`);
+        break;
+    } else if (statusResponse.status === "failed" || statusResponse.status === "canceled") {
+        console.log(`Job ended with status: ${statusResponse.status}`);
+        break;
+    }
+    
+    console.log(`Status: ${statusResponse.status}`);
+    await new Promise(resolve => setTimeout(resolve, delay * 1000));
+    delay = Math.min(delay * 1.5, 10);
+}
+```
+
+```bash curl
+# Step 1: Submit async extraction
+JOB_RESPONSE=$(curl -s -X POST https://dev.api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file_url=https://www.impact-bank.com/user/file/dummy_statement.pdf" \
+  -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "balance": {"type": "number"}}}}')
+
+JOB_ID=$(echo "$JOB_RESPONSE" | jq -r '.job_id')
+echo "Job submitted: $JOB_ID"
+
+# Step 2: Poll for completion
+DELAY=1
+while true; do
+    STATUS_RESPONSE=$(curl -s "https://dev.api.runpulse.com/job/${JOB_ID}" \
+        -H "x-api-key: YOUR_API_KEY")
+    
+    STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status')
+    
+    case "$STATUS" in
+        "completed")
+            echo "Extraction complete!"
+            echo "$STATUS_RESPONSE" | jq '.result.structured_output'
+            break
+            ;;
+        "failed"|"canceled")
+            echo "Job ended with status: $STATUS"
+            break
+            ;;
+        *)
+            echo "Status: $STATUS"
+            sleep $DELAY
+            DELAY=$(echo "$DELAY * 1.5" | bc)
+            if (( $(echo "$DELAY > 10" | bc -l) )); then
+                DELAY=10
+            fi
+            ;;
+    esac
+done
+```
+
+</CodeGroup>
 
 <Note>
   For webhook-based notifications instead of polling, see the [Webhooks](/api-reference/endpoint/webhook) documentation.

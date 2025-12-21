@@ -40,28 +40,221 @@ Cancel jobs when:
 
 ## Example Usage
 
-```bash
+### Cancel a Job
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+job_id = "abc123-def456-ghi789"
+
+try:
+    response = client.jobs.cancel_job(job_id=job_id)
+    print(f"Job {response.job_id} cancelled successfully")
+    print(f"Message: {response.message}")
+except Exception as e:
+    print(f"Failed to cancel job: {e}")
+```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const jobId = "abc123-def456-ghi789";
+
+try {
+    const response = await client.jobs.cancelJob({ jobId });
+    console.log(`Job ${response.jobId} cancelled successfully`);
+    console.log(`Message: ${response.message}`);
+} catch (error) {
+    console.log(`Failed to cancel job: ${error}`);
+}
+```
+
+```bash curl
 # Cancel a pending or processing job
-curl -X DELETE https://api.runpulse.com/job/abc123-def456 \
+curl -X DELETE https://dev.api.runpulse.com/job/abc123-def456-ghi789 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
-```python
-import requests
+</CodeGroup>
 
-def cancel_job(job_id: str, api_key: str):
-    response = requests.delete(
-        f"https://api.runpulse.com/job/{job_id}",
-        headers={"x-api-key": api_key}
-    )
-    
-    if response.status_code == 200:
-        print(f"Job {job_id} cancelled successfully")
-    elif response.status_code == 404:
-        print(f"Job {job_id} not found")
-    else:
-        print(f"Failed to cancel: {response.text}")
+### Cancel with Error Handling
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+from pulse.core.api_error import ApiError
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+def cancel_job_safely(job_id: str):
+    """Cancel a job with comprehensive error handling."""
+    try:
+        response = client.jobs.cancel_job(job_id=job_id)
+        print(f"✓ Job {job_id} cancelled successfully")
+        return True
+    except ApiError as e:
+        if e.status_code == 404:
+            print(f"✗ Job {job_id} not found")
+        elif e.status_code == 403:
+            print(f"✗ You don't have access to job {job_id}")
+        elif e.status_code == 401:
+            print(f"✗ Invalid or missing API key")
+        else:
+            print(f"✗ Failed to cancel job: {e}")
+        return False
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
+        return False
+
+# Example usage
+cancel_job_safely("abc123-def456-ghi789")
 ```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+async function cancelJobSafely(jobId: string): Promise<boolean> {
+    /**
+     * Cancel a job with comprehensive error handling.
+     */
+    try {
+        const response = await client.jobs.cancelJob({ jobId });
+        console.log(`✓ Job ${jobId} cancelled successfully`);
+        return true;
+    } catch (error: any) {
+        if (error.statusCode === 404) {
+            console.log(`✗ Job ${jobId} not found`);
+        } else if (error.statusCode === 403) {
+            console.log(`✗ You don't have access to job ${jobId}`);
+        } else if (error.statusCode === 401) {
+            console.log(`✗ Invalid or missing API key`);
+        } else {
+            console.log(`✗ Failed to cancel job: ${error.message}`);
+        }
+        return false;
+    }
+}
+
+// Example usage
+cancelJobSafely("abc123-def456-ghi789");
+```
+
+```bash curl
+#!/bin/bash
+
+JOB_ID="abc123-def456-ghi789"
+API_KEY="YOUR_API_KEY"
+
+response=$(curl -s -w "\n%{http_code}" -X DELETE \
+    "https://dev.api.runpulse.com/job/${JOB_ID}" \
+    -H "x-api-key: ${API_KEY}")
+
+# Split response body and status code
+body=$(echo "$response" | head -n -1)
+status_code=$(echo "$response" | tail -n 1)
+
+case "$status_code" in
+    200)
+        echo "✓ Job ${JOB_ID} cancelled successfully"
+        echo "$body" | jq .
+        ;;
+    401)
+        echo "✗ Invalid or missing API key"
+        ;;
+    403)
+        echo "✗ You don't have access to job ${JOB_ID}"
+        ;;
+    404)
+        echo "✗ Job ${JOB_ID} not found"
+        ;;
+    *)
+        echo "✗ Failed to cancel job (status $status_code)"
+        echo "$body"
+        ;;
+esac
+```
+
+</CodeGroup>
+
+### Cancel Multiple Jobs
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+job_ids = [
+    "job-111-aaa",
+    "job-222-bbb", 
+    "job-333-ccc"
+]
+
+for job_id in job_ids:
+    try:
+        client.jobs.cancel_job(job_id=job_id)
+        print(f"✓ Cancelled: {job_id}")
+    except Exception as e:
+        print(f"✗ Failed to cancel {job_id}: {e}")
+```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const jobIds = [
+    "job-111-aaa",
+    "job-222-bbb",
+    "job-333-ccc"
+];
+
+for (const jobId of jobIds) {
+    try {
+        await client.jobs.cancelJob({ jobId });
+        console.log(`✓ Cancelled: ${jobId}`);
+    } catch (error: any) {
+        console.log(`✗ Failed to cancel ${jobId}: ${error.message}`);
+    }
+}
+```
+
+```bash curl
+#!/bin/bash
+
+API_KEY="YOUR_API_KEY"
+JOB_IDS=("job-111-aaa" "job-222-bbb" "job-333-ccc")
+
+for job_id in "${JOB_IDS[@]}"; do
+    status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+        "https://dev.api.runpulse.com/job/${job_id}" \
+        -H "x-api-key: ${API_KEY}")
+    
+    if [ "$status" = "200" ]; then
+        echo "✓ Cancelled: $job_id"
+    else
+        echo "✗ Failed to cancel $job_id (status $status)"
+    fi
+done
+```
+
+</CodeGroup>
 
 ## Error Responses
 

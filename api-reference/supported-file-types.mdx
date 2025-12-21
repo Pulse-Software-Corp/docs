@@ -131,7 +131,7 @@ Upload files directly in your API request:
 # Direct file upload (recommended for files < 10MB)
 with open("document.pdf", "rb") as f:
     response = requests.post(
-        "https://api.runpulse.com/extract",
+        "https://dev.api.runpulse.com/extract",
         headers={"x-api-key": API_KEY},
         files={"file": f}
     )
@@ -144,9 +144,9 @@ Process files from public URLs:
 ```python
 # Extract from URL
 response = requests.post(
-    "https://api.runpulse.com/extract",
+    "https://dev.api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
-    json={"file_url": "https://example.com/document.pdf"}
+    json={"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}
 )
 ```
 

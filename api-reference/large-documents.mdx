@@ -162,7 +162,7 @@ for section in toc_result["sections"]:
 ```python
 # Start async extraction
 response = requests.post(
-    "https://api.runpulse.com/extract_async",
+    "https://dev.api.runpulse.com/extract_async",
     headers={"x-api-key": API_KEY},
     files={"file": open("large_doc.pdf", "rb")},
     data={
@@ -186,7 +186,7 @@ def poll_job_with_backoff(job_id, max_wait=600):
     
     while total_waited < max_wait:
         response = requests.get(
-            f"https://api.runpulse.com/job/{job_id}",
+            f"https://dev.api.runpulse.com/job/{job_id}",
             headers={"x-api-key": API_KEY}
         )
         

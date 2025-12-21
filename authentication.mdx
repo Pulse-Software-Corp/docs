@@ -3,6 +3,9 @@ title: 'Authentication'
 description: 'Learn how to authenticate with the Pulse API'
 ---
 
+import SdkInstall from '/snippets/sdk-install.mdx';
+import SdkInitAll from '/snippets/sdk-init-all.mdx';
+
 ## Overview
 
 All Pulse API endpoints require authentication using an API key. This key identifies your organization and tracks usage for billing purposes.
@@ -27,44 +30,51 @@ All Pulse API endpoints require authentication using an API key. This key identi
 
 ## Using Your API Key
 
-Include your API key in the `x-api-key` header with every request:
+### With the Official SDKs (Recommended)
 
 <CodeGroup>
 
-```bash cURL
+```python Python
+from pulse import Pulse
+
+# Initialize the client with your API key
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Extract a document
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
+)
+
+print(f"Job ID: {response.job_id}")
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+// Initialize the client with your API key
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Extract a document
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+});
+
+console.log(`Job ID: ${response.job_id}`);
+```
+
+```bash curl
 curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf"
 ```
 
-```python Python
-import requests
-
-headers = {
-    "x-api-key": "YOUR_API_KEY"
-}
-
-response = requests.post(
-    "https://dev.api.runpulse.com/extract",
-    headers=headers,
-    files={"file": open("document.pdf", "rb")}
-)
-```
-
-```javascript JavaScript
-const formData = new FormData();
-formData.append('file', fileInput.files[0]);
-
-fetch('https://dev.api.runpulse.com/extract', {
-  method: 'POST',
-  headers: {
-    'x-api-key': 'YOUR_API_KEY'
-  },
-  body: formData
-});
-```
-
 </CodeGroup>
+
+### Install the SDKs
+
+<SdkInstall />
 
 ## API Key Security
 
@@ -83,15 +93,24 @@ fetch('https://dev.api.runpulse.com/extract', {
     PULSE_API_KEY=your_api_key_here
     ```
 
-    ```python Python
-    import os
-    
-    API_KEY = os.getenv("PULSE_API_KEY")
-    ```
+<CodeGroup>
 
-    ```javascript Node.js
-    const API_KEY = process.env.PULSE_API_KEY;
-    ```
+```python Python
+import os
+from pulse import Pulse
+
+client = Pulse(api_key=os.getenv("PULSE_API_KEY"))
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': "YOUR_API_KEY" }
+});
+```
+
+</CodeGroup>
   </Accordion>
 
   <Accordion title="Key Rotation">
@@ -133,16 +152,9 @@ All API keys have full access to:
 
 <AccordionGroup>
   <Accordion title="AUTH_001: API key is required">
-    **Solution**: Ensure you're including the `x-api-key` header in your request
-    
-    ```bash
-    # Incorrect - missing header
-    curl -X POST https://dev.api.runpulse.com/extract
-    
-    # Correct - includes header
-    curl -X POST https://dev.api.runpulse.com/extract \
-      -H "x-api-key: YOUR_API_KEY"
-    ```
+    **Solution**: Ensure you're providing your API key when initializing the client
+
+<SdkInitAll />
   </Accordion>
 
   <Accordion title="AUTH_002: Invalid API key">

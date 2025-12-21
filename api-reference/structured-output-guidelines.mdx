@@ -115,14 +115,88 @@ When you include a `structured_output` schema in your request, the API response 
 
 The `structured_output` object will always match the structure defined in your `structured_output.schema` request parameter.
 
-### curl Example
+### SDK Examples
 
-```bash
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+schema = {
+    "type": "object",
+    "properties": {
+        "account_holder": {
+            "type": "string",
+            "description": "Name of the account holder"
+        },
+        "account_number": {
+            "type": "string",
+            "description": "Bank account number"
+        },
+        "opening_balance": {"type": "number"},
+        "closing_balance": {"type": "number"}
+    },
+    "required": ["account_holder", "account_number"]
+}
+
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={
+        "schema": schema,
+        "schema_prompt": "Extract bank statement details"
+    }
+)
+
+print(f"Account Holder: {response.structured_output['account_holder']}")
+print(f"Balance: {response.structured_output['closing_balance']}")
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const schema = {
+    type: "object",
+    properties: {
+        account_holder: {
+            type: "string",
+            description: "Name of the account holder"
+        },
+        account_number: {
+            type: "string",
+            description: "Bank account number"
+        },
+        opening_balance: { type: "number" },
+        closing_balance: { type: "number" }
+    },
+    required: ["account_holder", "account_number"]
+};
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: {
+        schema: schema,
+        schemaPrompt: "Extract bank statement details"
+    }
+});
+
+console.log(`Account Holder: ${response.structuredOutput?.account_holder}`);
+console.log(`Balance: ${response.structuredOutput?.closing_balance}`);
+```
+
+```bash curl
 curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@bank_statement.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'
 ```
+
+</CodeGroup>
 
 ## Schema Format
 

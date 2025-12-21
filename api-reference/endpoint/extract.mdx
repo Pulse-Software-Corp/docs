@@ -97,28 +97,60 @@ For documents with 70 or more pages, the API returns a URL to fetch the complete
 
 #### Handling Large Document Responses
 
-```python
-import requests
+<CodeGroup>
 
-response = requests.post(
-    "https://api.runpulse.com/extract",
-    headers={"x-api-key": "YOUR_API_KEY"},
-    files={"file": open("large_document.pdf", "rb")}
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# The SDK handles large document responses automatically
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
 )
 
-result = response.json()
-
-# Check if response is a URL reference
-if result.get("is_url"):
-    # Fetch the complete results from S3
-    full_result = requests.get(result["url"]).json()
+# If the response contains is_url, fetch from S3
+if hasattr(response, 'is_url') and response.is_url:
+    import requests
+    full_result = requests.get(response.url).json()
+    print(full_result["markdown"])
 else:
-    # Results are directly in the response
-    full_result = result
-
-# Process the extraction
-print(full_result["markdown"])
+    print(response.content)
 ```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+});
+
+// Check if response is a URL reference
+if ((response as any).is_url) {
+    const fullResult = await fetch((response as any).url).then(r => r.json());
+    console.log(fullResult.markdown);
+} else {
+    console.log(response.content);
+}
+```
+
+```bash curl
+# For large documents, the response contains a URL
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@large_document.pdf"
+
+# Response: {"is_url": true, "url": "https://...s3.amazonaws.com/..."}
+
+# Fetch the actual content
+curl "https://...s3.amazonaws.com/..."
+```
+
+</CodeGroup>
 
 <Note>
   The S3 URL expires after 24 hours. If you need to access results after this period, ensure `storage.enabled` is `true` and retrieve results from your extraction library.
@@ -126,35 +158,189 @@ print(full_result["markdown"])
 
 ## Example Usage
 
-```bash
-# Extract with file upload
-curl -X POST https://api.runpulse.com/extract \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@document.pdf"
+### Basic Extraction
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
 
 # Extract from URL
-curl -X POST https://api.runpulse.com/extract \
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extract_figure=True,
+    return_html=True
+)
+
+print(f"Content: {response.content}")
+print(f"Job ID: {response.job_id}")
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extractFigure: true,
+    returnHtml: true
+});
+
+console.log(`Content: ${response.content}`);
+console.log(`Job ID: ${response.job_id}`);
+```
+
+```bash curl
+# Extract from URL
+curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"file_url": "https://example.com/document.pdf"}'
+  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
+```
 
-# Extract with structured output schema
-curl -X POST https://api.runpulse.com/extract \
+</CodeGroup>
+
+### File Upload
+
+<CodeGroup>
+
+```python Python
+# Upload and extract a local file
+with open("document.pdf", "rb") as f:
+    response = client.extract(
+        file=f,
+        extract_figure=True
+    )
+```
+
+```typescript TypeScript
+import * as fs from 'fs';
+
+const fileBuffer = fs.readFileSync("document.pdf");
+const blob = new Blob([fileBuffer], { type: 'application/pdf' });
+
+const response = await client.extract({
+    file: blob,
+    extractFigure: true
+});
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf"
+```
+
+</CodeGroup>
+
+### Structured Output
+
+<CodeGroup>
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "total": {"type": "number"},
+        "vendor": {"type": "string"}
+    }
+}
+
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={
+        "schema": schema,
+        "schema_prompt": "Extract invoice total and vendor"
+    }
+)
+```
+
+```typescript TypeScript
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: {
+        schema: {
+            type: "object",
+            properties: {
+                total: { type: "number" },
+                vendor: { type: "string" }
+            }
+        },
+        schemaPrompt: "Extract invoice total and vendor"
+    }
+});
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schema_prompt": "Extract the invoice total and vendor name"}'
+```
 
-# Extract specific pages with chunking
-curl -X POST https://api.runpulse.com/extract \
+</CodeGroup>
+
+### Page Range and Chunking
+
+<CodeGroup>
+
+```python Python
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    pages="1-5,10",  # 1-indexed
+    chunking="semantic,page",
+    chunk_size=1000
+)
+```
+
+```typescript TypeScript
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    pages: "1-5,10",  // 1-indexed
+    chunking: "semantic,page",
+    chunkSize: 1000
+});
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
   -F "pages=1-5,10" \
   -F "chunking=semantic,page" \
   -F "chunk_size=1000"
+```
 
-# Extract without storage (temporary extraction)
-curl -X POST https://api.runpulse.com/extract \
+</CodeGroup>
+
+### Disable Storage
+
+<CodeGroup>
+
+```python Python
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    storage={"enabled": False}
+)
+```
+
+```typescript TypeScript
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    storage: { enabled: false }
+});
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
   -F 'storage={"enabled": false}'
 ```
+
+</CodeGroup>

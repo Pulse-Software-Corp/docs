@@ -62,28 +62,179 @@ For detailed information on the extraction output format (markdown, bounding box
 
 ## Example Usage
 
-```bash
+### Submit Async Extraction
+
+<CodeGroup>
+
+```python Python
+import time
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Submit async extraction
+submission = client.extract_async(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extract_figure=True
+)
+
+print(f"Job ID: {submission.job_id}")
+print(f"Status: {submission.status}")
+
+# Poll for completion
+job_id = submission.job_id
+while True:
+    job_status = client.jobs.get_job(job_id=job_id)
+    print(f"Status: {job_status.status}")
+    
+    if job_status.status == "completed":
+        print("Extraction complete!")
+        print(f"Result: {job_status.result}")
+        break
+    elif job_status.status in ["failed", "canceled"]:
+        print(f"Job ended: {job_status.status}")
+        if job_status.error:
+            print(f"Error: {job_status.error}")
+        break
+    
+    time.sleep(2)
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Submit async extraction
+const submission = await client.extractAsync({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extractFigure: true
+});
+
+console.log(`Job ID: ${submission.job_id}`);
+console.log(`Status: ${submission.status}`);
+
+// Poll for completion
+const jobId = submission.job_id;
+while (true) {
+    const jobStatus = await client.jobs.getJob({ jobId });
+    console.log(`Status: ${jobStatus.status}`);
+    
+    if (jobStatus.status === 'completed') {
+        console.log('Extraction complete!');
+        console.log(`Result: ${JSON.stringify(jobStatus.result)}`);
+        break;
+    } else if (jobStatus.status === 'failed' || jobStatus.status === 'canceled') {
+        console.log(`Job ended: ${jobStatus.status}`);
+        if (jobStatus.error) {
+            console.log(`Error: ${jobStatus.error}`);
+        }
+        break;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+}
+```
+
+```bash curl
 # Submit async extraction with file upload
-curl -X POST https://api.runpulse.com/extract_async \
+curl -X POST https://dev.api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf"
 
 # Submit async extraction with URL
-curl -X POST https://api.runpulse.com/extract_async \
+curl -X POST https://dev.api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"file_url": "https://example.com/document.pdf"}'
-
-# Submit with structured output schema
-curl -X POST https://api.runpulse.com/extract_async \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@invoice.pdf" \
-  -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schema_prompt": "Extract the invoice total"}'
+  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
 
 # Response
 # {"job_id": "abc123", "status": "pending", "queuedAt": "2025-01-15T10:30:00Z"}
 
 # Poll for results
-curl https://api.runpulse.com/job/abc123 \
+curl https://dev.api.runpulse.com/job/abc123 \
   -H "x-api-key: YOUR_API_KEY"
 ```
+
+</CodeGroup>
+
+### With Structured Output
+
+<CodeGroup>
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "total": {"type": "number"},
+        "vendor": {"type": "string"}
+    }
+}
+
+submission = client.extract_async(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={
+        "schema": schema,
+        "schema_prompt": "Extract the invoice total"
+    }
+)
+```
+
+```typescript TypeScript
+const submission = await client.extractAsync({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: {
+        schema: {
+            type: "object",
+            properties: {
+                total: { type: "number" },
+                vendor: { type: "string" }
+            }
+        },
+        schemaPrompt: "Extract the invoice total"
+    }
+});
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@invoice.pdf" \
+  -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schema_prompt": "Extract the invoice total"}'
+```
+
+</CodeGroup>
+
+### Cancel a Job
+
+<CodeGroup>
+
+```python Python
+# Cancel a running job
+cancellation = client.jobs.cancel_job(job_id=job_id)
+print(f"Cancelled: {cancellation.message}")
+
+# Verify cancellation
+status = client.jobs.get_job(job_id=job_id)
+print(f"Status: {status.status}")  # Should be "canceled"
+```
+
+```typescript TypeScript
+// Cancel a running job
+const cancellation = await client.jobs.cancelJob({ jobId });
+console.log(`Cancelled: ${cancellation.message}`);
+
+// Verify cancellation
+const status = await client.jobs.getJob({ jobId });
+console.log(`Status: ${status.status}`);  // Should be "canceled"
+```
+
+```bash curl
+# Cancel a job
+curl -X DELETE https://dev.api.runpulse.com/job/abc123 \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+</CodeGroup>

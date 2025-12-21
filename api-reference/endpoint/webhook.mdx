@@ -11,6 +11,43 @@ Configure webhook endpoints to receive real-time notifications about job status 
   Webhook event delivery is currently under development. The configuration portal is fully functional, but events are not yet being sent.
 </Note>
 
+## Get Portal Link
+
+<CodeGroup>
+
+```python Python SDK
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Get webhook portal link
+response = client.webhooks.create_webhook_link()
+print(f"Portal URL: {response.link}")
+
+# Open this URL in your browser to configure webhooks
+```
+
+```typescript TypeScript SDK
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Get webhook portal link
+const response = await client.webhooks.createWebhookLink();
+console.log(`Portal URL: ${response.link}`);
+
+// Open this URL in your browser to configure webhooks
+```
+
+```bash curl
+curl -X POST https://dev.api.runpulse.com/webhook \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+</CodeGroup>
+
 ## How It Works
 
 <Steps>
@@ -50,14 +87,26 @@ webhook-signature: v1,g0hM9SsE+OTPJTjfm/kBRBOlqPmYFYpwTEFfQK6UHdI=
 
 ### Verifying Webhook Signatures
 
-```python
+<CodeGroup>
+
+```python Python
 import hmac
 import hashlib
 import time
+import base64
 
-def verify_webhook(payload, headers, webhook_secret):
-    """Verify webhook authenticity using HMAC signature."""
+def verify_webhook(payload: str, headers: dict, webhook_secret: str) -> bool:
+    """
+    Verify webhook authenticity using HMAC signature.
     
+    Args:
+        payload: Raw request body as string
+        headers: Request headers dict
+        webhook_secret: Your webhook signing secret from the portal
+        
+    Returns:
+        True if signature is valid, False otherwise
+    """
     webhook_id = headers.get('webhook-id')
     webhook_timestamp = headers.get('webhook-timestamp')
     webhook_signature = headers.get('webhook-signature')
@@ -76,16 +125,131 @@ def verify_webhook(payload, headers, webhook_secret):
     # Extract signature from header (format: v1,signature)
     signature = webhook_signature.split(',')[1] if ',' in webhook_signature else webhook_signature
     
-    # Compute expected signature
-    expected = hmac.new(
-        webhook_secret.encode(),
-        signed_content.encode(),
-        hashlib.sha256
-    ).hexdigest()
+    # Compute expected signature (base64-encoded HMAC-SHA256)
+    expected = base64.b64encode(
+        hmac.new(
+            base64.b64decode(webhook_secret),
+            signed_content.encode(),
+            hashlib.sha256
+        ).digest()
+    ).decode()
     
     # Constant-time comparison
     return hmac.compare_digest(signature, expected)
+
+# Example usage with Flask
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+WEBHOOK_SECRET = "whsec_your_secret_here"
+
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    payload = request.get_data(as_text=True)
+    
+    if not verify_webhook(payload, request.headers, WEBHOOK_SECRET):
+        abort(401)
+    
+    # Process the event
+    event = request.json
+    print(f"Received event: {event['type']}")
+    
+    return '', 200
 ```
+
+```typescript TypeScript
+import * as crypto from 'crypto';
+
+function verifyWebhook(
+    payload: string,
+    headers: Record<string, string>,
+    webhookSecret: string
+): boolean {
+    /**
+     * Verify webhook authenticity using HMAC signature.
+     */
+    const webhookId = headers['webhook-id'];
+    const webhookTimestamp = headers['webhook-timestamp'];
+    const webhookSignature = headers['webhook-signature'];
+    
+    if (!webhookId || !webhookTimestamp || !webhookSignature) {
+        return false;
+    }
+    
+    // Check timestamp to prevent replay attacks (5 minute window)
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (Math.abs(currentTime - parseInt(webhookTimestamp)) > 300) {
+        return false;
+    }
+    
+    // Construct signed content
+    const signedContent = `${webhookId}.${webhookTimestamp}.${payload}`;
+    
+    // Extract signature from header (format: v1,signature)
+    const signature = webhookSignature.includes(',') 
+        ? webhookSignature.split(',')[1] 
+        : webhookSignature;
+    
+    // Compute expected signature (base64-encoded HMAC-SHA256)
+    const secretBytes = Buffer.from(webhookSecret, 'base64');
+    const expected = crypto
+        .createHmac('sha256', secretBytes)
+        .update(signedContent)
+        .digest('base64');
+    
+    // Constant-time comparison
+    return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expected)
+    );
+}
+
+// Example usage with Express.js
+import express from 'express';
+
+const app = express();
+const WEBHOOK_SECRET = "whsec_your_secret_here";
+
+app.use(express.raw({ type: 'application/json' }));
+
+app.post('/webhook', (req, res) => {
+    const payload = req.body.toString();
+    
+    if (!verifyWebhook(payload, req.headers as Record<string, string>, WEBHOOK_SECRET)) {
+        return res.status(401).send('Unauthorized');
+    }
+    
+    // Process the event
+    const event = JSON.parse(payload);
+    console.log(`Received event: ${event.type}`);
+    
+    res.status(200).send('OK');
+});
+```
+
+```bash Bash
+#!/bin/bash
+
+# Webhook verification in Bash
+# Note: This is for reference; typically you'd verify in your server
+
+WEBHOOK_SECRET="whsec_your_secret_here"
+PAYLOAD='{"type":"job.completed","data":{"job_id":"123"}}'
+WEBHOOK_ID="msg_abc123"
+WEBHOOK_TIMESTAMP=$(date +%s)
+
+# Construct signed content
+SIGNED_CONTENT="${WEBHOOK_ID}.${WEBHOOK_TIMESTAMP}.${PAYLOAD}"
+
+# Compute signature (base64-encoded HMAC-SHA256)
+SIGNATURE=$(echo -n "$SIGNED_CONTENT" | openssl dgst -sha256 -hmac "$(echo -n "$WEBHOOK_SECRET" | base64 -d)" -binary | base64)
+
+echo "Webhook ID: $WEBHOOK_ID"
+echo "Timestamp: $WEBHOOK_TIMESTAMP"
+echo "Signature: v1,$SIGNATURE"
+```
+
+</CodeGroup>
 
 ## Webhook Events (Coming Soon)
 
@@ -118,67 +282,267 @@ Once enabled, you'll receive events for:
 
 ## Example Implementation
 
-### Express.js Webhook Handler
+### Webhook Handler
 
-```javascript
-const express = require('express');
-const crypto = require('crypto');
+<CodeGroup>
 
-const app = express();
-app.use(express.raw({ type: 'application/json' }));
-
-app.post('/webhook', (req, res) => {
-  const payload = req.body.toString();
-  
-  // Verify webhook signature
-  if (!verifyWebhook(payload, req.headers, process.env.WEBHOOK_SECRET)) {
-    return res.status(401).send('Unauthorized');
-  }
-  
-  const event = JSON.parse(payload);
-  
-  // Handle different event types
-  switch (event.type) {
-    case 'job.completed':
-      console.log(`Job ${event.data.job_id} completed`);
-      // Process completed job
-      break;
-    case 'job.failed':
-      console.error(`Job ${event.data.job_id} failed: ${event.data.error}`);
-      // Handle failure
-      break;
-  }
-  
-  res.status(200).send('OK');
-});
-```
-
-### Python Flask Handler
-
-```python
+```python Python (Flask)
 from flask import Flask, request, abort
 import json
 
 app = Flask(__name__)
+WEBHOOK_SECRET = "whsec_your_secret_here"
 
 @app.route('/webhook', methods=['POST'])
 def handle_webhook():
     payload = request.get_data(as_text=True)
     
-    # Verify webhook
-    if not verify_webhook(payload, request.headers, app.config['WEBHOOK_SECRET']):
+    # Verify webhook signature
+    if not verify_webhook(payload, request.headers, WEBHOOK_SECRET):
         abort(401)
     
     event = json.loads(payload)
     
-    # Process event
+    # Handle different event types
     if event['type'] == 'job.completed':
-        process_completed_job(event['data'])
+        job_id = event['data']['job_id']
+        print(f"✓ Job {job_id} completed!")
+        
+        # Fetch the results
+        # result = fetch_job_result(job_id)
+        # process_extraction(result)
+        
     elif event['type'] == 'job.failed':
-        handle_failed_job(event['data'])
+        job_id = event['data']['job_id']
+        error = event['data'].get('error', 'Unknown error')
+        print(f"✗ Job {job_id} failed: {error}")
+        
+        # Handle failure (retry, notify, etc.)
+        # handle_job_failure(job_id, error)
+        
+    elif event['type'] == 'job.cancelled':
+        job_id = event['data']['job_id']
+        print(f"⊘ Job {job_id} was cancelled")
     
     return '', 200
+
+if __name__ == '__main__':
+    app.run(port=3000)
 ```
+
+```typescript TypeScript (Express)
+import express from 'express';
+
+const app = express();
+const WEBHOOK_SECRET = "whsec_your_secret_here";
+
+app.use(express.raw({ type: 'application/json' }));
+
+app.post('/webhook', (req, res) => {
+    const payload = req.body.toString();
+    
+    // Verify webhook signature
+    if (!verifyWebhook(payload, req.headers as Record<string, string>, WEBHOOK_SECRET)) {
+        return res.status(401).send('Unauthorized');
+    }
+    
+    const event = JSON.parse(payload);
+    
+    // Handle different event types
+    switch (event.type) {
+        case 'job.completed':
+            console.log(`✓ Job ${event.data.job_id} completed!`);
+            
+            // Fetch the results
+            // const result = await fetchJobResult(event.data.job_id);
+            // await processExtraction(result);
+            break;
+            
+        case 'job.failed':
+            console.error(`✗ Job ${event.data.job_id} failed: ${event.data.error}`);
+            
+            // Handle failure
+            // await handleJobFailure(event.data.job_id, event.data.error);
+            break;
+            
+        case 'job.cancelled':
+            console.log(`⊘ Job ${event.data.job_id} was cancelled`);
+            break;
+    }
+    
+    res.status(200).send('OK');
+});
+
+app.listen(3000, () => {
+    console.log('Webhook handler listening on port 3000');
+});
+```
+
+```python Python (FastAPI)
+from fastapi import FastAPI, Request, HTTPException
+import json
+
+app = FastAPI()
+WEBHOOK_SECRET = "whsec_your_secret_here"
+
+@app.post('/webhook')
+async def handle_webhook(request: Request):
+    payload = await request.body()
+    payload_str = payload.decode()
+    
+    # Verify webhook signature
+    if not verify_webhook(payload_str, dict(request.headers), WEBHOOK_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    event = json.loads(payload_str)
+    
+    # Handle different event types
+    match event['type']:
+        case 'job.completed':
+            print(f"✓ Job {event['data']['job_id']} completed!")
+        case 'job.failed':
+            print(f"✗ Job {event['data']['job_id']} failed: {event['data'].get('error')}")
+        case 'job.cancelled':
+            print(f"⊘ Job {event['data']['job_id']} was cancelled")
+    
+    return {"status": "ok"}
+```
+
+</CodeGroup>
+
+### Complete Integration Example
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+from flask import Flask, request, abort
+import json
+
+# Initialize Pulse client
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Flask app for webhook handler
+app = Flask(__name__)
+WEBHOOK_SECRET = "whsec_your_secret_here"
+
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    payload = request.get_data(as_text=True)
+    
+    if not verify_webhook(payload, request.headers, WEBHOOK_SECRET):
+        abort(401)
+    
+    event = json.loads(payload)
+    
+    if event['type'] == 'job.completed':
+        job_id = event['data']['job_id']
+        
+        # Fetch full results using SDK
+        job_result = client.jobs.get_job(job_id=job_id)
+        
+        if job_result.result:
+            print(f"Content: {job_result.result.content[:100]}...")
+            
+            if job_result.result.structured_output:
+                print(f"Structured data: {job_result.result.structured_output}")
+    
+    return '', 200
+
+# Submit an async job
+def submit_job():
+    response = client.extract_async(
+        file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+        structured_output=json.dumps({
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "account_holder": {"type": "string"},
+                    "balance": {"type": "number"}
+                }
+            }
+        })
+    )
+    print(f"Job submitted: {response.job_id}")
+    print("Waiting for webhook notification...")
+    return response.job_id
+
+if __name__ == '__main__':
+    # Submit a job, then start webhook handler
+    submit_job()
+    app.run(port=3000)
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+import express from 'express';
+
+// Initialize Pulse client
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Express app for webhook handler
+const app = express();
+const WEBHOOK_SECRET = "whsec_your_secret_here";
+
+app.use(express.raw({ type: 'application/json' }));
+
+app.post('/webhook', async (req, res) => {
+    const payload = req.body.toString();
+    
+    if (!verifyWebhook(payload, req.headers as Record<string, string>, WEBHOOK_SECRET)) {
+        return res.status(401).send('Unauthorized');
+    }
+    
+    const event = JSON.parse(payload);
+    
+    if (event.type === 'job.completed') {
+        const jobId = event.data.job_id;
+        
+        // Fetch full results using SDK
+        const jobResult = await client.jobs.getJob({ jobId });
+        
+        if (jobResult.result) {
+            console.log(`Content: ${jobResult.result.content?.slice(0, 100)}...`);
+            
+            if (jobResult.result.structuredOutput) {
+                console.log(`Structured data:`, jobResult.result.structuredOutput);
+            }
+        }
+    }
+    
+    res.status(200).send('OK');
+});
+
+// Submit an async job
+async function submitJob(): Promise<string> {
+    const response = await client.extractAsync({
+        fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+        structuredOutput: {
+            schema: {
+                type: "object",
+                properties: {
+                    account_holder: { type: "string" },
+                    balance: { type: "number" }
+                }
+            }
+        }
+    });
+    
+    console.log(`Job submitted: ${response.jobId}`);
+    console.log("Waiting for webhook notification...");
+    return response.jobId!;
+}
+
+// Start the server and submit a job
+app.listen(3000, async () => {
+    console.log('Webhook handler listening on port 3000');
+    await submitJob();
+});
+```
+
+</CodeGroup>
 
 ## Best Practices
 

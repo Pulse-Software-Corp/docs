@@ -1,0 +1,245 @@
+---
+title: 'Storage Configuration'
+description: 'API endpoints for configuring custom storage (BYOS)'
+---
+
+# Storage Configuration API
+
+Configure custom cloud storage for your organization's extraction artifacts.
+
+<Note>
+Custom storage is an Enterprise feature. These endpoints return `403 Forbidden` for organizations without custom storage access.
+</Note>
+
+## Get Storage Configuration
+
+<EndpointCard method="GET" endpoint="/api/v1/storage/config" />
+
+Retrieve the current storage configuration for your organization.
+
+### Response
+
+```json
+{
+  "id": "uuid",
+  "org_id": "org_abc123",
+  "provider": "s3",
+  "is_enabled": true,
+  "bucket_name": "my-company-pulse-data",
+  "region": "us-east-1",
+  "base_path": "extractions/",
+  "aws_role_arn": "arn:aws:iam::123456789012:role/PulseStorageRole",
+  "external_id": "pulse-org-abc123",
+  "last_tested_at": "2024-01-15T10:30:00Z",
+  "last_test_success": true
+}
+```
+
+---
+
+## Configure AWS S3
+
+<EndpointCard method="POST" endpoint="/api/v1/storage/config/s3" />
+
+Configure AWS S3 as your custom storage provider using IAM role assumption.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `bucket_name` | string | Yes | S3 bucket name |
+| `aws_role_arn` | string | Yes | IAM role ARN for cross-account access |
+| `region` | string | No | AWS region (default: `us-east-1`) |
+| `base_path` | string | No | Optional prefix path for all objects |
+
+### Example Request
+
+```bash
+curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/s3 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bucket_name": "my-company-pulse-data",
+    "aws_role_arn": "arn:aws:iam::123456789012:role/PulseStorageRole",
+    "region": "us-east-1",
+    "base_path": "extractions/"
+  }'
+```
+
+### Response
+
+Returns the saved configuration with sensitive fields masked.
+
+```json
+{
+  "id": "uuid",
+  "org_id": "org_abc123",
+  "provider": "s3",
+  "is_enabled": false,
+  "bucket_name": "my-company-pulse-data",
+  "region": "us-east-1",
+  "base_path": "extractions/",
+  "aws_role_arn": "arn:aws:iam::123456789012:role/PulseStorageRole",
+  "external_id": "pulse-org-abc123"
+}
+```
+
+---
+
+## Configure Azure Blob Storage
+
+<EndpointCard method="POST" endpoint="/api/v1/storage/config/azure" />
+
+Configure Azure Blob Storage as your custom storage provider.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `azure_storage_account` | string | Yes | Azure storage account name |
+| `azure_container_name` | string | Yes | Container name |
+| `azure_connection_string` | string | No* | Full connection string |
+| `azure_sas_token` | string | No* | SAS token (alternative to connection string) |
+| `base_path` | string | No | Optional prefix path for all objects |
+
+*Either `azure_connection_string` or `azure_sas_token` is required.
+
+### Example Request
+
+```bash
+curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/azure \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "azure_storage_account": "mycompanystorage",
+    "azure_container_name": "pulse-extractions",
+    "azure_connection_string": "DefaultEndpointsProtocol=https;AccountName=..."
+  }'
+```
+
+---
+
+## Configure Google Cloud Storage
+
+<EndpointCard method="POST" endpoint="/api/v1/storage/config/gcp" />
+
+Configure Google Cloud Storage as your custom storage provider.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `bucket_name` | string | Yes | GCS bucket name |
+| `gcp_project_id` | string | Yes | GCP project ID |
+| `gcp_service_account_json` | string | Yes | Service account JSON key (as string) |
+| `region` | string | No | Bucket region |
+| `base_path` | string | No | Optional prefix path for all objects |
+
+### Example Request
+
+```bash
+curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/gcp \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bucket_name": "my-company-pulse-data",
+    "gcp_project_id": "my-project-123",
+    "gcp_service_account_json": "{\"type\": \"service_account\", ...}"
+  }'
+```
+
+---
+
+## Test Connection
+
+<EndpointCard method="POST" endpoint="/api/v1/storage/config/test" />
+
+Test the configured storage connection. This verifies that Pulse can access your storage with the provided credentials.
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Connection successful! Your storage is ready to use."
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "message": "Connection failed",
+  "error": "AccessDenied: The specified bucket does not exist"
+}
+```
+
+---
+
+## Enable/Disable Custom Storage
+
+<EndpointCard method="POST" endpoint="/api/v1/storage/config/enable" />
+
+Enable or disable custom storage. When enabled, new extractions are stored in your custom storage. When disabled, extractions go to Pulse's default storage.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | boolean | Yes | Whether to enable custom storage |
+
+### Example Request
+
+```bash
+curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/enable \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+### Prerequisites
+
+Before enabling, you must:
+1. Configure a non-default storage provider
+2. Successfully test the connection
+
+---
+
+## Delete Configuration
+
+<EndpointCard method="DELETE" endpoint="/api/v1/storage/config" />
+
+Delete the custom storage configuration and revert to Pulse's default storage.
+
+### Example Request
+
+```bash
+curl -X DELETE https://dev.api.runpulse.com/api/v1/storage/config \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "message": "Storage configuration deleted. Using Pulse default storage."
+}
+```
+
+<Warning>
+This does not delete artifacts already stored in your custom storage. Those remain in your bucket/container.
+</Warning>
+
+---
+
+## Error Responses
+
+| Status Code | Error | Description |
+|-------------|-------|-------------|
+| 400 | Bad Request | Missing required fields or invalid configuration |
+| 401 | Unauthorized | Invalid or missing authentication |
+| 403 | Forbidden | Custom storage not available for your plan |
+| 404 | Not Found | No storage configuration exists |
+| 500 | Server Error | Internal error processing the request |
+

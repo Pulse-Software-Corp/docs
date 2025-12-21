@@ -69,8 +69,7 @@
     {
       "group": "Advanced Topics",
       "pages": [
-        "advanced/error-handling",
-        "security/overview"
+        "advanced/error-handling"
       ]
     },
     {

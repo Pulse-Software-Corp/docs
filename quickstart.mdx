@@ -3,164 +3,132 @@ title: 'Quickstart Guide'
 description: 'Get up and running with Pulse API in 5 minutes'
 ---
 
+import SdkInstall from '/snippets/sdk-install.mdx';
+
 ## Prerequisites
 
-Before you begin, make sure there is:
+Before you begin, make sure you have:
 
 <CardGroup cols={2}>
   <Card title="API Key" icon="key">
     Get your API key from the [Console](https://console.runpulse.com)
   </Card>
-  <Card title="Python 3.7+" icon="python">
-    Install Python and the requests library
+  <Card title="SDK or HTTP Client" icon="code">
+    Install the official SDK or use curl/fetch
   </Card>
 </CardGroup>
 
-## Step 1: Install Required Libraries
+## Step 1: Install the SDK
+
+<SdkInstall />
+
+## Step 2: Basic Document Extraction
+
+Extract content from a document URL:
 
 <CodeGroup>
 
-```bash pip
-pip install requests
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Extract from a URL
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extract_figure=True,
+    return_html=True
+)
+
+print(f"Job ID: {response.job_id}")
+print(f"Content: {response.content[:200]}...")
 ```
 
-```bash poetry
-poetry add requests
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extractFigure: true,
+    returnHtml: true
+});
+
+console.log(`Job ID: ${response.job_id}`);
+console.log(`Content: ${response.content?.substring(0, 200)}...`);
 ```
 
-```bash conda
-conda install requests
+```bash curl
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    "extract_figure": true,
+    "return_html": true
+  }'
 ```
 
 </CodeGroup>
 
-## Step 2: Basic Document Extraction
-
-Here's a complete Python script for extracting content from a document:
-
-```python basic_extraction.py
-import requests
-import json
-import time
-
-API_KEY = "YOUR_API_KEY"
-BASE_URL = "https://dev.api.runpulse.com"
-
-def extract_document_from_file(file_path, schema=None, pages=None):
-    """
-    Extract content from a local file using the /extract endpoint.
-    
-    Args:
-        file_path: Path to the local file
-        schema: Optional JSON schema for structured extraction
-        pages: Optional page range, 1-indexed (e.g., "1-5" for first 5 pages)
-    
-    Returns:
-        Extracted content or S3 URL for large documents
-    """
-    url = f"{BASE_URL}/extract"
-    headers = {"x-api-key": API_KEY}
-    
-    with open(file_path, 'rb') as f:
-        files = {'file': f}
-        data = {}
-        
-        if schema:
-            data['structured_output'] = json.dumps({'schema': schema})
-        if pages:
-            data['pages'] = pages
-            
-        response = requests.post(url, files=files, data=data, headers=headers)
-    
-    if response.status_code == 200:
-        result = response.json()
-        
-        # Check if result is returned as URL (for documents > 70 pages)
-        if result.get('is_url'):
-            print(f"Large document detected. Fetching from: {result['url']}")
-            # Fetch the actual content from S3
-            content_response = requests.get(result['url'])
-            return content_response.json()
-        else:
-            return result
-    else:
-        print(f"Error: {response.status_code}")
-        return response.json()
-
-# Example usage
-if __name__ == "__main__":
-    # Define extraction schema
-    schema = {
-        "invoice_number": "string",
-        "date": "date",
-        "total": "float",
-        "line_items": [{
-            "description": "string",
-            "quantity": "integer",
-            "price": "float"
-        }]
-    }
-    
-    # Extract document
-    result = extract_document_from_file(
-        "invoice.pdf",
-        schema=schema,
-        pages="1-5"
-    )
-    
-    print(json.dumps(result, indent=2))
-```
-
 ## Step 3: Uploading Files Directly
 
-Both `/extract` and `/extract_async` accept file uploads directly via multipart/form-data. Use the `file` parameter to upload your document:
+Both `/extract` and `/extract_async` accept file uploads directly via multipart/form-data:
 
-```python direct_upload.py
-def extract_with_file_upload(file_path, schema=None, pages=None):
-    """
-    Upload and extract a file in a single request.
-    This is the simplest approach for most use cases.
-    
-    Args:
-        file_path: Path to the local file
-        schema: Optional JSON schema for structured extraction
-        pages: Optional page range, 1-indexed (e.g., "1-5" or "1,3,5")
-    
-    Returns:
-        Extracted content
-    """
-    url = f"{BASE_URL}/extract"
-    headers = {"x-api-key": API_KEY}
-    
-    with open(file_path, 'rb') as f:
-        files = {'file': f}
-        data = {}
-        
-        if schema:
-            data['structured_output'] = json.dumps({
-                'schema': schema
-            })
-        if pages:
-            data['pages'] = pages
-        
-        response = requests.post(url, files=files, data=data, headers=headers)
-    
-    if response.status_code == 200:
-        result = response.json()
-        
-        # Handle large document response
-        if result.get('is_url'):
-            print(f"Large document detected. Fetching from: {result['url']}")
-            return requests.get(result['url']).json()
-        return result
-    else:
-        print(f"Extraction failed: {response.status_code}")
-        return response.json()
+<CodeGroup>
 
-# Example usage
-result = extract_with_file_upload("invoice.pdf", pages="1-5")
-print(result['markdown'])
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Upload and extract a local file
+with open("invoice.pdf", "rb") as f:
+    response = client.extract(
+        file=f,
+        pages="1-5",  # 1-indexed page range
+        extract_figure=True
+    )
+
+print(f"Job ID: {response.job_id}")
+print(f"Content: {response.content}")
 ```
+
+```typescript TypeScript
+import * as fs from 'fs';
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Upload and extract a local file
+const fileBuffer = fs.readFileSync("invoice.pdf");
+const blob = new Blob([fileBuffer], { type: 'application/pdf' });
+
+const response = await client.extract({
+    file: blob,
+    pages: "1-5",  // 1-indexed page range
+    extractFigure: true
+});
+
+console.log(`Job ID: ${response.job_id}`);
+console.log(`Content: ${response.content}`);
+```
+
+```bash curl
+# Upload a file directly
+curl -X POST https://dev.api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@invoice.pdf" \
+  -F "pages=1-5" \
+  -F "extract_figure=true"
+```
+
+</CodeGroup>
 
 <Tip>
 Use `file` for direct uploads or `file_url` when you have a public/presigned URL. Both work with `/extract` and `/extract_async`.
@@ -170,288 +138,88 @@ Use `file` for direct uploads or `file_url` when you have a public/presigned URL
 
 For documents over 50 pages or when processing multiple files, use async extraction:
 
-```python async_extraction.py
-def extract_async_with_polling(file_path, schema=None, pages=None):
-    """
-    Extract content asynchronously with automatic polling.
-    Recommended for:
-    - Documents over 50 pages
-    - Multiple concurrent extractions
-    - Long-running processes
-    
-    Args:
-        file_path: Path to the local file
-        schema: Optional JSON schema for structured extraction
-        pages: Optional page range, 1-indexed (e.g., "1-5" for first 5 pages)
-    
-    Returns:
-        Extracted content
-    """
-    
-    # Step 1: Start async extraction
-    url = f"{BASE_URL}/extract_async"
-    headers = {"x-api-key": API_KEY}
-    
-    with open(file_path, 'rb') as f:
-        files = {'file': f}
-        data = {}
-        
-        if schema:
-            data['structured_output'] = json.dumps({'schema': schema})
-        if pages:
-            data['pages'] = pages
-            
-        response = requests.post(url, files=files, data=data, headers=headers)
-    
-    if response.status_code != 200:
-        print(f"Failed to start extraction: {response.status_code}")
-        return response.json()
-    
-    job_info = response.json()
-    job_id = job_info['job_id']
-    print(f"Job started: {job_id}")
-    
-    # Step 2: Poll for job completion
-    poll_url = f"{BASE_URL}/job/{job_id}"
-    max_attempts = 60  # Maximum 5 minutes (60 * 5 seconds)
-    attempt = 0
-    
-    while attempt < max_attempts:
-        time.sleep(5)  # Wait 5 seconds between polls
-        poll_response = requests.get(poll_url, headers=headers)
-        
-        if poll_response.status_code != 200:
-            print(f"Failed to poll job: {poll_response.status_code}")
-            return None
-        
-        job_status = poll_response.json()
-        status = job_status['status']
-        
-        print(f"Job status: {status}")
-        
-        if status == 'completed':
-            result = job_status['result']
-            
-            # Handle large document response
-            if result.get('is_url'):
-                print(f"Large document detected. Fetching from: {result['url']}")
-                content_response = requests.get(result['url'])
-                return content_response.json()
-            else:
-                return result
-                
-        elif status == 'failed':
-            print(f"Job failed: {job_status.get('error', 'Unknown error')}")
-            return None
-            
-        elif status == 'cancelled':
-            print("Job was cancelled")
-            return None
-        
-        attempt += 1
-    
-    print("Job timed out")
-    return None
+<CodeGroup>
 
-# Example usage for large document
-result = extract_async_with_polling(
-    "large_report.pdf",
-    schema={"sections": [{"title": "string", "content": "string"}]},
-    pages="1-100"
-)
-```
-
-## Step 5: Production-Ready Client
-
-Here's a complete production-ready class that handles all scenarios:
-
-```python pulse_client.py
-import requests
-import json
+```python Python
 import time
-from typing import Optional, Dict, Any
-from pathlib import Path
+from pulse import Pulse
 
-class PulseAPIClient:
-    """Production-ready client for Pulse API."""
-    
-    def __init__(self, api_key: str, base_url: str = "https://dev.api.runpulse.com"):
-        self.api_key = api_key
-        self.base_url = base_url
-        self.headers = {"x-api-key": api_key}
-    
-    def extract(self, 
-                file_path: Optional[str] = None,
-                file_url: Optional[str] = None,
-                schema: Optional[Dict] = None,
-                pages: Optional[str] = None,
-                extract_figure: bool = False,
-                async_mode: bool = False) -> Dict[str, Any]:
-        """
-        Smart extraction that automatically handles different scenarios.
-        
-        Args:
-            file_path: Local file path
-            file_url: Remote file URL
-            schema: Extraction schema
-            pages: Page range, 1-indexed (e.g., "1-5" for first 5 pages)
-            extract_figure: Extract figures from document
-            async_mode: Use async processing
-        
-        Returns:
-            Extracted content
-        """
-        
-        # Determine if we should use async based on file size or explicit request
-        if file_path and not async_mode:
-            file_size_mb = Path(file_path).stat().st_size / (1024 * 1024)
-            if file_size_mb > 10:  # Auto-switch to async for files > 10MB
-                print(f"Large file detected ({file_size_mb:.1f}MB), using async mode")
-                async_mode = True
-        
-        # Choose endpoint
-        endpoint = "/extract_async" if async_mode else "/extract"
-        
-        # Prepare request
-        if file_path:
-            return self._extract_from_file(endpoint, file_path, schema, pages, extract_figure)
-        elif file_url:
-            return self._extract_from_url(endpoint, file_url, schema, pages, extract_figure)
-        else:
-            raise ValueError("Either file_path or file_url must be provided")
-    
-    def _extract_from_file(self, endpoint: str, file_path: str, 
-                          schema: Optional[Dict], pages: Optional[str],
-                          extract_figure: bool) -> Dict[str, Any]:
-        """Extract from local file."""
-        
-        url = f"{self.base_url}{endpoint}"
-        
-        with open(file_path, 'rb') as f:
-            files = {'file': f}
-            data = {}
-            
-            if schema:
-                data['structured_output'] = json.dumps({'schema': schema})
-            if pages:
-                data['pages'] = pages
-            if extract_figure:
-                data['extract_figure'] = 'true'
-            
-            response = requests.post(url, files=files, data=data, headers=self.headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"Extraction failed: {response.text}")
-        
-        result = response.json()
-        
-        # Handle async response
-        if endpoint == "/extract_async":
-            return self._wait_for_job(result['job_id'])
-        
-        # Handle large document URL response
-        if result.get('is_url'):
-            return self._fetch_from_url(result['url'])
-        
-        return result
-    
-    def _extract_from_url(self, endpoint: str, file_url: str,
-                         schema: Optional[Dict], pages: Optional[str],
-                         extract_figure: bool) -> Dict[str, Any]:
-        """Extract from URL."""
-        
-        url = f"{self.base_url}{endpoint}"
-        data = {"file_url": file_url}
-        
-        if schema:
-            data['structured_output'] = {'schema': schema}
-        if pages:
-            data['pages'] = pages
-        if extract_figure:
-            data['extract_figure'] = extract_figure
-        
-        response = requests.post(url, json=data, headers=self.headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"Extraction failed: {response.text}")
-        
-        result = response.json()
-        
-        # Handle async response
-        if endpoint == "/extract_async":
-            return self._wait_for_job(result['job_id'])
-        
-        # Handle large document URL response
-        if result.get('is_url'):
-            return self._fetch_from_url(result['url'])
-        
-        return result
-    
-    def _wait_for_job(self, job_id: str, timeout: int = 300) -> Dict[str, Any]:
-        """Poll for async job completion."""
-        
-        poll_url = f"{self.base_url}/job/{job_id}"
-        start_time = time.time()
-        
-        while time.time() - start_time < timeout:
-            time.sleep(5)
-            
-            response = requests.get(poll_url, headers=self.headers)
-            if response.status_code != 200:
-                raise Exception(f"Failed to poll job: {response.text}")
-            
-            job_status = response.json()
-            status = job_status['status']
-            
-            if status == 'completed':
-                result = job_status['result']
-                if result.get('is_url'):
-                    return self._fetch_from_url(result['url'])
-                return result
-            elif status in ['failed', 'cancelled']:
-                raise Exception(f"Job {status}: {job_status.get('error', 'Unknown error')}")
-        
-        raise TimeoutError(f"Job {job_id} timed out after {timeout} seconds")
-    
-    def _fetch_from_url(self, url: str) -> Dict[str, Any]:
-        """Fetch content from S3 URL."""
-        
-        response = requests.get(url)
-        if response.status_code != 200:
-            raise Exception(f"Failed to fetch content from URL: {response.status_code}")
-        return response.json()
-    
-    def cancel_job(self, job_id: str) -> bool:
-        """Cancel a running job."""
-        
-        url = f"{self.base_url}/job/{job_id}"
-        response = requests.delete(url, headers=self.headers)
-        
-        return response.status_code == 200
+client = Pulse(api_key="YOUR_API_KEY")
 
-# Example usage
-if __name__ == "__main__":
-    client = PulseAPIClient(api_key="YOUR_API_KEY")
+# Submit async extraction
+submission = client.extract_async(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extract_figure=True
+)
+
+print(f"Job submitted: {submission.job_id}")
+
+# Poll for completion
+job_id = submission.job_id
+while True:
+    job_status = client.jobs.get_job(job_id=job_id)
+    print(f"Status: {job_status.status}")
     
-    # Example 1: Simple extraction
-    result = client.extract(file_path="document.pdf")
+    if job_status.status == "completed":
+        print("Job completed!")
+        print(f"Result: {job_status.result}")
+        break
+    elif job_status.status in ["failed", "canceled"]:
+        print(f"Job ended: {job_status.status}")
+        break
     
-    # Example 2: Extract with schema
-    schema = {
-        "invoice_number": "string",
-        "total": "float",
-        "date": "date"
-    }
-    result = client.extract(file_path="invoice.pdf", schema=schema)
-    
-    # Example 3: Force async mode for large file
-    result = client.extract(file_path="large_report.pdf", async_mode=True)
-    
-    # Example 4: Extract from URL
-    result = client.extract(file_url="https://example.com/document.pdf")
-    
-    print(json.dumps(result, indent=2))
+    time.sleep(2)
 ```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({ 
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+// Submit async extraction
+const submission = await client.extractAsync({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    extractFigure: true
+});
+
+console.log(`Job submitted: ${submission.job_id}`);
+
+// Poll for completion
+const jobId = submission.job_id;
+while (true) {
+    const jobStatus = await client.jobs.getJob({ jobId });
+    console.log(`Status: ${jobStatus.status}`);
+    
+    if (jobStatus.status === 'completed') {
+        console.log('Job completed!');
+        console.log(`Result: ${JSON.stringify(jobStatus.result)}`);
+        break;
+    } else if (jobStatus.status === 'failed' || jobStatus.status === 'canceled') {
+        console.log(`Job ended: ${jobStatus.status}`);
+        break;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+}
+```
+
+```bash curl
+# Submit async extraction
+curl -X POST https://dev.api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf", "extract_figure": true}'
+
+# Response: {"job_id": "abc123", "status": "pending"}
+
+# Poll for results
+curl https://dev.api.runpulse.com/job/abc123 \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+</CodeGroup>
 
 ## Common Use Cases
 
@@ -459,64 +227,151 @@ if __name__ == "__main__":
   <Accordion title="Invoice Processing">
     Extract structured data from invoices:
     
-    ```python
-    schema = {
-        "invoice_number": "string",
-        "vendor_name": "string",
-        "date": "date",
-        "due_date": "date",
-        "subtotal": "float",
-        "tax": "float",
-        "total": "float",
-        "line_items": [{
-            "description": "string",
-            "quantity": "integer",
-            "unit_price": "float",
-            "amount": "float"
-        }]
+<CodeGroup>
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "invoice_number": {"type": "string"},
+        "vendor_name": {"type": "string"},
+        "total": {"type": "number"},
+        "line_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "amount": {"type": "number"}
+                }
+            }
+        }
     }
-    
-    result = client.extract(file_path="invoice.pdf", schema=schema)
-    ```
+}
+
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={"schema": schema}
+)
+```
+
+```typescript TypeScript
+const schema = {
+    type: "object",
+    properties: {
+        invoice_number: { type: "string" },
+        vendor_name: { type: "string" },
+        total: { type: "number" }
+    }
+};
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: { schema }
+});
+```
+
+</CodeGroup>
   </Accordion>
 
   <Accordion title="Contract Analysis">
     Extract key terms from contracts:
     
-    ```python
-    schema = {
-        "parties": [{
-            "name": "string",
-            "role": "string"
-        }],
-        "effective_date": "date",
-        "termination_date": "date",
-        "payment_terms": "string",
-        "key_obligations": ["string"]
+<CodeGroup>
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "parties": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "role": {"type": "string"}
+                }
+            }
+        },
+        "effective_date": {"type": "string"},
+        "payment_terms": {"type": "string"}
     }
-    
-    result = client.extract(file_path="contract.pdf", schema=schema)
-    ```
+}
+
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={"schema": schema}
+)
+```
+
+```typescript TypeScript
+const schema = {
+    type: "object",
+    properties: {
+        parties: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    name: { type: "string" },
+                    role: { type: "string" }
+                }
+            }
+        },
+        effective_date: { type: "string" },
+        payment_terms: { type: "string" }
+    }
+};
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: { schema }
+});
+```
+
+</CodeGroup>
   </Accordion>
 
   <Accordion title="Research Paper Processing">
     Extract structured content from academic papers:
     
-    ```python
-    schema = {
-        "title": "string",
-        "authors": ["string"],
-        "abstract": "string",
-        "keywords": ["string"],
-        "sections": [{
-            "title": "string",
-            "content": "string"
-        }],
-        "references": ["string"]
+<CodeGroup>
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "authors": {"type": "array", "items": {"type": "string"}},
+        "abstract": {"type": "string"},
+        "keywords": {"type": "array", "items": {"type": "string"}}
     }
-    
-    result = client.extract(file_path="paper.pdf", schema=schema)
-    ```
+}
+
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structured_output={"schema": schema}
+)
+```
+
+```typescript TypeScript
+const schema = {
+    type: "object",
+    properties: {
+        title: { type: "string" },
+        authors: { type: "array", items: { type: "string" } },
+        abstract: { type: "string" },
+        keywords: { type: "array", items: { type: "string" } }
+    }
+};
+
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    structuredOutput: { schema }
+});
+```
+
+</CodeGroup>
   </Accordion>
 </AccordionGroup>
 
