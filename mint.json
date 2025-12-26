@@ -114,6 +114,12 @@
   },
   "fontAwesome": true,
   "theme": "prism",
+  "redirects": [
+    {
+      "source": "/api-reference/schema-guidelines",
+      "destination": "/api-reference/structured-output-guidelines"
+    }
+  ],
   "analytics": {
     "posthog": {
       "apiKey": "phc_FutnpUqAQasGvZ2zQSA1mt9uu14YLiO85JV69tm0cYz"
