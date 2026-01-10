@@ -79,7 +79,7 @@ try {
 
 ```bash curl
 # Cancel a pending or processing job
-curl -X DELETE https://dev.api.runpulse.com/job/abc123-def456-ghi789 \
+curl -X DELETE https://api.runpulse.com/job/abc123-def456-ghi789 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -159,7 +159,7 @@ JOB_ID="abc123-def456-ghi789"
 API_KEY="YOUR_API_KEY"
 
 response=$(curl -s -w "\n%{http_code}" -X DELETE \
-    "https://dev.api.runpulse.com/job/${JOB_ID}" \
+    "https://api.runpulse.com/job/${JOB_ID}" \
     -H "x-api-key: ${API_KEY}")
 
 # Split response body and status code
@@ -243,7 +243,7 @@ JOB_IDS=("job-111-aaa" "job-222-bbb" "job-333-ccc")
 
 for job_id in "${JOB_IDS[@]}"; do
     status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-        "https://dev.api.runpulse.com/job/${job_id}" \
+        "https://api.runpulse.com/job/${job_id}" \
         -H "x-api-key: ${API_KEY}")
     
     if [ "$status" = "200" ]; then

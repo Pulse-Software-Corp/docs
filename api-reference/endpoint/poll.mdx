@@ -148,7 +148,7 @@ MAX_ATTEMPTS=60
 DELAY=1
 
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
-    response=$(curl -s "https://dev.api.runpulse.com/job/${JOB_ID}" \
+    response=$(curl -s "https://api.runpulse.com/job/${JOB_ID}" \
         -H "x-api-key: ${API_KEY}")
     
     status=$(echo "$response" | jq -r '.status')
@@ -234,7 +234,7 @@ if (response.status === "completed") {
 
 ```bash curl
 # Check job status
-curl https://dev.api.runpulse.com/job/abc123-def456-ghi789 \
+curl https://api.runpulse.com/job/abc123-def456-ghi789 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -334,7 +334,7 @@ while (true) {
 
 ```bash curl
 # Step 1: Submit async extraction
-JOB_RESPONSE=$(curl -s -X POST https://dev.api.runpulse.com/extract_async \
+JOB_RESPONSE=$(curl -s -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file_url=https://www.impact-bank.com/user/file/dummy_statement.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "balance": {"type": "number"}}}}')
@@ -345,7 +345,7 @@ echo "Job submitted: $JOB_ID"
 # Step 2: Poll for completion
 DELAY=1
 while true; do
-    STATUS_RESPONSE=$(curl -s "https://dev.api.runpulse.com/job/${JOB_ID}" \
+    STATUS_RESPONSE=$(curl -s "https://api.runpulse.com/job/${JOB_ID}" \
         -H "x-api-key: YOUR_API_KEY")
     
     STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status')

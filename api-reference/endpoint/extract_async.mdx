@@ -140,12 +140,12 @@ while (true) {
 
 ```bash curl
 # Submit async extraction with file upload
-curl -X POST https://dev.api.runpulse.com/extract_async \
+curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf"
 
 # Submit async extraction with URL
-curl -X POST https://dev.api.runpulse.com/extract_async \
+curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
@@ -154,7 +154,7 @@ curl -X POST https://dev.api.runpulse.com/extract_async \
 # {"job_id": "abc123", "status": "pending", "queuedAt": "2025-01-15T10:30:00Z"}
 
 # Poll for results
-curl https://dev.api.runpulse.com/job/abc123 \
+curl https://api.runpulse.com/job/abc123 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -199,7 +199,7 @@ const submission = await client.extractAsync({
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract_async \
+curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}}}, "schema_prompt": "Extract the invoice total"}'
@@ -233,7 +233,7 @@ console.log(`Status: ${status.status}`);  // Should be "canceled"
 
 ```bash curl
 # Cancel a job
-curl -X DELETE https://dev.api.runpulse.com/job/abc123 \
+curl -X DELETE https://api.runpulse.com/job/abc123 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 

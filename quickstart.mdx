@@ -62,7 +62,7 @@ console.log(`Content: ${response.content?.substring(0, 200)}...`);
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -121,7 +121,7 @@ console.log(`Content: ${response.content}`);
 
 ```bash curl
 # Upload a file directly
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
   -F "pages=1-5" \
@@ -207,7 +207,7 @@ while (true) {
 
 ```bash curl
 # Submit async extraction
-curl -X POST https://dev.api.runpulse.com/extract_async \
+curl -X POST https://api.runpulse.com/extract_async \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf", "extract_figure": true}'
@@ -215,7 +215,7 @@ curl -X POST https://dev.api.runpulse.com/extract_async \
 # Response: {"job_id": "abc123", "status": "pending"}
 
 # Poll for results
-curl https://dev.api.runpulse.com/job/abc123 \
+curl https://api.runpulse.com/job/abc123 \
   -H "x-api-key: YOUR_API_KEY"
 ```
 

@@ -55,7 +55,7 @@ Configure AWS S3 as your custom storage provider using IAM role assumption.
 ### Example Request
 
 ```bash
-curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/s3 \
+curl -X POST https://api.runpulse.com/api/v1/storage/config/s3 \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -107,7 +107,7 @@ Configure Azure Blob Storage as your custom storage provider.
 ### Example Request
 
 ```bash
-curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/azure \
+curl -X POST https://api.runpulse.com/api/v1/storage/config/azure \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -138,7 +138,7 @@ Configure Google Cloud Storage as your custom storage provider.
 ### Example Request
 
 ```bash
-curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/gcp \
+curl -X POST https://api.runpulse.com/api/v1/storage/config/gcp \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -192,7 +192,7 @@ Enable or disable custom storage. When enabled, new extractions are stored in yo
 ### Example Request
 
 ```bash
-curl -X POST https://dev.api.runpulse.com/api/v1/storage/config/enable \
+curl -X POST https://api.runpulse.com/api/v1/storage/config/enable \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"enabled": true}'
@@ -215,7 +215,7 @@ Delete the custom storage configuration and revert to Pulse's default storage.
 ### Example Request
 
 ```bash
-curl -X DELETE https://dev.api.runpulse.com/api/v1/storage/config \
+curl -X DELETE https://api.runpulse.com/api/v1/storage/config \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

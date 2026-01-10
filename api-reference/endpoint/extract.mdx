@@ -140,7 +140,7 @@ if ((response as any).is_url) {
 
 ```bash curl
 # For large documents, the response contains a URL
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@large_document.pdf"
 
@@ -197,7 +197,7 @@ console.log(`Job ID: ${response.job_id}`);
 
 ```bash curl
 # Extract from URL
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
@@ -231,7 +231,7 @@ const response = await client.extract({
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf"
 ```
@@ -277,7 +277,7 @@ const response = await client.extract({
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schema_prompt": "Extract the invoice total and vendor name"}'
@@ -308,7 +308,7 @@ const response = await client.extract({
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
   -F "pages=1-5,10" \
@@ -337,7 +337,7 @@ const response = await client.extract({
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
   -F 'storage={"enabled": false}'

@@ -11,7 +11,7 @@ info:
     email: support@trypulse.ai
     url: https://docs.runpulse.com
 servers:
-  - url: https://dev.api.runpulse.com
+  - url: https://api.runpulse.com
     description: Production server
 
 security:

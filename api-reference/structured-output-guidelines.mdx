@@ -190,7 +190,7 @@ console.log(`Balance: ${response.structuredOutput?.closing_balance}`);
 ```
 
 ```bash curl
-curl -X POST https://dev.api.runpulse.com/extract \
+curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@bank_statement.pdf" \
   -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'

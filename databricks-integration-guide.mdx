@@ -54,7 +54,7 @@ def convert_pdf(pdf_path, api_key):
     """
     Convert PDF using Pulse API
     """
-    url = "https://dev.api.runpulse.com/convert"
+    url = "https://api.runpulse.com/convert"
     headers = { 
         'Content-Type': 'application/pdf',
         'x-api-key': api_key,
@@ -78,7 +78,7 @@ def extract_document(file_url, api_key, schema=None, schema_prompt=None, chunkin
     """
     Extract structured data from document using Pulse API
     """
-    url = "https://dev.api.runpulse.com/extract"
+    url = "https://api.runpulse.com/extract"
     data = {
         'file-url': file_url,
         'schema': schema,

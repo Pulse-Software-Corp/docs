@@ -59,7 +59,7 @@ description: 'Get help with Pulse API'
     
     ```bash
     # Correct header format
-    curl -H "x-api-key: YOUR_API_KEY" https://dev.api.runpulse.com/extract
+    curl -H "x-api-key: YOUR_API_KEY" https://api.runpulse.com/extract
     ```
   </Accordion>
 
@@ -264,7 +264,7 @@ def check_api_health():
     
     try:
         response = requests.get(
-            "https://dev.api.runpulse.com/health",
+            "https://api.runpulse.com/health",
             headers={"x-api-key": API_KEY},
             timeout=5
         )
