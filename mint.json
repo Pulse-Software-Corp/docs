@@ -118,6 +118,10 @@
     {
       "source": "/api-reference/schema-guidelines",
       "destination": "/api-reference/structured-output-guidelines"
+    },
+    {
+      "source": "/core-concepts/bounding-boxes",
+      "destination": "/api-reference/bounding-boxes"
     }
   ],
   "analytics": {
