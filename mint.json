@@ -122,6 +122,10 @@
     {
       "source": "/core-concepts/bounding-boxes",
       "destination": "/api-reference/bounding-boxes"
+    },
+    {
+      "source": "/core-concepts/schema-extraction",
+      "destination": "/api-reference/structured-output-guidelines"
     }
   ],
   "analytics": {
