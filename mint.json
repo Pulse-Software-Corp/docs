@@ -163,10 +163,6 @@
     {
       "source": "/security/:slug*",
       "destination": "/introduction"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/introduction"
     }
   ],
   "analytics": {
