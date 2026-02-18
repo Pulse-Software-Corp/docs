@@ -1,0 +1,195 @@
+---
+title: 'Azure Blob Setup'
+description: 'Configure your own Azure Blob Storage for extraction storage'
+---
+
+# Bring Your Own Storage: Azure Blob Storage
+
+Store your extraction artifacts in your own Azure Blob Storage container for complete data sovereignty and compliance requirements.
+
+<Note>
+Custom storage is available for Enterprise customers. [Contact sales](mailto:sales@runpulse.com) to enable this feature.
+</Note>
+
+## Overview
+
+Pulse connects to your Azure Blob Storage using either:
+
+- **Connection String** - Full access connection string (recommended for initial setup)
+- **SAS Token** - Shared Access Signature for limited, time-bound access
+
+## Setup Steps
+
+### Step 1: Create a Storage Account
+
+If you don't have one, create an Azure Storage Account:
+
+```bash
+az storage account create \
+  --name mycompanypulsedata \
+  --resource-group my-resource-group \
+  --location eastus \
+  --sku Standard_LRS \
+  --encryption-services blob
+```
+
+### Step 2: Create a Container
+
+Create a container within your storage account for Pulse extractions:
+
+```bash
+az storage container create \
+  --name pulse-extractions \
+  --account-name mycompanypulsedata
+```
+
+### Step 3: Get Connection Credentials
+
+#### Option A: Connection String (Recommended)
+
+Get the connection string from your storage account:
+
+```bash
+az storage account show-connection-string \
+  --name mycompanypulsedata \
+  --resource-group my-resource-group
+```
+
+This returns a connection string like:
+```
+DefaultEndpointsProtocol=https;AccountName=mycompanypulsedata;AccountKey=...;EndpointSuffix=core.windows.net
+```
+
+#### Option B: SAS Token
+
+Generate a SAS token with the required permissions:
+
+```bash
+az storage container generate-sas \
+  --name pulse-extractions \
+  --account-name mycompanypulsedata \
+  --permissions rwdl \
+  --expiry 2025-12-31T23:59:59Z \
+  --https-only
+```
+
+**Required permissions:**
+- `r` - Read
+- `w` - Write
+- `d` - Delete
+- `l` - List
+
+### Step 4: Configure in Pulse Console
+
+1. Navigate to **Settings > Storage** in the Pulse Console
+2. Select **Azure Blob Storage** as your storage provider
+3. Enter the following details:
+   - **Storage Account**: `mycompanypulsedata`
+   - **Container Name**: `pulse-extractions`
+   - **Connection String** or **SAS Token**: Your credential from Step 3
+   - **Base Path** (optional): `extractions/` - prefix for all stored objects
+
+4. Click **Save Configuration**
+
+### Step 5: Test the Connection
+
+Click **Test Connection** to verify that Pulse can access your container. The test will:
+
+1. Connect to your storage account
+2. Verify container access
+3. Report success or any configuration issues
+
+### Step 6: Enable Custom Storage
+
+Once the connection test passes, toggle **Enabled** to start using your custom storage.
+
+## Storage Structure
+
+Pulse organizes artifacts in your container using this structure:
+
+```
+{base_path}/orgs/{org_id}/extractions/{job_id}/artifacts/
+├── result.json          # Extraction results
+├── original_file.pdf    # Original uploaded document
+└── ...                  # Other artifacts
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use a dedicated storage account">
+    Create a separate storage account specifically for Pulse extractions rather than using an existing account with other data.
+  </Accordion>
+  
+  <Accordion title="Enable soft delete">
+    Protect against accidental deletion:
+    ```bash
+    az storage blob service-properties delete-policy update \
+      --account-name mycompanypulsedata \
+      --enable true \
+      --days-retained 7
+    ```
+  </Accordion>
+  
+  <Accordion title="Enable versioning">
+    Track changes to blobs:
+    ```bash
+    az storage account blob-service-properties update \
+      --account-name mycompanypulsedata \
+      --resource-group my-resource-group \
+      --enable-versioning true
+    ```
+  </Accordion>
+  
+  <Accordion title="Use private endpoints">
+    For enhanced security, configure private endpoints to restrict network access to your storage account.
+  </Accordion>
+  
+  <Accordion title="Rotate SAS tokens">
+    If using SAS tokens, set appropriate expiry dates and rotate them regularly.
+  </Accordion>
+  
+  <Accordion title="Enable diagnostic logging">
+    Monitor access to your storage account through Azure Monitor for complete audit trails.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="AuthenticationFailed error">
+    - Verify the connection string or SAS token is correct
+    - Check that the SAS token hasn't expired
+    - Ensure the storage account name matches your configuration
+  </Accordion>
+  
+  <Accordion title="ContainerNotFound error">
+    - Verify the container name is spelled correctly
+    - Ensure the container exists in the storage account
+  </Accordion>
+  
+  <Accordion title="AuthorizationPermissionMismatch error">
+    - The SAS token may not have the required permissions (rwdl)
+    - Regenerate the SAS token with correct permissions
+  </Accordion>
+  
+  <Accordion title="Network errors">
+    - Check if your storage account has network restrictions
+    - Ensure Pulse IP addresses are allowed if using firewall rules
+  </Accordion>
+</AccordionGroup>
+
+## Reverting to Pulse Default Storage
+
+To stop using custom storage and revert to Pulse's managed storage:
+
+1. Toggle **Enabled** to off
+2. Click **Reset to Default** if you want to remove the configuration entirely
+
+<Warning>
+Reverting does not migrate existing artifacts. Data in your Azure container remains there.
+</Warning>
+
+
+
+

@@ -10,13 +10,40 @@ import ExtractDeprecatedFields from '/snippets/extract-deprecated-fields.mdx';
 
 ## Overview
 
-Synchronously extract content from documents. Best for files under 50 pages. Returns markdown or HTML formatted content with optional structured data extraction.
+<Info>
+  **Pipeline Step 1** — Extract is always the first step. After extraction, you can optionally [split](/api-reference/endpoint/split) the document into topics, then apply [schema extraction](/api-reference/endpoint/schema) to get structured data.
+</Info>
+
+Extract content from documents. Returns markdown or HTML formatted content with optional structured data extraction.
 
 For documents over 70 pages, results are returned via S3 URL.
 
 <Note>
-  For large documents or batch processing workflows, consider using the [/extract_async](/api-reference/endpoint/extract_async) endpoint to avoid timeout issues.
+  For large documents or batch processing workflows, set `async: true` to process asynchronously and poll for results via [GET /job/{'{'}jobId{'}'}](/api-reference/endpoint/poll).
 </Note>
+
+### Async Mode
+
+Set `async: true` to return immediately with a job ID for polling:
+
+```json
+{
+  "file_url": "https://example.com/document.pdf",
+  "async": true
+}
+```
+
+**Async Response (200):**
+
+```json
+{
+  "job_id": "abc123-def456",
+  "status": "pending",
+  "message": "Document processing started"
+}
+```
+
+Use `GET /job/{job_id}` to poll for completion.
 
 ## Request
 
@@ -40,20 +67,26 @@ For documents under 70 pages, results are returned directly in the response body
 {
   "markdown": "# Document Title\n\nExtracted content...",
   "page_count": 15,
-  "job_id": "abc123-def456-ghi789",
+  "extraction_id": "abc123-def456-ghi789",
+  "extraction_url": "https://platform.runpulse.com/dashboard/extractions/abc123",
   "plan-info": {
     "pages_used": 15,
     "tier": "standard",
     "note": "Pulse Ultra"
   },
   "bounding_boxes": {
-    "Title": [...],
-    "Paragraphs": [...],
-    "Tables": [...],
-    "Images": [...],
+    "Title": [],
+    "Text": [],
+    "Tables": [],
+    "Images": [],
     "markdown_with_ids": "<p data-bb-text-id=\"txt-1\">..."
   },
-  "extraction_url": "https://platform.runpulse.com/dashboard/extractions/abc123"
+  "chunks": {
+    "semantic": ["chunk 1...", "chunk 2..."],
+    "header": ["section 1...", "section 2..."],
+    "page": ["page 1...", "page 2..."],
+    "recursive": ["part 1...", "part 2..."]
+  }
 }
 ```
 
@@ -61,16 +94,18 @@ For documents under 70 pages, results are returned directly in the response body
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `markdown` | string | Clean markdown content extracted from the document. |
+| `markdown` | string | Clean markdown content extracted from the document. Present when `return_html` is `false` or omitted. |
+| `html` | string | HTML representation of the document. Present when `return_html` is `true`. |
 | `page_count` | integer | Total number of pages processed. |
-| `job_id` | string | Unique identifier for the extraction job. |
+| `extraction_id` | string (uuid) | Persisted extraction ID. Present when storage is enabled (default). Use with `/split` and `/schema`. |
+| `extraction_url` | string | URL to view the extraction in the Pulse Platform. Present when storage is enabled. |
 | `plan-info` | object | Billing information including pages used and plan tier. |
 | `bounding_boxes` | object | Detailed bounding box data for document elements. See [Bounding Boxes](/api-reference/bounding-boxes) for details. |
-| `extraction_url` | string | URL to view the extraction in the Pulse Platform (when storage is enabled). |
-| `html` | string | HTML representation of the document (when `return_html` is `true`). |
-| `structured_output` | object | Extracted data matching your schema (when `structured_output` is provided). |
-| `chunks` | array | Document chunks (when `chunking` is enabled). |
-| `figures` | array | Extracted figures (when `extract_figure` is `true`). |
+| `structured_output` | object | ⚠️ **Deprecated response field** — present only when the deprecated `structured_output` input param was used. Use [`/schema`](/api-reference/endpoint/schema) post-extraction instead. |
+| `chunks` | object | `{ semantic: [...], header: [...], page: [...], recursive: [...] }` — Document chunks by strategy (when `chunking` is enabled). |
+| `input_schema` | object | Echo of the schema that was applied (when the deprecated `structured_output` param was used). |
+| `schema_error` | string | Error message if schema processing failed (deprecated `structured_output` path only). |
+| `schema_processing_time_seconds` | number | Time spent on schema processing (deprecated `structured_output` path only). |
 
 ### Large Document Response (70+ Pages)
 
@@ -115,7 +150,7 @@ if hasattr(response, 'is_url') and response.is_url:
     full_result = requests.get(response.url).json()
     print(full_result["markdown"])
 else:
-    print(response.content)
+    print(response.markdown)
 ```
 
 ```typescript TypeScript
@@ -134,7 +169,7 @@ if ((response as any).is_url) {
     const fullResult = await fetch((response as any).url).then(r => r.json());
     console.log(fullResult.markdown);
 } else {
-    console.log(response.content);
+    console.log(response.markdown);
 }
 ```
 
@@ -174,8 +209,8 @@ response = client.extract(
     return_html=True
 )
 
-print(f"Content: {response.content}")
-print(f"Job ID: {response.job_id}")
+print(f"Markdown: {response.markdown}")
+print(f"Extraction ID: {response.extraction_id}")
 ```
 
 ```typescript TypeScript
@@ -191,8 +226,8 @@ const response = await client.extract({
     returnHtml: true
 });
 
-console.log(`Content: ${response.content}`);
-console.log(`Job ID: ${response.job_id}`);
+console.log(`Markdown: ${response.markdown}`);
+console.log(`Extraction ID: ${response.extraction_id}`);
 ```
 
 ```bash curl
@@ -238,32 +273,54 @@ curl -X POST https://api.runpulse.com/extract \
 
 </CodeGroup>
 
-### Structured Output
+### Structured Data (Extract → Schema)
+
+<Warning>
+  The `structured_output` parameter on `/extract` is **deprecated**. Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead. This gives you better control, re-runnability, and support for split-mode schemas.
+</Warning>
+
+**Recommended two-step approach:**
 
 <CodeGroup>
 
 ```python Python
-schema = {
-    "type": "object",
-    "properties": {
-        "total": {"type": "number"},
-        "vendor": {"type": "string"}
-    }
-}
-
+# Step 1: Extract the document
 response = client.extract(
-    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structured_output={
-        "schema": schema,
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
+)
+
+extraction_id = response.extraction_id
+
+# Step 2: Apply schema separately
+schema_result = client.schema(
+    extraction_id=extraction_id,
+    schema_config={
+        "schema": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "number"},
+                "vendor": {"type": "string"}
+            }
+        },
         "schema_prompt": "Extract invoice total and vendor"
     }
 )
+
+print(schema_result.schema_output)
 ```
 
 ```typescript TypeScript
+// Step 1: Extract the document
 const response = await client.extract({
-    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structuredOutput: {
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+});
+
+const extractionId = response.extraction_id;
+
+// Step 2: Apply schema separately
+const schemaResult = await client.schema.extractSchema({
+    extraction_id: extractionId,
+    schema_config: {
         schema: {
             type: "object",
             properties: {
@@ -271,16 +328,32 @@ const response = await client.extract({
                 vendor: { type: "string" }
             }
         },
-        schemaPrompt: "Extract invoice total and vendor"
+        schema_prompt: "Extract invoice total and vendor"
     }
 });
+
+console.log(schemaResult.schema_output);
 ```
 
 ```bash curl
+# Step 1: Extract the document
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@invoice.pdf" \
-  -F 'structured_output={"schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}}, "schema_prompt": "Extract the invoice total and vendor name"}'
+  -F "file=@invoice.pdf"
+
+# Response includes extraction_id: "abc123-..."
+
+# Step 2: Apply schema
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-...",
+    "schema_config": {
+      "schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}},
+      "schema_prompt": "Extract invoice total and vendor"
+    }
+  }'
 ```
 
 </CodeGroup>

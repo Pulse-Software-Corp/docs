@@ -442,26 +442,31 @@ def handle_webhook():
         job_result = client.jobs.get_job(job_id=job_id)
         
         if job_result.result:
-            print(f"Content: {job_result.result.content[:100]}...")
+            print(f"Markdown: {job_result.result.markdown[:100]}...")
             
-            if job_result.result.structured_output:
-                print(f"Structured data: {job_result.result.structured_output}")
+            # Apply schema post-extraction via /schema endpoint
+            schema_result = client.schema(
+                extraction_id=job_result.result.extraction_id,
+                schema_config={
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "account_holder": {"type": "string"},
+                            "balance": {"type": "number"}
+                        }
+                    }
+                }
+            )
+            if schema_result.schema_output:
+                print(f"Structured data: {schema_result.schema_output}")
     
     return '', 200
 
 # Submit an async job
 def submit_job():
-    response = client.extract_async(
+    response = client.extract(
         file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-        structured_output=json.dumps({
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "account_holder": {"type": "string"},
-                    "balance": {"type": "number"}
-                }
-            }
-        })
+        async_=True
     )
     print(f"Job submitted: {response.job_id}")
     print("Waiting for webhook notification...")
@@ -504,10 +509,23 @@ app.post('/webhook', async (req, res) => {
         const jobResult = await client.jobs.getJob({ jobId });
         
         if (jobResult.result) {
-            console.log(`Content: ${jobResult.result.content?.slice(0, 100)}...`);
+            console.log(`Markdown: ${jobResult.result.markdown?.slice(0, 100)}...`);
             
-            if (jobResult.result.structuredOutput) {
-                console.log(`Structured data:`, jobResult.result.structuredOutput);
+            // Apply schema post-extraction via /schema endpoint
+            const schemaResult = await client.schema.extractSchema({
+                extraction_id: jobResult.result.extraction_id,
+                schema_config: {
+                    schema: {
+                        type: "object",
+                        properties: {
+                            account_holder: { type: "string" },
+                            balance: { type: "number" }
+                        }
+                    }
+                }
+            });
+            if (schemaResult.schema_output) {
+                console.log(`Structured data:`, schemaResult.schema_output);
             }
         }
     }
@@ -517,22 +535,14 @@ app.post('/webhook', async (req, res) => {
 
 // Submit an async job
 async function submitJob(): Promise<string> {
-    const response = await client.extractAsync({
+    const response = await client.extract({
         fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-        structuredOutput: {
-            schema: {
-                type: "object",
-                properties: {
-                    account_holder: { type: "string" },
-                    balance: { type: "number" }
-                }
-            }
-        }
+        async: true
     });
     
-    console.log(`Job submitted: ${response.jobId}`);
+    console.log(`Job submitted: ${response.job_id}`);
     console.log("Waiting for webhook notification...");
-    return response.jobId!;
+    return response.job_id!;
 }
 
 // Start the server and submit a job
@@ -596,7 +606,7 @@ Before going live:
   <Card title="API Reference" icon="book" href="/api-reference/introduction">
     Explore other endpoints
   </Card>
-  <Card title="Async Processing" icon="clock" href="/api-reference/endpoint/extract_async">
+  <Card title="Async Processing" icon="clock" href="/api-reference/async-processing">
     Learn about async jobs
   </Card>
 </CardGroup> 

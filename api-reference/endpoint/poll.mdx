@@ -5,7 +5,7 @@ openapi: 'GET /job/{jobId}'
 
 ## Overview
 
-Check the status and retrieve results of an asynchronous job (e.g., submitted via `/extract_async`).
+Check the status and retrieve results of an asynchronous job (e.g., submitted via `/extract` with `async: true`).
 
 Poll this endpoint periodically until the job reaches a terminal state (`completed`, `failed`, or `canceled`).
 
@@ -66,7 +66,7 @@ def poll_job(job_id: str, max_attempts: int = 60):
     Poll for job completion with exponential backoff.
     
     Args:
-        job_id: The job ID returned from extract_async
+        job_id: The job ID returned from /extract with async: true
         max_attempts: Maximum number of polling attempts
         
     Returns:
@@ -253,17 +253,9 @@ client = Pulse(api_key="YOUR_API_KEY")
 
 # Step 1: Submit async extraction
 print("Submitting async extraction...")
-submit_response = client.extract_async(
+submit_response = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structured_output=json.dumps({
-        "schema": {
-            "type": "object",
-            "properties": {
-                "account_holder": {"type": "string"},
-                "balance": {"type": "number"}
-            }
-        }
-    })
+    async_=True
 )
 
 job_id = submit_response.job_id
@@ -276,7 +268,8 @@ while True:
     
     if status_response.status == "completed":
         print("Extraction complete!")
-        print(f"Structured output: {status_response.result.structured_output}")
+        extraction_id = status_response.result.extraction_id
+        print(f"Extraction ID: {extraction_id}")
         break
     elif status_response.status in ["failed", "canceled"]:
         print(f"Job ended with status: {status_response.status}")
@@ -285,6 +278,21 @@ while True:
     print(f"Status: {status_response.status}")
     time.sleep(delay)
     delay = min(delay * 1.5, 10)
+
+# Step 3 (optional): Apply schema via /schema endpoint
+schema_result = client.schema(
+    extraction_id=extraction_id,
+    schema_config={
+        "schema": {
+            "type": "object",
+            "properties": {
+                "account_holder": {"type": "string"},
+                "balance": {"type": "number"}
+            }
+        }
+    }
+)
+print(f"Schema output: {schema_result.schema_output}")
 ```
 
 ```typescript TypeScript SDK
@@ -296,30 +304,24 @@ const client = new PulseClient({
 
 // Step 1: Submit async extraction
 console.log("Submitting async extraction...");
-const submitResponse = await client.extractAsync({
+const submitResponse = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structuredOutput: {
-        schema: {
-            type: "object",
-            properties: {
-                account_holder: { type: "string" },
-                balance: { type: "number" }
-            }
-        }
-    }
+    async: true
 });
 
-const jobId = submitResponse.jobId;
+const jobId = submitResponse.job_id;
 console.log(`Job submitted: ${jobId}`);
 
 // Step 2: Poll for completion
 let delay = 1;
+let extractionId: string;
 while (true) {
     const statusResponse = await client.jobs.getJob({ jobId });
     
     if (statusResponse.status === "completed") {
         console.log("Extraction complete!");
-        console.log(`Structured output: ${JSON.stringify(statusResponse.result?.structuredOutput)}`);
+        extractionId = statusResponse.result?.extraction_id;
+        console.log(`Extraction ID: ${extractionId}`);
         break;
     } else if (statusResponse.status === "failed" || statusResponse.status === "canceled") {
         console.log(`Job ended with status: ${statusResponse.status}`);
@@ -330,14 +332,29 @@ while (true) {
     await new Promise(resolve => setTimeout(resolve, delay * 1000));
     delay = Math.min(delay * 1.5, 10);
 }
+
+// Step 3 (optional): Apply schema via /schema endpoint
+const schemaResult = await client.schema.extractSchema({
+    extraction_id: extractionId,
+    schema_config: {
+        schema: {
+            type: "object",
+            properties: {
+                account_holder: { type: "string" },
+                balance: { type: "number" }
+            }
+        }
+    }
+});
+console.log(`Schema output:`, schemaResult.schema_output);
 ```
 
 ```bash curl
 # Step 1: Submit async extraction
-JOB_RESPONSE=$(curl -s -X POST https://api.runpulse.com/extract_async \
+JOB_RESPONSE=$(curl -s -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file_url=https://www.impact-bank.com/user/file/dummy_statement.pdf" \
-  -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "balance": {"type": "number"}}}}')
+  -F "async=true")
 
 JOB_ID=$(echo "$JOB_RESPONSE" | jq -r '.job_id')
 echo "Job submitted: $JOB_ID"
@@ -353,7 +370,8 @@ while true; do
     case "$STATUS" in
         "completed")
             echo "Extraction complete!"
-            echo "$STATUS_RESPONSE" | jq '.result.structured_output'
+            EXTRACTION_ID=$(echo "$STATUS_RESPONSE" | jq -r '.result.extraction_id')
+            echo "Extraction ID: $EXTRACTION_ID"
             break
             ;;
         "failed"|"canceled")

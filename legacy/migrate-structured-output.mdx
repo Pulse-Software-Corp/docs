@@ -1,0 +1,476 @@
+---
+title: 'Migrate from structured_output to /schema'
+description: 'How to switch from passing structured_output on /extract to using the dedicated /schema endpoint for structured data extraction'
+---
+
+<Warning>
+  The `structured_output` parameter on `/extract` is **deprecated** and will be removed in a future version. Please migrate to the two-step extract → schema flow described below.
+</Warning>
+
+## Overview
+
+Previously, you could pass a `structured_output` object directly in your `/extract` request to get structured data in a single call. This approach has been replaced by a dedicated `/schema` endpoint that runs **after** extraction.
+
+### Why the change?
+
+| Benefit | Description |
+|---------|-------------|
+| **Re-runnability** | Re-apply different schemas to the same extraction without re-processing the document |
+| **Split-mode schemas** | Apply different schemas to different sections of a document using `/split` → `/schema` |
+| **Separation of concerns** | Extraction and schema application are independent steps — easier to debug and optimize |
+| **Async support** | The `/schema` endpoint supports its own `async: true` flag for long-running schema jobs |
+| **Cost savings** | Only pay for extraction once, then iterate on schemas without additional extraction charges |
+
+### Before vs. After
+
+| | Before (Deprecated) | After (Recommended) |
+|---|---|---|
+| **Steps** | 1 call to `/extract` | 2 calls: `/extract` → `/schema` |
+| **Schema param** | `structured_output` on `/extract` | `schema_config` on `/schema` |
+| **Response field** | `response.structured_output` | `response.schema_output` |
+| **Re-run schema** | Must re-extract entire document | Call `/schema` again with same `extraction_id` |
+| **Split-mode** | Not supported | Supported via `/split` → `/schema` |
+
+## Migration Steps
+
+<Steps>
+
+### Step 1: Remove `structured_output` from your /extract call
+
+Strip the `structured_output`, `schema`, and `schema_prompt` parameters from your extraction request. Keep all other parameters (`pages`, `chunking`, `extract_figure`, etc.) as-is.
+
+### Step 2: Save the `extraction_id` from the response
+
+The `/extract` response includes an `extraction_id` (when storage is enabled, which is the default). Store this ID — you'll need it for the schema step.
+
+### Step 3: Call /schema with your schema config
+
+Send a `POST /schema` request with the `extraction_id` and your schema in the `schema_config` object. The schema format is the same JSON Schema you were using before.
+
+### Step 4: Update response handling
+
+The schema result is now in `response.schema_output` (instead of `response.structured_output`). The shape includes `values` and `citations`.
+
+</Steps>
+
+## Code Examples
+
+### Python SDK
+
+<CodeGroup>
+
+```python Before (Deprecated)
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+schema = {
+    "type": "object",
+    "properties": {
+        "account_holder": {"type": "string"},
+        "account_number": {"type": "string"},
+        "closing_balance": {"type": "number"}
+    },
+    "required": ["account_holder"]
+}
+
+# Old way — schema bundled with extraction
+response = client.extract(
+    file_url="https://example.com/bank_statement.pdf",
+    structured_output={
+        "schema": schema,
+        "schema_prompt": "Extract bank statement details"
+    }
+)
+
+# Structured data was in the extract response
+print(response.structured_output["account_holder"])
+print(response.structured_output["closing_balance"])
+```
+
+```python After (Recommended)
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+schema = {
+    "type": "object",
+    "properties": {
+        "account_holder": {"type": "string"},
+        "account_number": {"type": "string"},
+        "closing_balance": {"type": "number"}
+    },
+    "required": ["account_holder"]
+}
+
+# Step 1: Extract the document (no schema)
+extract_response = client.extract(
+    file_url="https://example.com/bank_statement.pdf"
+)
+
+extraction_id = extract_response.extraction_id
+print(f"Markdown: {extract_response.markdown[:200]}...")
+
+# Step 2: Apply schema separately
+schema_response = client.schema.extract_schema(
+    extraction_id=extraction_id,
+    schema_config={
+        "schema": schema,
+        "schema_prompt": "Extract bank statement details"
+    }
+)
+
+# Structured data is now in schema_output
+print(schema_response.schema_output["values"]["account_holder"])
+print(schema_response.schema_output["values"]["closing_balance"])
+
+# Bonus: Re-run with a different schema without re-extracting
+invoice_schema = {
+    "type": "object",
+    "properties": {
+        "total_due": {"type": "number"},
+        "due_date": {"type": "string", "format": "date"}
+    }
+}
+
+schema_response_2 = client.schema.extract_schema(
+    extraction_id=extraction_id,  # same extraction!
+    schema_config={"schema": invoice_schema}
+)
+```
+
+</CodeGroup>
+
+### TypeScript SDK
+
+<CodeGroup>
+
+```typescript Before (Deprecated)
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+    headers: { "x-api-key": "YOUR_API_KEY" }
+});
+
+const schema = {
+    type: "object",
+    properties: {
+        account_holder: { type: "string" },
+        account_number: { type: "string" },
+        closing_balance: { type: "number" }
+    },
+    required: ["account_holder"]
+};
+
+// Old way — schema bundled with extraction
+const response = await client.extract({
+    fileUrl: "https://example.com/bank_statement.pdf",
+    structuredOutput: {
+        schema,
+        schemaPrompt: "Extract bank statement details"
+    }
+});
+
+// Structured data was in the extract response
+console.log(response.structured_output?.values?.account_holder);
+console.log(response.structured_output?.values?.closing_balance);
+```
+
+```typescript After (Recommended)
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+    headers: { "x-api-key": "YOUR_API_KEY" }
+});
+
+const schema = {
+    type: "object",
+    properties: {
+        account_holder: { type: "string" },
+        account_number: { type: "string" },
+        closing_balance: { type: "number" }
+    },
+    required: ["account_holder"]
+};
+
+// Step 1: Extract the document (no schema)
+const extractResponse = await client.extract({
+    fileUrl: "https://example.com/bank_statement.pdf"
+});
+
+const extractionId = extractResponse.extraction_id;
+console.log(`Markdown: ${extractResponse.markdown?.slice(0, 200)}...`);
+
+// Step 2: Apply schema separately
+const schemaResponse = await client.schema.extractSchema({
+    extraction_id: extractionId,
+    schema_config: {
+        schema,
+        schema_prompt: "Extract bank statement details"
+    }
+});
+
+// Structured data is now in schema_output
+console.log(schemaResponse.schema_output?.values?.account_holder);
+console.log(schemaResponse.schema_output?.values?.closing_balance);
+
+// Bonus: Re-run with a different schema without re-extracting
+const schemaResponse2 = await client.schema.extractSchema({
+    extraction_id: extractionId, // same extraction!
+    schema_config: {
+        schema: {
+            type: "object",
+            properties: {
+                total_due: { type: "number" },
+                due_date: { type: "string", format: "date" }
+            }
+        }
+    }
+});
+```
+
+</CodeGroup>
+
+### curl
+
+<CodeGroup>
+
+```bash Before (Deprecated)
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@bank_statement.pdf" \
+  -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "closing_balance": {"type": "number"}}}, "schema_prompt": "Extract bank statement details"}'
+```
+
+```bash After (Recommended)
+# Step 1: Extract the document
+EXTRACT_RESPONSE=$(curl -s -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@bank_statement.pdf")
+
+EXTRACTION_ID=$(echo "$EXTRACT_RESPONSE" | jq -r '.extraction_id')
+echo "Extraction ID: $EXTRACTION_ID"
+
+# Step 2: Apply schema
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"extraction_id\": \"$EXTRACTION_ID\",
+    \"schema_config\": {
+      \"schema\": {
+        \"type\": \"object\",
+        \"properties\": {
+          \"account_holder\": {\"type\": \"string\"},
+          \"closing_balance\": {\"type\": \"number\"}
+        }
+      },
+      \"schema_prompt\": \"Extract bank statement details\"
+    }
+  }"
+```
+
+</CodeGroup>
+
+## With Async Processing
+
+If you were using `structured_output` with async extraction, here's the updated flow:
+
+<CodeGroup>
+
+```python Python
+import time
+
+# Step 1: Async extraction
+extract_response = client.extract(
+    file_url="https://example.com/large_document.pdf",
+    async_=True
+)
+
+# Step 2: Poll for extraction completion
+job_id = extract_response.job_id
+while True:
+    status = client.jobs.get_job(job_id=job_id)
+    if status.status == "completed":
+        extraction_id = status.result.extraction_id
+        break
+    elif status.status in ["failed", "canceled"]:
+        raise Exception(f"Extraction failed: {status.status}")
+    time.sleep(2)
+
+# Step 3: Apply schema (can also be async)
+schema_response = client.schema.extract_schema(
+    extraction_id=extraction_id,
+    schema_config={
+        "schema": {
+            "type": "object",
+            "properties": {
+                "account_holder": {"type": "string"},
+                "closing_balance": {"type": "number"}
+            }
+        }
+    }
+)
+
+print(schema_response.schema_output)
+```
+
+```typescript TypeScript
+// Step 1: Async extraction
+const extractResponse = await client.extract({
+    fileUrl: "https://example.com/large_document.pdf",
+    async: true
+});
+
+// Step 2: Poll for extraction completion
+const jobId = extractResponse.job_id;
+let extractionId: string;
+while (true) {
+    const status = await client.jobs.getJob({ jobId });
+    if (status.status === "completed") {
+        extractionId = status.result?.extraction_id!;
+        break;
+    } else if (status.status === "failed" || status.status === "canceled") {
+        throw new Error(`Extraction failed: ${status.status}`);
+    }
+    await new Promise(r => setTimeout(r, 2000));
+}
+
+// Step 3: Apply schema (can also be async)
+const schemaResponse = await client.schema.extractSchema({
+    extraction_id: extractionId,
+    schema_config: {
+        schema: {
+            type: "object",
+            properties: {
+                account_holder: { type: "string" },
+                closing_balance: { type: "number" }
+            }
+        }
+    }
+});
+
+console.log(schemaResponse.schema_output);
+```
+
+</CodeGroup>
+
+## Advanced: Split-Mode Schema (New Capability)
+
+With the new flow, you can now split a document into topics and apply **different schemas** to each section. This was not possible with the old `structured_output` approach.
+
+```python Python
+# Step 1: Extract
+extract_response = client.extract(
+    file_url="https://example.com/annual_report.pdf"
+)
+
+# Step 2: Split into topics
+split_response = client.split.document(
+    extraction_id=extract_response.extraction_id,
+    split_config={
+        "topics": [
+            {"name": "Financials", "description": "Revenue, expenses, profit data"},
+            {"name": "Leadership", "description": "Executive team and board info"},
+            {"name": "Outlook", "description": "Future plans and projections"}
+        ]
+    }
+)
+
+# Step 3: Apply different schemas to each topic
+schema_response = client.schema.extract_schema(
+    split_id=split_response.split_id,
+    split_schema_config={
+        "Financials": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "revenue": {"type": "number"},
+                    "net_income": {"type": "number"},
+                    "yoy_growth": {"type": "string"}
+                }
+            },
+            "schema_prompt": "Extract key financial metrics"
+        },
+        "Leadership": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "ceo": {"type": "string"},
+                    "board_members": {"type": "array", "items": {"type": "string"}}
+                }
+            },
+            "schema_prompt": "Extract leadership information"
+        },
+        "Outlook": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "guidance": {"type": "string"},
+                    "key_initiatives": {"type": "array", "items": {"type": "string"}}
+                }
+            },
+            "schema_prompt": "Extract forward-looking statements"
+        }
+    }
+)
+
+# Results are organized by topic
+for topic, result in schema_response.results.items():
+    print(f"\n--- {topic} ---")
+    print(result)
+```
+
+## Response Field Mapping
+
+If you're parsing the response, here's how the fields map:
+
+| Old field (on /extract response) | New field (on /schema response) | Notes |
+|---|---|---|
+| `response.structured_output` | `response.schema_output.values` | Values are now nested under `schema_output.values` |
+| `response.structured_output.citations` | `response.schema_output.citations` | Same structure, new path |
+| `response.input_schema` | N/A | Echo removed; you know what schema you sent |
+| `response.schema_error` | Standard HTTP error response | Errors are returned as 4xx/5xx responses |
+| `response.schema_processing_time_seconds` | N/A | Available via job metadata for async schema calls |
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Will structured_output on /extract stop working immediately?">
+    No. The parameter will continue to work for backward compatibility but will be removed in a future version. We recommend migrating as soon as possible.
+  </Accordion>
+
+  <Accordion title="Is the schema format the same?">
+    Yes. The JSON Schema format is identical. The only change is where you send it: instead of `structured_output.schema` on `/extract`, you send `schema_config.schema` on `/schema`. The `schema_prompt` field is also in the same location within the config object.
+  </Accordion>
+
+  <Accordion title="Does the two-step flow cost more?">
+    No. Extraction is billed once based on page count. The `/schema` endpoint runs on the already-extracted content and does not incur additional extraction charges.
+  </Accordion>
+
+  <Accordion title="Can I use async for the schema step too?">
+    Yes! Set `async: true` on the `/schema` request to get a `job_id` and poll for results, just like extraction.
+  </Accordion>
+
+  <Accordion title="What if I don't need structured data — just markdown?">
+    Then you're already using the recommended flow. Just call `/extract` without any schema parameters and use the `markdown` from the response.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Schema Endpoint" icon="table" href="/api-reference/endpoint/schema">
+    Full reference for the /schema endpoint (single + split mode)
+  </Card>
+  <Card title="Schema Design Guide" icon="code" href="/api-reference/structured-output-guidelines">
+    Best practices for writing effective JSON schemas
+  </Card>
+  <Card title="Pipeline Overview" icon="diagram-project" href="/api-reference/endpoint/pipeline-overview">
+    How extract → split → schema work together
+  </Card>
+  <Card title="Split Endpoint" icon="scissors" href="/api-reference/endpoint/split">
+    Split documents into topics for targeted schema extraction
+  </Card>
+</CardGroup>
+

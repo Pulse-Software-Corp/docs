@@ -45,7 +45,8 @@ response = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
 )
 
-print(f"Job ID: {response.job_id}")
+print(f"Extraction ID: {response.extraction_id}")
+print(f"Markdown: {response.markdown[:200]}...")
 ```
 
 ```typescript TypeScript
@@ -61,7 +62,8 @@ const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
 });
 
-console.log(`Job ID: ${response.job_id}`);
+console.log(`Extraction ID: ${response.extraction_id}`);
+console.log(`Markdown: ${response.markdown?.substring(0, 200)}...`);
 ```
 
 ```bash curl
@@ -106,7 +108,7 @@ client = Pulse(api_key=os.getenv("PULSE_API_KEY"))
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': "YOUR_API_KEY" }
+    headers: { 'x-api-key': process.env.PULSE_API_KEY! }
 });
 ```
 
@@ -183,4 +185,4 @@ All API keys have full access to:
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
     Explore available endpoints
   </Card>
-</CardGroup> 
+</CardGroup>

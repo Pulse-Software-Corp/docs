@@ -1,0 +1,429 @@
+---
+title: 'Schema Extraction'
+description: 'Extract structured data from documents using custom schemas'
+---
+
+## Overview
+
+Schema extraction allows you to define the exact structure of data you want to extract from documents. Instead of getting raw text, you receive structured JSON that matches your specified schema, making it perfect for automated workflows and database integration.
+
+## How It Works
+
+<Steps>
+  <Step title="Define Schema">
+    Create a JSON schema that describes your desired output structure
+  </Step>
+  <Step title="Send Request">
+    Include the schema with your extraction request
+  </Step>
+  <Step title="AI Processing">
+    Our AI analyzes the document and maps content to your schema
+  </Step>
+  <Step title="Receive Structured Data">
+    Get back clean, structured JSON matching your schema
+  </Step>
+</Steps>
+
+## Basic Schema Format
+
+Define your schema as a JSON object with field names and data types:
+
+```json
+{
+  "invoice_number": "string",
+  "date": "date",
+  "total": "float",
+  "items": [{
+    "description": "string",
+    "quantity": "integer",
+    "price": "float"
+  }]
+}
+```
+
+## Supported Data Types
+
+<CardGroup cols={2}>
+  <Card title="string" icon="text">
+    Text values of any length
+    ```json
+    {"name": "string"}
+    ```
+  </Card>
+
+  <Card title="integer" icon="hashtag">
+    Whole numbers without decimals
+    ```json
+    {"quantity": "integer"}
+    ```
+  </Card>
+
+  <Card title="float" icon="calculator">
+    Numbers with decimal places
+    ```json
+    {"price": "float"}
+    ```
+  </Card>
+
+  <Card title="date" icon="calendar">
+    Date values in various formats
+    ```json
+    {"due_date": "date"}
+    ```
+  </Card>
+
+  <Card title="boolean" icon="toggle-on">
+    True/false values
+    ```json
+    {"is_paid": "boolean"}
+    ```
+  </Card>
+
+  <Card title="array" icon="list">
+    Lists of items
+    ```json
+    {"tags": ["string"]}
+    ```
+  </Card>
+</CardGroup>
+
+## Complex Schema Examples
+
+### Invoice Processing
+
+Extract detailed invoice information:
+
+```python
+schema = {
+    "vendor": {
+        "name": "string",
+        "address": "string",
+        "tax_id": "string"
+    },
+    "customer": {
+        "name": "string",
+        "address": "string",
+        "email": "string"
+    },
+    "invoice_details": {
+        "number": "string",
+        "date": "date",
+        "due_date": "date",
+        "currency": "string"
+    },
+    "line_items": [{
+        "description": "string",
+        "quantity": "integer",
+        "unit_price": "float",
+        "tax_rate": "float",
+        "amount": "float"
+    }],
+    "totals": {
+        "subtotal": "float",
+        "tax": "float",
+        "total": "float"
+    },
+    "payment_terms": "string",
+    "notes": "string"
+}
+
+result = client.extract(file_path="invoice.pdf", schema=schema)
+```
+
+### Contract Analysis
+
+Extract key contract terms:
+
+```python
+schema = {
+    "contract_type": "string",
+    "parties": [{
+        "name": "string",
+        "role": "string",
+        "representative": "string",
+        "address": "string"
+    }],
+    "dates": {
+        "effective_date": "date",
+        "expiration_date": "date",
+        "signed_date": "date"
+    },
+    "terms": {
+        "payment_amount": "float",
+        "payment_schedule": "string",
+        "deliverables": ["string"],
+        "termination_clause": "string"
+    },
+    "signatures": [{
+        "name": "string",
+        "title": "string",
+        "date": "date"
+    }]
+}
+
+result = client.extract(file_path="contract.pdf", schema=schema)
+```
+
+### Medical Records
+
+Extract patient information:
+
+```python
+schema = {
+    "patient": {
+        "name": "string",
+        "date_of_birth": "date",
+        "medical_record_number": "string"
+    },
+    "visit": {
+        "date": "date",
+        "provider": "string",
+        "chief_complaint": "string"
+    },
+    "vitals": {
+        "blood_pressure": "string",
+        "heart_rate": "integer",
+        "temperature": "float",
+        "weight": "float"
+    },
+    "diagnoses": [{
+        "code": "string",
+        "description": "string"
+    }],
+    "medications": [{
+        "name": "string",
+        "dosage": "string",
+        "frequency": "string"
+    }],
+    "follow_up": "string"
+}
+
+result = client.extract(file_path="medical_record.pdf", schema=schema)
+```
+
+## Advanced Features
+
+### Optional Fields
+
+Make fields optional by using null as an alternative type:
+
+```python
+schema = {
+    "required_field": "string",
+    "optional_field": "string|null",
+    "optional_number": "float|null"
+}
+```
+
+### Schema Prompts
+
+Provide additional context for better extraction:
+
+```python
+result = client.extract(
+    file_path="document.pdf",
+    schema=schema,
+    schema_prompt="This is a German invoice. Extract amounts in EUR. Pay special attention to VAT calculations"
+)
+```
+
+### Nested Objects
+
+Create deeply nested structures:
+
+```python
+schema = {
+    "company": {
+        "name": "string",
+        "departments": [{
+            "name": "string",
+            "manager": {
+                "name": "string",
+                "email": "string"
+            },
+            "employees": [{
+                "name": "string",
+                "role": "string",
+                "salary": "float"
+            }]
+        }]
+    }
+}
+```
+
+### Dynamic Arrays
+
+Extract variable-length lists:
+
+```python
+schema = {
+    "products": [{
+        "sku": "string",
+        "name": "string",
+        "category": "string",
+        "price": "float",
+        "features": ["string"]
+    }]
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep Schemas Simple">
+    - Start with basic schemas and add complexity gradually
+    - Use clear, descriptive field names
+    - Avoid deeply nested structures when possible
+    - Test with sample documents first
+  </Accordion>
+
+  <Accordion title="Handle Missing Data">
+    - Make optional fields nullable
+    - Provide default values in your application
+    - Use validation after extraction
+    - Consider partial extraction strategies
+  </Accordion>
+
+  <Accordion title="Optimize for Performance">
+    - Extract only needed fields
+    - Use specific data types (not just "string")
+    - Process pages selectively with `pages` parameter
+    - Consider chunking for very large schemas
+  </Accordion>
+
+  <Accordion title="Improve Accuracy">
+    - Use descriptive field names that match document terminology
+    - Provide context with schema prompts
+    - Validate critical data points
+  </Accordion>
+</AccordionGroup>
+
+## Common Patterns
+
+### Table Extraction
+
+Extract tabular data efficiently:
+
+```python
+schema = {
+    "table_data": [{
+        "row_number": "integer",
+        "columns": {
+            "product": "string",
+            "quantity": "integer",
+            "price": "float",
+            "total": "float"
+        }
+    }]
+}
+```
+
+### Key-Value Extraction
+
+Extract form-like data:
+
+```python
+schema = {
+    "form_fields": {
+        "field_name_1": "string",
+        "field_name_2": "date",
+        "field_name_3": "boolean"
+    }
+}
+```
+
+### Multi-Document Extraction
+
+Process related documents:
+
+```python
+# Extract matching fields from multiple documents
+schema = {
+    "document_type": "string",
+    "reference_number": "string",
+    "date": "date",
+    "common_fields": {
+        "vendor": "string",
+        "amount": "float"
+    }
+}
+
+# Process invoice and purchase order with same schema
+invoice_data = client.extract("invoice.pdf", schema=schema)
+po_data = client.extract("purchase_order.pdf", schema=schema)
+```
+
+## Error Handling
+
+### Schema Validation
+
+The API validates your schema before processing:
+
+```python
+try:
+    result = client.extract(file_path="doc.pdf", schema=invalid_schema)
+except Exception as e:
+    if "Invalid schema" in str(e):
+        print("Schema validation failed")
+```
+
+### Partial Extraction
+
+When some fields can't be found:
+
+```json
+{
+  "invoice_number": "INV-12345",
+  "date": "2024-01-15",
+  "total": 1234.56,
+  "optional_field": null  // Field not found in document
+}
+```
+
+## Integration Examples
+
+### Database Storage
+
+```python
+# Extract and store in database
+schema = {
+    "invoice_number": "string",
+    "vendor_name": "string",
+    "total": "float",
+    "date": "date"
+}
+
+result = client.extract(file_path="invoice.pdf", schema=schema)
+
+# Insert into database
+cursor.execute(
+    "INSERT INTO invoices (number, vendor, total, date) VALUES (?, ?, ?, ?)",
+    (result["invoice_number"], result["vendor_name"], result["total"], result["date"])
+)
+```
+
+### API Integration
+
+```python
+# Extract and send to another API
+schema = {
+    "customer_id": "string",
+    "order_items": [{
+        "product_id": "string",
+        "quantity": "integer"
+    }]
+}
+
+result = client.extract(file_path="order.pdf", schema=schema)
+
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/endpoint/extract">
+    See extraction endpoint details
+  </Card>
+  <Card title="Large Documents" icon="file-lines" href="/core-concepts/large-documents">
+    Handle complex extractions
+  </Card>
+</CardGroup> 

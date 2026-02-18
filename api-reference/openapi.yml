@@ -25,9 +25,71 @@ paths:
         The primary endpoint for the Pulse API. Parses uploaded documents or remote 
         file URLs and returns rich markdown content with optional structured data 
         extraction based on user-provided schemas and extraction options.
+        
+        Set `async: true` to return immediately with a job ID for polling via
+        `GET /job/{jobId}`. Otherwise processes synchronously.
+        
+        Both sync and async modes return HTTP 200. When `async` is true the response
+        body contains `{ job_id, status, message }` instead of the full extraction result.
       operationId: extractDocument
       tags:
         - Extract
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+
+            # Sync extraction from URL
+            response = client.extract(
+                file_url="https://example.com/document.pdf"
+            )
+            print(response.markdown)
+            print(response.extraction_id)
+
+            # Async extraction
+            response = client.extract(
+                file_url="https://example.com/document.pdf",
+                async_=True
+            )
+            print(response.job_id)  # poll via client.jobs.get_job(job_id=...)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+
+            // Sync extraction from URL
+            const response = await client.extract({
+                fileUrl: "https://example.com/document.pdf"
+            });
+            console.log(response.markdown);
+            console.log(response.extraction_id);
+
+            // Async extraction
+            const asyncResp = await client.extract({
+                fileUrl: "https://example.com/document.pdf",
+                async: true
+            });
+            console.log(asyncResp.job_id); // poll via client.jobs.getJob(...)
+        - lang: bash
+          label: curl
+          source: |
+            # Sync extraction
+            curl -X POST https://api.runpulse.com/extract \
+              -H "x-api-key: YOUR_API_KEY" \
+              -F "file=@document.pdf"
+
+            # Async extraction
+            curl -X POST https://api.runpulse.com/extract \
+              -H "x-api-key: YOUR_API_KEY" \
+              -F "file=@document.pdf" \
+              -F "async=true"
       requestBody:
         required: true
         content:
@@ -39,11 +101,16 @@ paths:
               $ref: '#/components/schemas/ExtractJsonInput'
       responses:
         '200':
-          description: Synchronous extraction result
+          description: |
+            When `async=false` (default): full extraction result with markdown,
+            bounding boxes, chunks, etc.
+            When `async=true`: job submission acknowledgement with `job_id`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtractResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/ExtractResponse'
+                  - $ref: '#/components/schemas/AsyncSubmissionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -55,16 +122,44 @@ paths:
 
   /extract_async:
     post:
-      summary: Extract Document Async
+      summary: Extract Document Async (Deprecated)
+      deprecated: true
       description: |
+        **Deprecated:** Use `/extract` with `async: true` instead.
+        
         Starts an asynchronous extraction job. The request mirrors the
         synchronous options but returns immediately with a job identifier that
         clients can poll for completion status.
-        
-        Ideal for large files or when processing multiple documents.
       operationId: submitExtractJob
       tags:
         - Extract
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            # DEPRECATED — use client.extract(..., async_=True) instead
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+            response = client.extract(
+                file_url="https://example.com/document.pdf",
+                async_=True
+            )
+            print(response.job_id)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            // DEPRECATED — use client.extract({ ..., async: true }) instead
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+            const response = await client.extract({
+                fileUrl: "https://example.com/document.pdf",
+                async: true
+            });
+            console.log(response.job_id);
       requestBody:
         required: true
         content:
@@ -80,11 +175,301 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtractAsyncResponse'
+                $ref: '#/components/schemas/AsyncSubmissionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /split:
+    post:
+      summary: Split Document
+      description: |
+        Identify which pages of a document contain each topic/section. Takes an
+        existing extraction and a list of topics, then uses AI to identify which
+        PDF pages contain content related to each topic.
+
+        The result is persisted with a `split_id` that can be used with the
+        `/schema` endpoint (split mode) for targeted schema extraction on
+        specific page groups.
+
+        Set `async: true` to return 202 with a job_id for polling.
+      operationId: splitDocument
+      tags:
+        - Split
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+
+            # Async split (recommended)
+            response = client.split.document(
+                extraction_id="your-extraction-id",
+                split_config={
+                    "topics": [
+                        {"name": "Introduction", "description": "Overview section"},
+                        {"name": "Financials", "description": "Financial data"}
+                    ]
+                },
+                async_=True
+            )
+            print(response.job_id)  # poll via client.jobs.get_job(job_id=...)
+
+            # Sync split
+            response = client.split.document(
+                extraction_id="your-extraction-id",
+                split_config={
+                    "topics": [
+                        {"name": "Introduction", "description": "Overview section"},
+                        {"name": "Financials", "description": "Financial data"}
+                    ]
+                }
+            )
+            print(response.split_id)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+
+            // Async split (recommended)
+            const response = await client.split.document({
+                extraction_id: "your-extraction-id",
+                split_config: {
+                    topics: [
+                        { name: "Introduction", description: "Overview section" },
+                        { name: "Financials", description: "Financial data" }
+                    ]
+                },
+                async: true
+            });
+            console.log(response.job_id); // poll via client.jobs.getJob(...)
+
+            // Sync split
+            const syncResp = await client.split.document({
+                extraction_id: "your-extraction-id",
+                split_config: {
+                    topics: [
+                        { name: "Introduction", description: "Overview section" },
+                        { name: "Financials", description: "Financial data" }
+                    ]
+                }
+            });
+            console.log(syncResp.split_id);
+        - lang: bash
+          label: curl
+          source: |
+            curl -X POST https://api.runpulse.com/split \
+              -H "x-api-key: YOUR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "extraction_id": "your-extraction-id",
+                "split_config": {
+                  "topics": [
+                    {"name": "Introduction", "description": "Overview section"},
+                    {"name": "Financials", "description": "Financial data"}
+                  ]
+                }
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SplitInput'
+      responses:
+        '200':
+          description: Split result with page assignments (when async=false or omitted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitResponse'
+        '202':
+          description: Split job accepted (when async=true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncSubmissionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /schema:
+    post:
+      summary: Extract Structured Data
+      description: |
+        Apply schema extraction to a previously saved extraction. The mode is
+        inferred from the input:
+
+        **Single mode** — Provide `extraction_id` + `schema_config` (or
+        `schema_config_id`) to apply one schema to the entire document.
+
+        **Split mode** — Provide `split_id` + `split_schema_config` to apply
+        different schemas to different page groups from a prior `/split` call.
+
+        Set `async: true` to return 202 with a job_id for polling.
+      operationId: extractSchema
+      tags:
+        - Schema
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+
+            # Single mode — apply schema to entire document
+            response = client.schema.extract_schema(
+                extraction_id="your-extraction-id",
+                schema_config={
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "total": {"type": "number"},
+                            "vendor": {"type": "string"}
+                        }
+                    },
+                    "schema_prompt": "Extract invoice total and vendor"
+                }
+            )
+            print(response.schema_output)
+
+            # Split mode — different schemas per topic
+            response = client.schema.extract_schema(
+                split_id="your-split-id",
+                split_schema_config={
+                    "Introduction": {
+                        "schema": {"type": "object", "properties": {"summary": {"type": "string"}}},
+                        "schema_prompt": "Summarize the introduction"
+                    },
+                    "Financials": {
+                        "schema": {"type": "object", "properties": {"revenue": {"type": "number"}}},
+                        "schema_prompt": "Extract financial figures"
+                    }
+                }
+            )
+            print(response.results)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+
+            // Single mode — apply schema to entire document
+            const response = await client.schema.extractSchema({
+                extraction_id: "your-extraction-id",
+                schema_config: {
+                    schema: {
+                        type: "object",
+                        properties: {
+                            total: { type: "number" },
+                            vendor: { type: "string" }
+                        }
+                    },
+                    schema_prompt: "Extract invoice total and vendor"
+                }
+            });
+            console.log(response.schema_output);
+
+            // Split mode — different schemas per topic
+            const splitResp = await client.schema.extractSchema({
+                split_id: "your-split-id",
+                split_schema_config: {
+                    Introduction: {
+                        schema: { type: "object", properties: { summary: { type: "string" } } },
+                        schema_prompt: "Summarize the introduction"
+                    },
+                    Financials: {
+                        schema: { type: "object", properties: { revenue: { type: "number" } } },
+                        schema_prompt: "Extract financial figures"
+                    }
+                }
+            });
+            console.log(splitResp.results);
+        - lang: bash
+          label: curl
+          source: |
+            # Single mode
+            curl -X POST https://api.runpulse.com/schema \
+              -H "x-api-key: YOUR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "extraction_id": "your-extraction-id",
+                "schema_config": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "total": {"type": "number"},
+                      "vendor": {"type": "string"}
+                    }
+                  },
+                  "schema_prompt": "Extract invoice total and vendor"
+                }
+              }'
+
+            # Split mode
+            curl -X POST https://api.runpulse.com/schema \
+              -H "x-api-key: YOUR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "split_id": "your-split-id",
+                "split_schema_config": {
+                  "Introduction": {
+                    "schema": {"type": "object", "properties": {"summary": {"type": "string"}}},
+                    "schema_prompt": "Summarize the introduction"
+                  }
+                }
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaInput'
+      responses:
+        '200':
+          description: |
+            Schema extraction result (when async=false or omitted).
+            Shape depends on the mode used (single vs split).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SingleSchemaResponse'
+                  - $ref: '#/components/schemas/SplitSchemaResponse'
+        '202':
+          description: Schema job accepted (when async=true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncSubmissionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -95,15 +480,46 @@ paths:
       summary: Get Job Status
       description: |
         Check the status and retrieve results of an asynchronous job 
-        (e.g., submitted via `/extract_async`).
+        (submitted via any endpoint with `async: true`).
       operationId: getJob
       tags:
         - Jobs
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+
+            status = client.jobs.get_job(job_id="your-job-id")
+            print(status.status)   # "pending" | "processing" | "completed" | "failed"
+            if status.status == "completed":
+                print(status.result)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+
+            const status = await client.jobs.getJob({ jobId: "your-job-id" });
+            console.log(status.status); // "pending" | "processing" | "completed" | "failed"
+            if (status.status === "completed") {
+                console.log(status.result);
+            }
+        - lang: bash
+          label: curl
+          source: |
+            curl https://api.runpulse.com/job/your-job-id \
+              -H "x-api-key: YOUR_API_KEY"
       parameters:
         - name: jobId
           in: path
           required: true
-          description: Identifier returned from an async job submission (e.g., `/extract_async`).
+          description: Identifier returned from an async job submission.
           schema:
             type: string
       responses:
@@ -131,11 +547,35 @@ paths:
       operationId: cancelJob
       tags:
         - Jobs
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+            result = client.jobs.cancel_job(job_id="your-job-id")
+            print(result)
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+            const result = await client.jobs.cancelJob({ jobId: "your-job-id" });
+            console.log(result);
+        - lang: bash
+          label: curl
+          source: |
+            curl -X DELETE https://api.runpulse.com/job/your-job-id \
+              -H "x-api-key: YOUR_API_KEY"
       parameters:
         - name: jobId
           in: path
           required: true
-          description: Identifier returned from an async job submission (e.g., `/extract_async`).
+          description: Identifier returned from an async job submission.
           schema:
             type: string
       responses:
@@ -233,6 +673,30 @@ paths:
       operationId: createWebhookLink
       tags:
         - Webhooks
+      x-codeSamples:
+        - lang: python
+          label: Python SDK
+          source: |
+            from pulse import Pulse
+
+            client = Pulse(api_key="YOUR_API_KEY")
+            portal = client.webhooks.create_webhook_link()
+            print(portal.link)  # Open this URL to manage webhooks
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            import { PulseClient } from "pulse-ts-sdk";
+
+            const client = new PulseClient({
+                headers: { "x-api-key": "YOUR_API_KEY" }
+            });
+            const portal = await client.webhooks.createWebhookLink();
+            console.log(portal.link); // Open this URL to manage webhooks
+        - lang: bash
+          label: curl
+          source: |
+            curl -X POST https://api.runpulse.com/webhook \
+              -H "x-api-key: YOUR_API_KEY"
       responses:
         '200':
           description: Webhook portal link created
@@ -254,23 +718,13 @@ components:
       description: API key for authentication
 
   schemas:
+    # =========================================================================
+    # Extract Endpoint Schemas
+    # =========================================================================
     ExtractOptions:
       type: object
       description: Common extraction options shared by synchronous and asynchronous endpoints.
       properties:
-        # === RECOMMENDED OPTIONS ===
-        structured_output:
-          type: object
-          description: >-
-            **Recommended** method for schema-guided extraction. Contains the schema
-            and optional prompt in a single object.
-          properties:
-            schema:
-              type: object
-              description: JSON schema describing the structured data to extract.
-            schema_prompt:
-              type: string
-              description: Natural language prompt with additional extraction instructions.
         pages:
           type: string
           description: >-
@@ -295,9 +749,21 @@ components:
           type: boolean
           description: Toggle to generate descriptive captions for extracted figures.
           default: false
+        show_images:
+          type: boolean
+          description: >-
+            Embed base64-encoded images inline in figure tags in the output.
+            Increases response size.
+          default: false
         return_html:
           type: boolean
           description: Whether to include HTML representation alongside markdown in the response.
+          default: false
+        effort:
+          type: boolean
+          description: >-
+            Enable extended reasoning mode for higher quality extraction on
+            complex documents.
           default: false
         storage:
           type: object
@@ -316,42 +782,12 @@ components:
               description: >-
                 Target folder name to save the extraction to. Creates the folder
                 if it doesn't exist.
-        # === DEPRECATED OPTIONS ===
-        schema:
-          description: >-
-            **⚠️ DEPRECATED** - Use `structured_output.schema` instead.
-            JSON schema describing structured data to extract.
-          oneOf:
-            - type: object
-            - type: string
-          deprecated: true
-        schema_prompt:
-          type: string
-          description: >-
-            **⚠️ DEPRECATED** - Use `structured_output.schema_prompt` instead.
-            Natural language prompt for schema-guided extraction.
-          deprecated: true
-        experimental_schema:
-          description: >-
-            **⚠️ DEPRECATED** - Use `structured_output.schema` instead.
-            Experimental schema definition.
-          oneOf:
-            - type: object
-            - type: string
-          deprecated: true
-        custom_prompt:
-          type: string
-          description: >-
-            **⚠️ DEPRECATED** - No replacement. Custom instructions that augment 
-            the default extraction behaviour.
-          deprecated: true
-        thinking:
+        async:
           type: boolean
           description: >-
-            **⚠️ DEPRECATED** - No replacement. Enables expanded rationale output 
-            for debugging.
+            If true, returns immediately with a job_id for polling via
+            GET /job/{jobId}. Otherwise processes synchronously.
           default: false
-          deprecated: true
 
     ExtractSourceMultipart:
       type: object
@@ -396,62 +832,343 @@ components:
 
     ExtractResponse:
       type: object
-      description: High-level structure returned by the synchronous extract API.
+      description: >-
+        Full extraction result returned by the synchronous `/extract` endpoint.
+        Contains extracted markdown (or HTML), optional structured data,
+        chunked content, bounding boxes, and storage metadata.
       properties:
-        content:
+        markdown:
           type: string
-          description: Primary markdown content extracted from the document.
+          description: >-
+            Primary markdown content extracted from the document.
+            Present when `return_html` is false or omitted.
         html:
           type: string
-          description: Optional HTML representation when return_html is true.
-        job_id:
-          type: string
-          description: Identifier assigned to the extraction job.
-        warnings:
-          type: array
-          items:
-            type: string
-          description: Non-fatal warnings generated during extraction.
-        metadata:
+          description: >-
+            HTML representation of the extracted content.
+            Present when `return_html` is true.
+        structured_output:
           type: object
+          description: >-
+            Structured data extracted using the provided schema. Contains `values`
+            and `citations`. Only present when a schema was provided.
+          properties:
+            values:
+              type: object
+              description: Extracted values matching the provided schema.
+              additionalProperties: true
+            citations:
+              type: object
+              description: Citation references linking extracted values to source locations.
+              additionalProperties: true
+        chunks:
+          type: object
+          description: >-
+            Document content split into chunks using the requested strategies.
+            Only present when `chunking` was specified.
+          properties:
+            semantic:
+              type: array
+              items:
+                type: string
+              description: Semantically-segmented chunks.
+            header:
+              type: array
+              items:
+                type: string
+              description: Chunks split by document headers/headings.
+            page:
+              type: array
+              items:
+                type: string
+              description: One chunk per page.
+            recursive:
+              type: array
+              items:
+                type: string
+              description: Recursively-split chunks respecting size limits.
+        bounding_boxes:
+          type: object
+          description: >-
+            Positional bounding-box data for text, titles, headers, footers,
+            images, and tables.
           additionalProperties: true
-          description: Additional metadata supplied by the backend.
-        schema_data:
+        extraction_id:
+          type: string
+          format: uuid
+          description: >-
+            Persisted extraction ID. Present when storage is enabled (default).
+            Use with `/split` and `/schema` endpoints.
+        extraction_url:
+          type: string
+          description: >-
+            URL to view the extraction on the Pulse platform. Present when
+            storage is enabled.
+        page_count:
+          type: integer
+          minimum: 1
+          description: Number of pages processed.
+        input_schema:
           type: object
-          description: Extracted structured data if schema was provided.
+          description: >-
+            Echo of the schema that was applied. Present when a schema was provided.
+          additionalProperties: true
+        plan-info:
+          type: object
+          description: Billing tier and usage information.
+          properties:
+            tier:
+              type: string
+              description: Current plan tier name.
+            pages_used:
+              type: integer
+              description: Cumulative pages used after this extraction.
+            note:
+              type: string
+              description: Human-readable plan note.
+        schema_error:
+          type: string
+          description: >-
+            Error message if schema processing failed.
+        schema_processing_time_seconds:
+          type: number
+          format: float
+          description: Time spent on schema processing, in seconds.
       additionalProperties: true
 
-    ExtractAsyncResponse:
+    # =========================================================================
+    # Split Endpoint Schemas
+    # =========================================================================
+    SplitInput:
       type: object
-      description: Metadata describing the enqueued asynchronous extraction job.
+      description: Request body for splitting a document into topics.
+      required:
+        - extraction_id
+      properties:
+        extraction_id:
+          type: string
+          format: uuid
+          description: ID of the saved extraction to split.
+        split_config:
+          type: object
+          description: >-
+            Inline split configuration with topics. Required if split_config_id
+            is not provided.
+          properties:
+            topics:
+              type: array
+              items:
+                type: object
+                required:
+                  - name
+                properties:
+                  name:
+                    type: string
+                    description: Unique identifier for the topic.
+                  description:
+                    type: string
+                    description: Description of what content belongs to this topic.
+              minItems: 1
+        split_config_id:
+          type: string
+          format: uuid
+          description: Reference to a saved split configuration.
+        async:
+          type: boolean
+          default: false
+          description: >-
+            If true, returns 202 with a job_id for polling via
+            GET /job/{jobId}. Otherwise processes synchronously.
+
+    SplitResponse:
+      type: object
+      description: Result of document splitting with page assignments.
+      required:
+        - split_id
+        - split_output
+      properties:
+        split_id:
+          type: string
+          format: uuid
+          description: >-
+            Unique identifier for this split result. Use with `/schema` endpoint
+            (split mode) to apply per-topic schemas.
+        split_output:
+          type: object
+          description: Page assignments per topic.
+          properties:
+            splits:
+              type: object
+              description: >-
+                Mapping of topic names to arrays of 1-indexed page numbers.
+              additionalProperties:
+                type: array
+                items:
+                  type: integer
+                  minimum: 1
+
+    # =========================================================================
+    # Schema Endpoint Schemas
+    # =========================================================================
+    SchemaInput:
+      type: object
+      description: |
+        Request body for schema extraction. Mode is inferred from the input:
+        - Provide `extraction_id` + `schema_config` for single-mode extraction.
+        - Provide `split_id` + `split_schema_config` for split-mode extraction.
+      properties:
+        extraction_id:
+          type: string
+          format: uuid
+          description: ID of saved extraction (for single mode).
+        split_id:
+          type: string
+          format: uuid
+          description: ID of saved split (for split mode).
+        schema_config:
+          type: object
+          description: Inline schema configuration for single mode.
+          properties:
+            schema:
+              type: object
+              description: JSON Schema defining the structured data to extract.
+            schema_prompt:
+              type: string
+              description: Natural language prompt with extraction instructions.
+            effort:
+              type: boolean
+              default: false
+              description: Enable extended reasoning.
+        schema_config_id:
+          type: string
+          format: uuid
+          description: Reference to a saved schema configuration (for single mode).
+        split_schema_config:
+          type: object
+          description: >-
+            Per-topic schema configurations for split mode. Keys must match
+            topic names from the split.
+          additionalProperties:
+            type: object
+            properties:
+              schema:
+                type: object
+                description: JSON Schema for this topic.
+              schema_prompt:
+                type: string
+                description: Additional instructions for this topic.
+              effort:
+                type: boolean
+                default: false
+              schema_config_id:
+                type: string
+                format: uuid
+                description: Reference to a saved schema config for this topic.
+        async:
+          type: boolean
+          default: false
+          description: >-
+            If true, returns 202 with a job_id for polling via
+            GET /job/{jobId}.
+
+    SingleSchemaResponse:
+      type: object
+      description: Response for single schema extraction mode.
+      required:
+        - schema_id
+        - version
+        - schema_output
+      properties:
+        schema_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this schema version.
+        version:
+          type: integer
+          minimum: 1
+          description: Version number of this schema for the extraction.
+        schema_output:
+          type: object
+          description: Extracted values and citations.
+          properties:
+            values:
+              type: object
+              additionalProperties: true
+            citations:
+              type: object
+              additionalProperties: true
+
+    SplitSchemaResponse:
+      type: object
+      description: Response for split schema extraction mode.
+      required:
+        - schema_id
+        - split_id
+        - results
+      properties:
+        schema_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this schema version.
+        split_id:
+          type: string
+          format: uuid
+          description: ID of the split that defined the page groups.
+        results:
+          type: object
+          description: >-
+            Per-topic extraction results. Keys match topic names.
+          additionalProperties:
+            type: object
+            properties:
+              values:
+                type: object
+                additionalProperties: true
+              citations:
+                type: object
+                additionalProperties: true
+        input_schemas:
+          type: object
+          description: Echo of the schemas applied, keyed by topic.
+          additionalProperties:
+            type: object
+        errors:
+          type: object
+          description: Per-topic errors if any topics failed.
+          additionalProperties:
+            type: string
+
+    # =========================================================================
+    # Shared Async Response
+    # =========================================================================
+    AsyncSubmissionResponse:
+      type: object
+      description: >-
+        Acknowledgement returned when a request is submitted for asynchronous
+        processing. Poll GET /job/{job_id} to check status and retrieve results.
       required:
         - job_id
         - status
       properties:
         job_id:
           type: string
-          description: Identifier assigned to the asynchronous extraction job.
+          description: Identifier assigned to the asynchronous job.
         status:
           type: string
-          description: Initial status reported by the extractor.
+          description: Initial status reported by the server.
           enum:
             - pending
             - processing
-            - completed
-            - failed
-            - canceled
         message:
           type: string
-          description: Human-readable status message.
-          example: "Job queued for processing"
-        queuedAt:
-          type: string
-          format: date-time
-          description: Timestamp indicating when the job was accepted.
+          description: Human-readable description of the accepted job.
 
+    # =========================================================================
+    # Job Endpoint Schemas
+    # =========================================================================
     JobStatus:
       type: string
-      description: Lifecycle status for an asynchronous extraction job.
+      description: Lifecycle status for an asynchronous job.
       enum:
         - pending
         - processing
@@ -461,7 +1178,7 @@ components:
 
     JobStatusResponse:
       type: object
-      description: Current status and metadata for an asynchronous extraction job.
+      description: Current status and metadata for an asynchronous job.
       required:
         - job_id
         - status
@@ -469,7 +1186,7 @@ components:
       properties:
         job_id:
           type: string
-          description: Identifier assigned to the asynchronous extraction job.
+          description: Identifier assigned to the asynchronous job.
         status:
           $ref: '#/components/schemas/JobStatus'
         created_at:
@@ -482,7 +1199,7 @@ components:
           description: Timestamp of the last status update, if available.
         result:
           type: object
-          description: Structured payload that contains extraction output when the job is completed.
+          description: Structured payload when the job is completed.
           additionalProperties: true
         error:
           type: string
@@ -502,6 +1219,9 @@ components:
           type: string
           description: Human-readable confirmation message.
 
+    # =========================================================================
+    # Utility Schemas
+    # =========================================================================
     ConvertResponse:
       type: object
       properties:

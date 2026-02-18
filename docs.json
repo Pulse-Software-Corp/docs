@@ -1,0 +1,221 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Pulse API",
+  "colors": {
+    "primary": "#3573f6",
+    "light": "#4a90f9",
+    "dark": "#2561ef"
+  },
+  "favicon": "/pulse 1024-2.png",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "authentication",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "advanced/error-handling",
+              "svix-webhooks"
+            ]
+          },
+          {
+            "group": "Legacy Support",
+            "pages": [
+              "legacy/migrate-extract-async",
+              "legacy/migrate-structured-output"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/async-processing",
+              "api-reference/structured-output-guidelines",
+              "api-reference/bounding-boxes",
+              "api-reference/supported-file-types",
+              "api-reference/large-documents"
+            ]
+          },
+          {
+            "group": "Pipeline Steps",
+            "pages": [
+              "api-reference/endpoint/pipeline-overview",
+              "api-reference/endpoint/extract",
+              "api-reference/endpoint/split",
+              "api-reference/endpoint/schema"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api-reference/endpoint/extract_async",
+              "api-reference/endpoint/poll",
+              "api-reference/endpoint/delete-job",
+              "api-reference/endpoint/cancel",
+              "api-reference/endpoint/webhook",
+              "api-reference/endpoint/convert"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Platform Reference",
+        "groups": [
+          {
+            "group": "Platform Reference",
+            "pages": [
+              "platform-reference/introduction"
+            ]
+          },
+          {
+            "group": "Pipelines",
+            "pages": [
+              "platform-reference/extract",
+              "platform-reference/extract-schema",
+              "platform-reference/extract-split-schema",
+              "platform-reference/step-preset-library"
+            ]
+          },
+          {
+            "group": "Additional Features",
+            "pages": [
+              "platform-reference/meridian",
+              "platform-reference/extraction-library",
+              "platform-reference/platform-to-production",
+              "platform-reference/reruns"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo_with_text_-removebg-preview.png",
+    "dark": "/logo_with_text_-removebg-preview.png"
+  },
+  "appearance": {
+    "default": "light",
+    "strict": true
+  },
+  "background": {
+    "color": {
+      "light": "#ffffff",
+      "dark": "#000000"
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Console",
+        "href": "https://console.runpulse.com"
+      },
+      {
+        "label": "Playground",
+        "href": "https://platform.runpulse.com"
+      },
+      {
+        "label": "Support",
+        "href": "mailto:support@trypulse.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://console.runpulse.com/"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/Pulse__AI",
+      "linkedin": "https://www.linkedin.com/company/pulse-ai-corp/"
+    }
+  },
+  "integrations": {
+    "posthog": {
+      "apiKey": "phc_FutnpUqAQasGvZ2zQSA1mt9uu14YLiO85JV69tm0cYz"
+    }
+  },
+  "fonts": {
+    "heading": {
+      "family": "Inria Serif"
+    },
+    "body": {
+      "family": "Geist"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/api-reference/schema-guidelines",
+      "destination": "/api-reference/structured-output-guidelines"
+    },
+    {
+      "source": "/api-reference/endpoint/split-schema",
+      "destination": "/api-reference/endpoint/schema"
+    },
+    {
+      "source": "/api-reference/endpoint/storage",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/api-reference/steps/:slug*",
+      "destination": "/api-reference/endpoint/pipeline-overview"
+    },
+    {
+      "source": "/api-reference/utilities/:slug*",
+      "destination": "/api-reference/introduction"
+    },
+    {
+      "source": "/core-concepts/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/storage/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/databricks-integration-guide",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/security/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/introduction"
+    }
+  ],
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
+  },
+  "css": "/style.css",
+  "icons": {
+    "library": "fontawesome"
+  },
+  "head": [
+    {
+      "tag": "script",
+      "innerHTML": "!function(){var e=[\"identify\",\"page\",\"startAutoPage\",\"stopAutoPage\",\"startAutoIdentify\",\"stopAutoIdentify\"];function t(o){return Object.assign([],e.reduce(function(r,n){return r[n]=function(){return o.push([n,[].slice.call(arguments)]),o},r},{}))}window.unify||(window.unify=t(window.unify)),window.unifyBrowser||(window.unifyBrowser=t(window.unifyBrowser));var n=document.createElement(\"script\");n.async=!0,n.setAttribute(\"src\",\"https://tag.unifyintent.com/v1/MKrFdNpq2WAqcfTwhpcb7Y/script.js\"),n.setAttribute(\"data-api-key\",\"wk_L1Zy2sp7_3MZUe8uqxfk5ZXxmBzCH4Tk5R8PrmWV4\"),n.setAttribute(\"id\",\"unifytag\"),(document.body||document.head).appendChild(n)}();"
+    }
+  ]
+}

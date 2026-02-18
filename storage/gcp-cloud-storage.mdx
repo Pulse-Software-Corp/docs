@@ -1,0 +1,224 @@
+---
+title: 'Google Cloud Storage Setup'
+description: 'Configure your own GCP Cloud Storage bucket for extraction storage'
+---
+
+# Bring Your Own Storage: Google Cloud Storage
+
+Store your extraction artifacts in your own Google Cloud Storage bucket for complete data sovereignty and compliance requirements.
+
+<Note>
+Custom storage is available for Enterprise customers. [Contact sales](mailto:sales@runpulse.com) to enable this feature.
+</Note>
+
+## Overview
+
+Pulse connects to your Google Cloud Storage bucket using a service account with a JSON key. This provides:
+
+- **Fine-grained access control** - Grant only the permissions Pulse needs
+- **Full audit trail** - All access is logged in Cloud Audit Logs
+- **Data residency** - Choose your bucket location for compliance
+
+## Setup Steps
+
+### Step 1: Create a GCS Bucket
+
+Create a new bucket in your GCP project:
+
+```bash
+gcloud storage buckets create gs://my-company-pulse-data \
+  --location=us-central1 \
+  --uniform-bucket-level-access
+```
+
+**Recommended settings:**
+- Enable uniform bucket-level access
+- Choose a location that meets your compliance requirements
+- Consider using dual-region or multi-region for high availability
+
+### Step 2: Create a Service Account
+
+Create a dedicated service account for Pulse:
+
+```bash
+gcloud iam service-accounts create pulse-storage-access \
+  --display-name="Pulse Storage Access" \
+  --description="Service account for Pulse document extraction storage"
+```
+
+### Step 3: Grant Bucket Permissions
+
+Grant the service account access to your bucket:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://my-company-pulse-data \
+  --member="serviceAccount:pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+```
+
+**Required role:** `roles/storage.objectAdmin` allows Pulse to:
+- Create, read, update, and delete objects
+- List objects in the bucket
+
+### Step 4: Create Service Account Key
+
+Generate a JSON key for the service account:
+
+```bash
+gcloud iam service-accounts keys create pulse-storage-key.json \
+  --iam-account=pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com
+```
+
+<Warning>
+Store this key securely. It provides access to your bucket.
+</Warning>
+
+The key file looks like:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+  "client_email": "pulse-storage-access@your-project.iam.gserviceaccount.com",
+  "client_id": "...",
+  ...
+}
+```
+
+### Step 5: Configure in Pulse Console
+
+1. Navigate to **Settings > Storage** in the Pulse Console
+2. Select **Google Cloud Storage** as your storage provider
+3. Enter the following details:
+   - **Project ID**: `your-project-id`
+   - **Bucket Name**: `my-company-pulse-data`
+   - **Service Account JSON**: Paste the contents of your key file
+   - **Region** (optional): `us-central1`
+   - **Base Path** (optional): `extractions/` - prefix for all stored objects
+
+4. Click **Save Configuration**
+
+### Step 6: Test the Connection
+
+Click **Test Connection** to verify that Pulse can access your bucket. The test will:
+
+1. Authenticate using the service account
+2. Verify bucket access
+3. Report success or any configuration issues
+
+### Step 7: Enable Custom Storage
+
+Once the connection test passes, toggle **Enabled** to start using your custom storage.
+
+## Storage Structure
+
+Pulse organizes artifacts in your bucket using this structure:
+
+```
+{base_path}/orgs/{org_id}/extractions/{job_id}/artifacts/
+├── result.json          # Extraction results
+├── original_file.pdf    # Original uploaded document
+└── ...                  # Other artifacts
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use a dedicated project or bucket">
+    Create a separate bucket specifically for Pulse extractions rather than using an existing bucket with other data.
+  </Accordion>
+  
+  <Accordion title="Enable Object Versioning">
+    Protect against accidental deletion:
+    ```bash
+    gcloud storage buckets update gs://my-company-pulse-data --versioning
+    ```
+  </Accordion>
+  
+  <Accordion title="Set retention policies">
+    Configure retention policies for compliance:
+    ```bash
+    gcloud storage buckets update gs://my-company-pulse-data \
+      --retention-period=30d
+    ```
+  </Accordion>
+  
+  <Accordion title="Enable audit logging">
+    Ensure Cloud Audit Logs are enabled for your project to track all data access.
+  </Accordion>
+  
+  <Accordion title="Use VPC Service Controls">
+    For enhanced security, configure VPC Service Controls to restrict data exfiltration.
+  </Accordion>
+  
+  <Accordion title="Rotate service account keys">
+    Regularly rotate service account keys. GCP recommends rotation every 90 days.
+    ```bash
+    # Create new key
+    gcloud iam service-accounts keys create new-key.json \
+      --iam-account=pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com
+    
+    # Update in Pulse Console, then delete old key
+    gcloud iam service-accounts keys delete OLD_KEY_ID \
+      --iam-account=pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Permission denied error">
+    - Verify the service account has `roles/storage.objectAdmin` on the bucket
+    - Check that the service account email matches the key file
+    - Ensure uniform bucket-level access is enabled
+  </Accordion>
+  
+  <Accordion title="Invalid JSON key error">
+    - Ensure you've copied the entire JSON key file content
+    - Check for any trailing whitespace or formatting issues
+    - Verify the key file is valid JSON
+  </Accordion>
+  
+  <Accordion title="Bucket not found error">
+    - Verify the bucket name is spelled correctly
+    - Ensure the bucket exists in the specified project
+    - Check that the project ID matches
+  </Accordion>
+  
+  <Accordion title="Key disabled or deleted">
+    - The service account key may have been disabled or deleted
+    - Generate a new key and update the configuration
+  </Accordion>
+</AccordionGroup>
+
+## Reverting to Pulse Default Storage
+
+To stop using custom storage and revert to Pulse's managed storage:
+
+1. Toggle **Enabled** to off
+2. Click **Reset to Default** if you want to remove the configuration entirely
+
+<Warning>
+Reverting does not migrate existing artifacts. Data in your GCS bucket remains there.
+</Warning>
+
+## Cleanup
+
+To revoke Pulse access after reverting:
+
+```bash
+# Remove bucket IAM binding
+gcloud storage buckets remove-iam-policy-binding gs://my-company-pulse-data \
+  --member="serviceAccount:pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+
+# Delete service account (optional)
+gcloud iam service-accounts delete pulse-storage-access@YOUR_PROJECT.iam.gserviceaccount.com
+```
+
+
+
+

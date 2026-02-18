@@ -321,10 +321,13 @@ def debug_extract(file_path):
     4. Start with simple extractions before adding complexity
   </Accordion>
 
-  <Accordion title="What's the difference between /extract and /extract_async?">
-    - `/extract`: Synchronous, best for documents under 50 pages
-    - `/extract_async`: Asynchronous, required for large documents
-    - The client library automatically chooses based on file size
+  <Accordion title="How do I use async processing?">
+    `/extract` supports both synchronous and asynchronous modes:
+    - **Sync** (default): Best for documents under 50 pages. Returns the result directly.
+    - **Async** (`async: true`): Returns a `job_id` for polling via `GET /job/{jobId}`. Recommended for large documents.
+    - The deprecated `/extract_async` endpoint still works but redirects to `/extract` with `async: true`.
+    
+    See [Async Processing](/api-reference/async-processing) for full details.
   </Accordion>
 
   <Accordion title="How accurate is the extraction?">

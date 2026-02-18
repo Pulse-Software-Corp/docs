@@ -20,7 +20,7 @@ Pulse API is designed to handle documents of any size, from single-page memos to
 | < 50 pages | Synchronous | Direct JSON | Use `/extract` endpoint |
 | 50-70 pages | Synchronous/Async | Direct JSON | Consider async for reliability |
 | > 70 pages | Either | S3 URL | Results delivered via URL |
-| > 100 pages | Async recommended | S3 URL | Use `/extract_async` |
+| > 100 pages | Async recommended | S3 URL | Use `/extract` with `async: true` |
 | > 500 pages | Async required | S3 URL | Consider page ranges |
 
 ## Automatic Optimizations
@@ -160,19 +160,29 @@ for section in toc_result["sections"]:
 ### Starting Async Jobs
 
 ```python
-# Start async extraction
+# Start async extraction (use /extract with async flag)
 response = requests.post(
-    "https://api.runpulse.com/extract_async",
+    "https://api.runpulse.com/extract",
     headers={"x-api-key": API_KEY},
     files={"file": open("large_doc.pdf", "rb")},
     data={
-        "structured_output": json.dumps({"schema": schema}),
-        "pages": "1-100"
+        "pages": "1-100",
+        "async": "true"
     }
 )
 
 job_info = response.json()
-# {"job_id": "123e4567-e89b-12d3-a456-426614174000", "status": "pending"}
+# {"job_id": "123e4567-e89b-12d3-a456-426614174000", "status": "pending", "message": "Document processing started"}
+
+# After extraction completes, apply schema via /schema endpoint:
+# schema_response = requests.post(
+#     "https://api.runpulse.com/schema",
+#     headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
+#     json={
+#         "extraction_id": result["extraction_id"],
+#         "schema_config": {"schema": schema}
+#     }
+# )
 ```
 
 ### Polling for Completion
@@ -452,8 +462,8 @@ def robust_large_document_processing(file_path, max_retries=3):
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Async Endpoints" icon="clock" href="/api-reference/endpoint/extract_async">
-    Learn about async processing endpoints
+  <Card title="Async Processing" icon="clock" href="/api-reference/async-processing">
+    Async flag, polling, and webhooks
   </Card>
   <Card title="Error Handling" icon="triangle-exclamation" href="/advanced/error-handling">
     Handle errors in large documents

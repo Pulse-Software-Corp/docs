@@ -1,5 +1,5 @@
 ---
-title: 'Extract File Async'
+title: 'Extract File Async (Deprecated)'
 openapi: 'POST /extract_async'
 ---
 
@@ -8,6 +8,10 @@ import ExtractOptions from '/snippets/extract-options.mdx';
 import ExtractStorageOptions from '/snippets/extract-storage-options.mdx';
 import ExtractDeprecatedFields from '/snippets/extract-deprecated-fields.mdx';
 
+<Warning>
+  **Deprecated**: This endpoint is deprecated. Use [`/extract`](/api-reference/endpoint/extract) with `async: true` instead.
+</Warning>
+
 ## Overview
 
 The asynchronous extraction endpoint accepts the same input parameters as the synchronous `/extract` endpoint but returns immediately with a job identifier. Use this endpoint for:
@@ -15,6 +19,20 @@ The asynchronous extraction endpoint accepts the same input parameters as the sy
 - Large documents that may take longer to process
 - Batch processing workflows
 - Non-blocking integrations
+
+### Migration
+
+Replace calls to `/extract_async` with `/extract` and add `async: true`:
+
+```diff
+- POST /extract_async
+- {"file_url": "https://example.com/doc.pdf"}
+
++ POST /extract
++ {"file_url": "https://example.com/doc.pdf", "async": true}
+```
+
+The response format is identical.
 
 ## Request
 

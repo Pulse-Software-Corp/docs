@@ -2,12 +2,15 @@
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `structured_output` | object | - | Recommended method for schema-guided extraction. Contains `schema` (JSON schema) and optional `schema_prompt` (natural language instructions). |
 | `pages` | string | - | Page range filter (1-indexed). Supports segments like `1-2` or mixed ranges like `1-2,5`. Page 1 is the first page. |
 | `chunking` | string | - | Comma-separated list of chunking strategies (e.g., `semantic,header,page,recursive`). |
 | `chunk_size` | integer | - | Maximum characters per chunk when chunking is enabled. |
 | `extract_figure` | boolean | `false` | Enable figure extraction in results. |
 | `figure_description` | boolean | `false` | Generate descriptive captions for extracted figures. |
+| `show_images` | boolean | `false` | Embed base64-encoded images inline in figure tags. Increases response size. |
 | `return_html` | boolean | `false` | Include HTML representation alongside markdown in the response. |
+| `effort` | boolean | `false` | Enable extended reasoning for higher quality extraction on complex documents. |
 | `storage` | object | - | Options for persisting extraction artifacts. See [Storage Options](#storage-options). |
+| `async` | boolean | `false` | If `true`, returns immediately with a `job_id` for polling via `GET /job/{jobId}`. |
+| `structured_output` | object | - | **⚠️ Deprecated** — Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead. Still works for backward compatibility. |
 

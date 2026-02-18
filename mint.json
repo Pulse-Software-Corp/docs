@@ -33,7 +33,7 @@
       "url": "https://console.runpulse.com"
     },
     {
-      "name": "Platform",
+      "name": "Playground",
       "url": "https://platform.runpulse.com"
     },
     {
@@ -61,21 +61,17 @@
       ]
     },
     {
-      "group": "Svix Webhooks",
+      "group": "Guides",
       "pages": [
+        "advanced/error-handling",
         "svix-webhooks"
-      ]
-    },
-    {
-      "group": "Advanced Topics",
-      "pages": [
-        "advanced/error-handling"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
         "api-reference/introduction",
+        "api-reference/async-processing",
         "api-reference/structured-output-guidelines",
         "api-reference/bounding-boxes",
         "api-reference/supported-file-types",
@@ -83,21 +79,30 @@
       ]
     },
     {
-      "group": "Endpoints",
+      "group": "Pipeline Steps",
       "pages": [
+        "api-reference/endpoint/pipeline-overview",
         "api-reference/endpoint/extract",
-        "api-reference/endpoint/extract_async",
-        "api-reference/endpoint/poll",
-        "api-reference/endpoint/delete-job",
-        "api-reference/endpoint/webhook",
-        "api-reference/endpoint/convert",
-        "api-reference/endpoint/cancel"
+        "api-reference/endpoint/split",
+        "api-reference/endpoint/schema"
       ]
     },
     {
-      "group": "Resources",
+      "group": "Utilities",
       "pages": [
-        "support"
+        "api-reference/endpoint/extract_async",
+        "api-reference/endpoint/poll",
+        "api-reference/endpoint/delete-job",
+        "api-reference/endpoint/cancel",
+        "api-reference/endpoint/webhook",
+        "api-reference/endpoint/convert"
+      ]
+    },
+    {
+      "group": "Legacy Support",
+      "pages": [
+        "legacy/migrate-extract-async",
+        "legacy/migrate-structured-output"
       ]
     }
   ],
@@ -114,18 +119,54 @@
   },
   "fontAwesome": true,
   "theme": "prism",
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
+  },
   "redirects": [
     {
       "source": "/api-reference/schema-guidelines",
       "destination": "/api-reference/structured-output-guidelines"
     },
     {
-      "source": "/core-concepts/bounding-boxes",
-      "destination": "/api-reference/bounding-boxes"
+      "source": "/api-reference/endpoint/split-schema",
+      "destination": "/api-reference/endpoint/schema"
     },
     {
-      "source": "/core-concepts/schema-extraction",
-      "destination": "/api-reference/structured-output-guidelines"
+      "source": "/api-reference/endpoint/storage",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/api-reference/steps/:slug*",
+      "destination": "/api-reference/endpoint/pipeline-overview"
+    },
+    {
+      "source": "/api-reference/utilities/:slug*",
+      "destination": "/api-reference/introduction"
+    },
+    {
+      "source": "/core-concepts/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/storage/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/databricks-integration-guide",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/security/:slug*",
+      "destination": "/introduction"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/introduction"
     }
   ],
   "analytics": {

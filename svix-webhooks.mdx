@@ -435,11 +435,17 @@ schema = {
 }
 
 # Submit async extraction - webhook will notify when complete
-submission = client.extract_async(
+submission = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structured_output={"schema": schema},
-    pages="1-100"
+    pages="1-100",
+    async_=True
 )
+
+# After extraction completes (via webhook), apply schema via /schema endpoint:
+# schema_result = client.schema(
+#     extraction_id=submission.extraction_id,
+#     schema_config={"schema": schema}
+# )
 
 print(f"Extraction started: {submission.job_id}")
 print("You'll receive a webhook notification when complete!")
@@ -487,11 +493,17 @@ const schema = {
 };
 
 // Submit async extraction - webhook will notify when complete
-const submission = await client.extractAsync({
+const submission = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structuredOutput: { schema },
-    pages: "1-100"
+    pages: "1-100",
+    async: true
 });
+
+// After extraction completes (via webhook), apply schema via /schema endpoint:
+// const schemaResult = await client.schema.extractSchema({
+//     extraction_id: submission.extraction_id,
+//     schema_config: { schema }
+// });
 
 console.log(`Extraction started: ${submission.job_id}`);
 console.log("You'll receive a webhook notification when complete!");
@@ -636,7 +648,7 @@ ngrok http 5000
 ## Related Resources
 
 <CardGroup cols={2}>
-  <Card title="Async Extraction" icon="clock" href="/api-reference/endpoint/extract_async">
+  <Card title="Async Processing" icon="clock" href="/api-reference/async-processing">
     Learn about asynchronous document processing
   </Card>
   <Card title="API Reference" icon="book" href="/api-reference/endpoint/webhook">

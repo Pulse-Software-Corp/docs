@@ -1,0 +1,242 @@
+---
+title: 'Split Document'
+openapi: 'POST /split'
+---
+
+## Overview
+
+<Info>
+  **Pipeline Step 2 (optional)** — Split requires a prior [extraction](/api-reference/endpoint/extract). After splitting, use [schema extraction](/api-reference/endpoint/schema) with `split_id` to apply per-topic schemas.
+</Info>
+
+Identify which pages of a document contain each topic or section. The `/split` endpoint analyzes a saved extraction and uses AI to map pages to your defined topics. This is useful for:
+
+- Processing multi-section documents (e.g., annual reports, contracts)
+- Applying different schemas to different parts of a document
+- Organizing large documents by content type
+
+<Note>
+  This endpoint operates on **saved extractions** (created via `/extract` with storage enabled, which is the default).
+</Note>
+
+### Async Mode
+
+Set `async: true` to return immediately with a job ID for polling. See [Polling for Results](/api-reference/endpoint/poll) for details.
+
+```json
+{
+  "extraction_id": "abc123-def456",
+  "split_config": { "topics": [...] },
+  "async": true
+}
+```
+
+---
+
+## Request
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `extraction_id` | uuid | Yes | ID of the saved extraction to split |
+| `split_config` | object | XOR | Inline split configuration with topics |
+| `split_config_id` | uuid | XOR | Reference to a saved split configuration |
+| `async` | boolean | No | If `true`, returns immediately with a `job_id` for [polling](/api-reference/endpoint/poll). Default: `false`. |
+
+### Inline Config (`split_config`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `split_config.topics` | array | Yes | List of topics to identify |
+
+Each topic in the `topics` array:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique identifier for the topic |
+| `description` | string | No | Description of what content belongs to this topic |
+
+---
+
+## Response
+
+### Synchronous Response (200)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `split_id` | uuid | Unique identifier for this split result |
+| `split_output` | object | Contains `splits` — a mapping of topic names to arrays of 1-indexed page numbers |
+
+### Async Response (202)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | Job ID for [polling](/api-reference/endpoint/poll) |
+| `status` | string | `"pending"` |
+| `message` | string | Human-readable description |
+
+---
+
+## Example Usage
+
+### Split with Inline Topics
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+split_result = client.split(
+    extraction_id="abc123-def456-ghi789",
+    split_config={
+        "topics": [
+            {
+                "name": "financial_statements",
+                "description": "Balance sheets, income statements, cash flow statements"
+            },
+            {
+                "name": "executive_summary",
+                "description": "Letter to shareholders, company overview, highlights"
+            },
+            {
+                "name": "risk_factors",
+                "description": "Risk disclosures, forward-looking statements"
+            }
+        ]
+    }
+)
+
+print(f"Split ID: {split_result.split_id}")
+for topic, pages in split_result.split_output.splits.items():
+    print(f"  {topic}: pages {pages}")
+```
+
+```typescript TypeScript
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+  headers: { "x-api-key": "YOUR_API_KEY" },
+});
+
+const splitResult = await client.split.document({
+  extraction_id: "abc123-def456-ghi789",
+  split_config: {
+    topics: [
+      { name: "financial_statements", description: "Balance sheets, income statements" },
+      { name: "executive_summary", description: "Letter to shareholders" },
+      { name: "risk_factors", description: "Risk disclosures" },
+    ],
+  },
+});
+
+console.log("Split ID:", splitResult.split_id);
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/split \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-def456-ghi789",
+    "split_config": {
+      "topics": [
+        {"name": "financial_statements", "description": "Balance sheets, income statements"},
+        {"name": "executive_summary", "description": "Letter to shareholders"},
+        {"name": "risk_factors", "description": "Risk disclosures"}
+      ]
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Split with Saved Config Reference
+
+<CodeGroup>
+
+```python Python
+split_result = client.split(
+    extraction_id="abc123-def456-ghi789",
+    split_config_id="config-uuid-456"
+)
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/split \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"extraction_id": "abc123-def456-ghi789", "split_config_id": "config-uuid-456"}'
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "split_id": "split-uuid-123",
+  "split_output": {
+    "splits": {
+      "financial_statements": [15, 16, 17, 18, 19, 20],
+      "executive_summary": [1, 2, 3, 4],
+      "risk_factors": [25, 26, 27, 28, 29, 30]
+    }
+  }
+}
+```
+
+---
+
+## Using Split Results
+
+After splitting, use the `split_id` with the [`/schema`](/api-reference/endpoint/schema) endpoint (split mode) to apply per-topic schemas:
+
+```python
+split_id = split_result.split_id
+
+schema_result = client.schema(
+    split_id=split_id,
+    split_schema_config={
+        "financial_statements": {
+            "schema": {"type": "object", "properties": {"revenue": {"type": "number"}}},
+            "schema_prompt": "Extract financial data"
+        },
+        "risk_factors": {
+            "schema": {"type": "object", "properties": {"risk_description": {"type": "string"}}}
+        }
+    }
+)
+```
+
+---
+
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | Invalid request | Missing required fields or invalid topic format |
+| 401 | Unauthorized | Invalid or missing API key |
+| 404 | Extraction not found | The `extraction_id` doesn't exist or you don't have access |
+| 429 | Rate limit exceeded | Too many requests |
+| 500 | Processing error | Split processing failed |
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use descriptive topic names">
+    Topic names become keys in the response and are used with `/schema` (split mode). Use clear, descriptive names like `financial_statements` rather than `section_1`.
+  </Accordion>
+  
+  <Accordion title="Provide detailed descriptions">
+    The description field helps the AI accurately identify relevant pages. Be specific about what content belongs to each topic.
+  </Accordion>
+  
+  <Accordion title="Use async for large documents">
+    For documents with many pages, set `async: true` to avoid request timeouts. See [Polling for Results](/api-reference/endpoint/poll).
+  </Accordion>
+</AccordionGroup>

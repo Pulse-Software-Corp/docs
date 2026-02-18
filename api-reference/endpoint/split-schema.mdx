@@ -1,0 +1,36 @@
+---
+title: 'Split Schema (Deprecated)'
+description: 'This endpoint has been merged into /schema'
+---
+
+# Split Schema — Deprecated
+
+<Warning>
+  The `/split-schema` endpoint has been merged into the unified [`/schema`](/api-reference/endpoint/schema) endpoint. Use `/schema` with a `split_id` parameter instead.
+</Warning>
+
+## Migration
+
+Replace your `/split-schema` calls with `/schema` using `split_id`:
+
+**Before:**
+```json
+POST /split-schema
+{
+  "split_id": "uuid",
+  "split_schema_config": { ... }
+}
+```
+
+**After:**
+```json
+POST /schema
+{
+  "split_id": "uuid",
+  "split_schema_config": { ... }
+}
+```
+
+The request body is identical — just change the URL from `/split-schema` to `/schema`.
+
+See the [Schema Extraction](/api-reference/endpoint/schema) docs for full details on both single and split modes.

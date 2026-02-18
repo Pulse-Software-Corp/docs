@@ -4,9 +4,10 @@ The following fields are deprecated and will be removed in a future version:
 
 | Field | Replacement |
 |-------|-------------|
-| `schema` | Use `structured_output.schema` instead |
-| `schema_prompt` | Use `structured_output.schema_prompt` instead |
-| `experimental_schema` | Use `structured_output.schema` instead |
+| `structured_output` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction. Pass `extraction_id` + `schema_config`. |
+| `schema` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction |
+| `schema_prompt` | Use [`/schema`](/api-reference/endpoint/schema) endpoint with `schema_config.schema_prompt` |
+| `experimental_schema` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction |
 | `custom_prompt` | No replacement |
 | `thinking` | No replacement |
 

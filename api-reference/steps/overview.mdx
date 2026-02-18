@@ -1,0 +1,121 @@
+---
+title: 'Processing Steps'
+description: 'Core document processing endpoints'
+---
+
+# Processing Steps
+
+Pulse provides modular processing steps that can be used independently or chained together. Each step builds on the previous to enable sophisticated document workflows.
+
+## Step Overview
+
+<CardGroup cols={2}>
+  <Card title="Extract" icon="file-import" href="/api-reference/endpoint/extract">
+    Parse documents into rich markdown with bounding boxes, figures, and metadata
+  </Card>
+  <Card title="Schema" icon="code" href="/api-reference/endpoint/schema">
+    Apply a JSON schema to extract structured data from a saved extraction
+  </Card>
+  <Card title="Split" icon="scissors" href="/api-reference/endpoint/split">
+    Identify page groups by topic for targeted processing
+  </Card>
+  <Card title="Split Schema" icon="layer-group" href="/api-reference/endpoint/split-schema">
+    Apply different schemas to different page groups
+  </Card>
+</CardGroup>
+
+---
+
+## Common Patterns
+
+### Basic Extraction
+
+The simplest workflow - extract a document and get structured data in one call:
+
+```python
+response = client.extract(
+    file_url="https://example.com/invoice.pdf",
+    structured_output={
+        "schema": {"type": "object", "properties": {...}},
+        "schema_prompt": "Extract invoice details"
+    }
+)
+```
+
+### Extract → Schema (Two-Step)
+
+For iterating on schemas without re-extracting:
+
+```python
+# Step 1: Extract
+extract = client.extract(
+    file_url="https://example.com/doc.pdf"
+)
+
+# Step 2: Apply schema (can repeat with different schemas)
+result = client.schema(
+    extraction_id=extract.job_id,
+    structured_output={"schema": {...}}
+)
+```
+
+### Extract → Split → Split-Schema (Multi-Section)
+
+For documents with distinct sections needing different schemas:
+
+```python
+# Step 1: Extract
+extract = client.extract(file_url="https://example.com/report.pdf")
+
+# Step 2: Split into topics
+split = client.split(
+    extraction_id=extract.job_id,
+    topics=[
+        {"name": "financials", "description": "Financial statements"},
+        {"name": "governance", "description": "Corporate governance"}
+    ]
+)
+
+# Step 3: Apply targeted schemas
+result = client.split_schema(
+    split_id=split.split_id,
+    structured_outputs={
+        "financials": {"schema": {...}},
+        "governance": {"schema": {...}}
+    }
+)
+```
+
+---
+
+## Async Processing
+
+All steps support async mode for long-running operations:
+
+```python
+# Submit async
+job = client.extract(file_url="...", async_=True)
+# Returns: {"job_id": "...", "status": "pending"}
+
+# Poll for results
+result = client.jobs.get_job(job_id=job.job_id)
+```
+
+See [Polling](/api-reference/utilities/poll) for details on checking job status.
+
+---
+
+## Saved Artifacts
+
+When `storage.enabled: true` (default), each step saves artifacts:
+
+| Step | Saved Artifacts |
+|------|-----------------|
+| Extract | Markdown, bounding boxes, figures, metadata |
+| Split | Page assignments per topic |
+| Schema | Input schema, extracted values, citations |
+| Split-Schema | Per-topic schemas and extracted values |
+
+Access saved artifacts via the [Platform UI](https://platform.runpulse.com) or the console API.
+
+

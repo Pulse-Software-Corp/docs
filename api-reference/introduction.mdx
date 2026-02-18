@@ -23,21 +23,31 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
 
 ## Available Endpoints
 
-### Core Endpoints
+### Pipeline Steps
 
-<CardGroup cols={2}>
-  <Card title="Extract" icon="file-export" href="/api-reference/endpoint/extract">
+<CardGroup cols={3}>
+  <Card title="Extract" icon="file-lines" href="/api-reference/endpoint/extract">
     **POST** `/extract`
     
-    The primary endpoint. Synchronously extract content from documents.
+    Extract content from documents. Supports sync and async via `async: true`.
   </Card>
   
-  <Card title="Extract Async" icon="clock" href="/api-reference/endpoint/extract_async">
-    **POST** `/extract_async`
+  <Card title="Split" icon="scissors" href="/api-reference/endpoint/split">
+    **POST** `/split`
     
-    Asynchronously process documents. Returns job ID for polling.
+    Split a document into topic-based page groups.
   </Card>
   
+  <Card title="Schema" icon="brackets-curly" href="/api-reference/endpoint/schema">
+    **POST** `/schema`
+    
+    Apply schemas to extract structured JSON data.
+  </Card>
+</CardGroup>
+
+### Utilities
+
+<CardGroup cols={2}>
   <Card title="Poll Job" icon="magnifying-glass" href="/api-reference/endpoint/poll">
     **GET** `/job/{jobId}`
     
@@ -55,6 +65,10 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
     
     Get portal link to configure webhook endpoints.
   </Card>
+
+  <Card title="Async Processing" icon="clock" href="/api-reference/async-processing">
+    Guide to using `async: true` and polling for results.
+  </Card>
 </CardGroup>
 
 ### Deprecated Endpoints
@@ -65,6 +79,7 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
 
 | Endpoint | Status | Replacement |
 |----------|--------|-------------|
+| `POST /extract_async` | Deprecated | Use `POST /extract` with `async: true` instead |
 | `POST /convert` | Deprecated | Use `file_url` parameter in `/extract` instead |
 | `POST /cancel/{job_id}` | Deprecated | Use `DELETE /job/{jobId}` instead |
 
@@ -86,8 +101,8 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
 
 <AccordionGroup>
   <Accordion title="Use Appropriate Endpoints">
-    - Use `/extract` for most documents - it's the primary endpoint
-    - Use `/extract_async` for large documents or batch processing
+    - Use `/extract` for all extractions — it's the primary endpoint
+    - Set `async: true` for large documents or batch processing
     - Use `file_url` parameter when you have documents hosted online
   </Accordion>
 
@@ -116,8 +131,8 @@ Get your API key from the [Pulse Console](https://console.runpulse.com/).
 Explore specific endpoints:
 
 <CardGroup cols={2}>
-  <Card title="Extract Endpoint" icon="file-export" href="/api-reference/endpoint/extract">
-    Main extraction endpoint
+  <Card title="Pipeline Overview" icon="diagram-project" href="/api-reference/endpoint/pipeline-overview">
+    Learn how extract, split, and schema work together
   </Card>
   <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
     Get started quickly

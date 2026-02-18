@@ -1,15 +1,15 @@
 ---
 title: 'Structured Output Guidelines'
-description: 'Best practices for defining extraction schemas using structured_output'
+description: 'Best practices for defining extraction schemas'
 ---
+
+<Warning>
+  **Deprecation Notice**: The `structured_output` parameter on `/extract` is **deprecated**. Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead. The schema format and design principles on this page still apply — just pass your schema to `/schema` via `schema_config` instead of to `/extract` via `structured_output`.
+</Warning>
 
 ## Overview
 
-The `structured_output` parameter allows you to extract structured data from documents in a consistent format. This guide provides comprehensive guidelines for creating effective schemas.
-
-<Note>
-  **Migration Notice**: The `structured_output` parameter replaces the deprecated `schema` and `schema_prompt` top-level parameters. See [Migration from Legacy Parameters](#migration-from-legacy-parameters) for details.
-</Note>
+This guide covers best practices for designing JSON schemas used with the [`/schema` endpoint](/api-reference/endpoint/schema) (recommended) or the legacy `structured_output` parameter on `/extract`.
 
 ## Schema Format
 
@@ -50,24 +50,39 @@ Describe what you want to extract in natural language, and the editor will gener
 
 Once you're happy with your schema, copy it directly into your API requests.
 
-## Using structured_output
+## Using the /schema Endpoint (Recommended)
 
-The `structured_output` parameter is an object containing:
+The recommended approach is a two-step flow:
+
+1. **Extract** the document via `/extract` to get an `extraction_id`
+2. **Apply a schema** via `/schema` using the `extraction_id`
+
+The `schema_config` object contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema` | object | JSON schema defining the structure of data to extract |
 | `schema_prompt` | string | Natural language instructions to guide extraction |
+| `effort` | boolean | Enable extended reasoning for complex documents |
 
 ### Bank Statement Example
 
 Here's an example extracting key fields from a bank statement:
 
-**Request Schema:**
+**Step 1: Extract**
+
+```bash
+POST /extract
+{"file_url": "https://...bank_statement.pdf"}
+# → {"extraction_id": "abc123-...", "markdown": "...", ...}
+```
+
+**Step 2: Apply Schema**
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "abc123-...",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -94,26 +109,25 @@ Here's an example extracting key fields from a bank statement:
 }
 ```
 
-**Response (structured_output field):**
-
-When you include a `structured_output` schema in your request, the API response will include a `structured_output` field containing the extracted data matching your schema:
+**Response (`schema_output`):**
 
 ```json
 {
-  "markdown": "SAMPLE\nStatement of Account\n12345678\n\nJAMES C. MORRISON\n...",
-  "page_count": 2,
-  "structured_output": {
-    "account_holder": "JAMES C. MORRISON",
-    "account_number": "12345678",
-    "opening_balance": 69.96,
-    "closing_balance": 586.71
-  },
-  "bounding_boxes": { ... },
-  "plan-info": { ... }
+  "schema_id": "schema-uuid-456",
+  "version": 1,
+  "schema_output": {
+    "values": {
+      "account_holder": "JAMES C. MORRISON",
+      "account_number": "12345678",
+      "opening_balance": 69.96,
+      "closing_balance": 586.71
+    },
+    "citations": {
+      "account_holder": {"page": 1, "bbox": [100, 50, 300, 70]}
+    }
+  }
 }
 ```
-
-The `structured_output` object will always match the structure defined in your `structured_output.schema` request parameter.
 
 ### SDK Examples
 
@@ -124,6 +138,12 @@ from pulse import Pulse
 
 client = Pulse(api_key="YOUR_API_KEY")
 
+# Step 1: Extract
+response = client.extract(
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
+)
+
+# Step 2: Apply schema
 schema = {
     "type": "object",
     "properties": {
@@ -141,16 +161,16 @@ schema = {
     "required": ["account_holder", "account_number"]
 }
 
-response = client.extract(
-    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structured_output={
+schema_result = client.schema(
+    extraction_id=response.extraction_id,
+    schema_config={
         "schema": schema,
         "schema_prompt": "Extract bank statement details"
     }
 )
 
-print(f"Account Holder: {response.structured_output['account_holder']}")
-print(f"Balance: {response.structured_output['closing_balance']}")
+print(f"Account Holder: {schema_result.schema_output['values']['account_holder']}")
+print(f"Balance: {schema_result.schema_output['values']['closing_balance']}")
 ```
 
 ```typescript TypeScript
@@ -160,6 +180,12 @@ const client = new PulseClient({
     headers: { 'x-api-key': 'YOUR_API_KEY' }
 });
 
+// Step 1: Extract
+const response = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+});
+
+// Step 2: Apply schema
 const schema = {
     type: "object",
     properties: {
@@ -177,23 +203,37 @@ const schema = {
     required: ["account_holder", "account_number"]
 };
 
-const response = await client.extract({
-    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    structuredOutput: {
+const schemaResult = await client.schema.extractSchema({
+    extraction_id: response.extraction_id,
+    schema_config: {
         schema: schema,
-        schemaPrompt: "Extract bank statement details"
+        schema_prompt: "Extract bank statement details"
     }
 });
 
-console.log(`Account Holder: ${response.structuredOutput?.account_holder}`);
-console.log(`Balance: ${response.structuredOutput?.closing_balance}`);
+console.log(`Account Holder: ${schemaResult.schema_output?.values?.account_holder}`);
+console.log(`Balance: ${schemaResult.schema_output?.values?.closing_balance}`);
 ```
 
 ```bash curl
+# Step 1: Extract
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@bank_statement.pdf" \
-  -F 'structured_output={"schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]}}'
+  -F "file=@bank_statement.pdf"
+
+# Response: {"extraction_id": "abc123-...", "markdown": "...", ...}
+
+# Step 2: Apply schema
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-...",
+    "schema_config": {
+      "schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]},
+      "schema_prompt": "Extract bank statement details"
+    }
+  }'
 ```
 
 </CodeGroup>
@@ -229,7 +269,8 @@ Begin with basic fields and gradually add complexity:
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "abc123-...",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -246,7 +287,8 @@ Then expand with nested objects and arrays:
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "abc123-...",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -307,7 +349,8 @@ The `schema_prompt` field provides natural language guidance to help the model u
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "abc123-...",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -328,7 +371,8 @@ The `schema_prompt` field provides natural language guidance to help the model u
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "your-extraction-id",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -379,7 +423,8 @@ The `schema_prompt` field provides natural language guidance to help the model u
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "your-extraction-id",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -428,7 +473,8 @@ The `schema_prompt` field provides natural language guidance to help the model u
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "your-extraction-id",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -488,7 +534,8 @@ Use `schema_prompt` to guide conditional extraction:
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "your-extraction-id",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -517,7 +564,8 @@ For documents with deeply nested structures:
 
 ```json
 {
-  "structured_output": {
+  "extraction_id": "your-extraction-id",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -562,10 +610,10 @@ Use `schema_prompt` to provide context that can't be expressed in the schema str
 ## Migration from Legacy Parameters
 
 <Warning>
-  The `schema` and `schema_prompt` top-level parameters are deprecated and will be removed in a future version.
+  Both the `schema` / `schema_prompt` top-level parameters **and** the `structured_output` parameter on `/extract` are deprecated. Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead.
 </Warning>
 
-### Before (Deprecated)
+### Before (Deprecated — top-level schema on /extract)
 
 ```json
 {
@@ -575,12 +623,40 @@ Use `schema_prompt` to provide context that can't be expressed in the schema str
 }
 ```
 
-### After (Recommended)
+### Before (Deprecated — structured_output on /extract)
 
 ```json
 {
   "file": "@document.pdf",
   "structured_output": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": { "type": "string" },
+        "total": { "type": "number" }
+      },
+      "required": ["invoice_number", "total"]
+    },
+    "schema_prompt": "Extract invoice details"
+  }
+}
+```
+
+### After (Recommended — /extract → /schema)
+
+```bash
+# Step 1: Extract
+POST /extract  {"file_url": "https://..."}
+# → {"extraction_id": "abc123-...", "markdown": "...", ...}
+
+# Step 2: Apply schema
+POST /schema
+```
+
+```json
+{
+  "extraction_id": "abc123-...",
+  "schema_config": {
     "schema": {
       "type": "object",
       "properties": {
@@ -600,7 +676,7 @@ Use `schema_prompt` to provide context that can't be expressed in the schema str
 }
 ```
 
-The API currently supports both formats for backward compatibility, but new integrations should use `structured_output`.
+The API supports `structured_output` on `/extract` for backward compatibility, but **all new integrations should use the `/schema` endpoint**.
 
 ## Error Handling
 
@@ -624,7 +700,7 @@ The API currently supports both formats for backward compatibility, but new inte
 
 <AccordionGroup>
   <Accordion title="DO">
-    - Use `structured_output` for all new integrations
+    - Use the [`/schema`](/api-reference/endpoint/schema) endpoint for all new integrations
     - Provide descriptive `schema_prompt` instructions
     - Use descriptive field names matching document terminology
     - Start simple and iterate
@@ -633,6 +709,7 @@ The API currently supports both formats for backward compatibility, but new inte
   </Accordion>
 
   <Accordion title="DON'T">
+    - Use `structured_output` on `/extract` (deprecated — use `/schema` instead)
     - Use deprecated `schema` top-level parameter
     - Create overly complex nested structures
     - Use generic field names
@@ -647,7 +724,7 @@ The API currently supports both formats for backward compatibility, but new inte
   <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
     See more examples
   </Card>
-  <Card title="Extract Endpoint" icon="book" href="/api-reference/endpoint/extract">
-    Try structured output extraction
+  <Card title="Schema Endpoint" icon="book" href="/api-reference/endpoint/schema">
+    Apply schemas to extracted documents
   </Card>
 </CardGroup>

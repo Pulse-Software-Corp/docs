@@ -1,0 +1,393 @@
+---
+title: 'Schema Extraction'
+openapi: 'POST /schema'
+---
+
+## Overview
+
+<Info>
+  **Pipeline Step 2 or 3** — Schema requires a prior [extraction](/api-reference/endpoint/extract). For split mode, it also requires a prior [split](/api-reference/endpoint/split). The mode is inferred from whether you provide `extraction_id` (single) or `split_id` (split).
+</Info>
+
+Apply a schema to a previously extracted document to get structured data output. This endpoint supports two modes, inferred from the input:
+
+- **Single mode** — provide `extraction_id` to apply one schema to the entire document
+- **Split mode** — provide `split_id` to apply per-topic schemas to page groups from a prior `/split`
+
+<Note>
+  This endpoint operates on **saved extractions** (created via `/extract` with storage enabled, which is the default).
+</Note>
+
+### Async Mode
+
+Set `async: true` to return immediately with a job ID for polling. See [Polling for Results](/api-reference/endpoint/poll) for details.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `async` | boolean | No | If `true`, returns immediately with a `job_id` for [polling](/api-reference/endpoint/poll). Default: `false`. |
+
+**Async Response (200)**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | Job ID for [polling](/api-reference/endpoint/poll) |
+| `status` | string | `"pending"` |
+| `message` | string | Human-readable description |
+
+---
+
+## Mode Reference
+
+<Tabs>
+  <Tab title="Single Mode">
+
+### Request
+
+Apply one schema to an entire extraction.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `extraction_id` | uuid | Yes | ID of the saved extraction |
+| `schema_config` | object | XOR | Inline schema: `{ schema: {...}, schema_prompt: "...", effort: false }` |
+| `schema_config_id` | uuid | XOR | Reference to a saved schema configuration |
+| `async` | boolean | No | Default: `false` |
+
+### Response (200)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schema_id` | uuid | Unique identifier for this schema version |
+| `version` | integer | Schema version number |
+| `schema_output` | object | `{ values: {...}, citations: {...} }` |
+
+### Example — Inline Schema
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+schema_result = client.schema(
+    extraction_id="abc123-def456-ghi789",
+    schema_config={
+        "schema": {
+            "type": "object",
+            "properties": {
+                "invoice_number": {"type": "string"},
+                "total_amount": {"type": "number"},
+                "vendor_name": {"type": "string"},
+                "line_items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": {"type": "string"},
+                            "amount": {"type": "number"}
+                        }
+                    }
+                }
+            },
+            "required": ["invoice_number", "total_amount"]
+        },
+        "schema_prompt": "Extract all invoice details including line items"
+    }
+)
+
+print(schema_result.schema_output)
+```
+
+```typescript TypeScript
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+  headers: { "x-api-key": "YOUR_API_KEY" },
+});
+
+const schemaResult = await client.schema.extractSchema({
+  extraction_id: "abc123-def456-ghi789",
+  schema_config: {
+    schema: {
+      type: "object",
+      properties: {
+        invoice_number: { type: "string" },
+        total_amount: { type: "number" },
+        vendor_name: { type: "string" },
+      },
+      required: ["invoice_number", "total_amount"],
+    },
+    schema_prompt: "Extract all invoice details",
+  },
+});
+
+console.log(schemaResult.schema_output);
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-def456-ghi789",
+    "schema_config": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "invoice_number": {"type": "string"},
+          "total_amount": {"type": "number"}
+        },
+        "required": ["invoice_number", "total_amount"]
+      },
+      "schema_prompt": "Extract invoice details"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Example — Saved Config Reference
+
+<CodeGroup>
+
+```python Python
+schema_result = client.schema(
+    extraction_id="abc123-def456-ghi789",
+    schema_config_id="config-uuid-123"
+)
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"extraction_id": "abc123-def456-ghi789", "schema_config_id": "config-uuid-123"}'
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "schema_id": "schema-uuid-456",
+  "version": 2,
+  "schema_output": {
+    "values": {
+      "invoice_number": "INV-2024-001",
+      "total_amount": 1250.00,
+      "vendor_name": "Acme Corp",
+      "line_items": [
+        {"description": "Consulting Services", "amount": 1000.00},
+        {"description": "Travel Expenses", "amount": 250.00}
+      ]
+    },
+    "citations": {
+      "invoice_number": {"page": 1, "bbox": [100, 50, 200, 70]},
+      "total_amount": {"page": 1, "bbox": [400, 500, 500, 520]}
+    }
+  }
+}
+```
+
+  </Tab>
+
+  <Tab title="Split Mode">
+
+### Request
+
+Apply different schemas to different page groups from a prior `/split` call.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `split_id` | uuid | Yes | ID from a prior [`/split`](/api-reference/endpoint/split) call |
+| `split_schema_config` | object | Yes | Per-topic schema configs (keys = topic names from split) |
+| `async` | boolean | No | Default: `false` |
+
+Each topic in `split_schema_config`:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `schema` | object | XOR | JSON Schema for this topic |
+| `schema_prompt` | string | No | Additional extraction instructions |
+| `effort` | boolean | No | Enable extended reasoning |
+| `schema_config_id` | uuid | XOR | Reference to a saved schema config |
+
+### Response (200)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schema_id` | uuid | Unique identifier for this schema version |
+| `split_id` | uuid | ID of the split that defined the page groups |
+| `results` | object | Per-topic results: `{ "topic": { values: {...}, citations: {...} } }` |
+| `input_schemas` | object | Echo of the schemas applied, keyed by topic |
+| `errors` | object | Optional: per-topic errors if any topics failed |
+
+### Example — Per-Topic Schemas
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+schema_result = client.schema(
+    split_id="split-uuid-123",
+    split_schema_config={
+        "financial_statements": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "revenue": {"type": "number"},
+                    "expenses": {"type": "number"},
+                    "net_income": {"type": "number"}
+                }
+            },
+            "schema_prompt": "Extract financial data from statements"
+        },
+        "signatures": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "signee_name": {"type": "string"},
+                    "date_signed": {"type": "string"}
+                }
+            }
+        }
+    }
+)
+
+for topic, result in schema_result.results.items():
+    print(f"{topic}: {result}")
+```
+
+```typescript TypeScript
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+  headers: { "x-api-key": "YOUR_API_KEY" },
+});
+
+const schemaResult = await client.schema.extractSchema({
+  split_id: "split-uuid-123",
+  split_schema_config: {
+    financial_statements: {
+      schema: {
+        type: "object",
+        properties: {
+          revenue: { type: "number" },
+          expenses: { type: "number" },
+        },
+      },
+      schema_prompt: "Extract financial data",
+    },
+    signatures: {
+      schema: {
+        type: "object",
+        properties: {
+          signee_name: { type: "string" },
+          date_signed: { type: "string" },
+        },
+      },
+    },
+  },
+});
+
+for (const [topic, result] of Object.entries(schemaResult.results)) {
+  console.log(`${topic}:`, result);
+}
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "split_id": "split-uuid-123",
+    "split_schema_config": {
+      "financial_statements": {
+        "schema": {"type": "object", "properties": {"revenue": {"type": "number"}}},
+        "schema_prompt": "Extract financial data"
+      },
+      "signatures": {
+        "schema": {"type": "object", "properties": {"signee_name": {"type": "string"}}}
+      }
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "schema_id": "schema-uuid-789",
+  "split_id": "split-uuid-123",
+  "results": {
+    "financial_statements": {
+      "values": { "revenue": 5000000, "expenses": 3200000 },
+      "citations": { "revenue": {"page": 15, "bbox": [100, 200, 300, 220]} }
+    },
+    "signatures": {
+      "values": { "signee_name": "Jane Doe", "date_signed": "2024-01-15" },
+      "citations": {}
+    }
+  },
+  "input_schemas": {
+    "financial_statements": { "type": "object", "properties": { "revenue": { "type": "number" } } },
+    "signatures": { "type": "object", "properties": { "signee_name": { "type": "string" } } }
+  }
+}
+```
+
+  </Tab>
+</Tabs>
+
+---
+
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | Invalid request | Must provide either `extraction_id` or `split_id` (not both) |
+| 400 | Invalid schema | Schema must follow JSON Schema / OpenAPI 3.0 format |
+| 401 | Unauthorized | Invalid or missing API key |
+| 404 | Not found | Extraction or split not found |
+| 500 | Processing error | Schema extraction failed |
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use effort mode for complex documents">
+    Set `effort: true` for documents with complex layouts, tables, or when initial extraction quality is low.
+  </Accordion>
+  
+  <Accordion title="Provide schema_prompt for context">
+    Add natural language instructions to guide the extraction, especially for ambiguous fields.
+  </Accordion>
+  
+  <Accordion title="Use async for large schemas">
+    If your schema has many fields or the document is large, set `async: true` to avoid timeouts. See [Polling for Results](/api-reference/endpoint/poll).
+  </Accordion>
+  
+  <Accordion title="For multi-section documents, use split mode">
+    First call [`/split`](/api-reference/endpoint/split) to get page groups, then use this endpoint with `split_id` + `split_schema_config`.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Extract" icon="file-lines" href="/api-reference/endpoint/extract">
+    Extract content from a document
+  </Card>
+  <Card title="Split Document" icon="scissors" href="/api-reference/endpoint/split">
+    Split a document into topic-based page groups
+  </Card>
+</CardGroup>

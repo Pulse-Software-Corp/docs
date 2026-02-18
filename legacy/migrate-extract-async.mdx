@@ -1,0 +1,232 @@
+---
+title: 'Migrate from /extract_async to /extract'
+description: 'How to switch from the deprecated /extract_async endpoint to the unified /extract endpoint with the async flag'
+---
+
+<Warning>
+  The `/extract_async` endpoint is **deprecated** and will be removed in a future version. Please migrate to `/extract` with `async: true` as described below.
+</Warning>
+
+## Overview
+
+The `/extract_async` endpoint has been replaced by a single, unified `/extract` endpoint that supports both synchronous and asynchronous processing via an `async` flag. This simplifies the API surface — you no longer need to choose between two different endpoints.
+
+| | Before (Deprecated) | After (Recommended) |
+|---|---|---|
+| **Endpoint** | `POST /extract_async` | `POST /extract` |
+| **Async behavior** | Always async | Set `async: true` |
+| **Sync behavior** | Not available | Default (`async: false`) |
+| **Response (async)** | `{ job_id, status }` | `{ job_id, status, message }` |
+
+## Migration Steps
+
+<Steps>
+
+### Step 1: Change the endpoint URL
+
+Replace `/extract_async` with `/extract` in your API calls.
+
+### Step 2: Add the `async` flag
+
+Add `"async": true` to your request body (JSON) or form data (multipart).
+
+### Step 3: Update response handling (if needed)
+
+The async response now includes an additional `message` field. Your existing `job_id` and `status` handling will continue to work unchanged.
+
+### Step 4: Remove any `/extract_async`-specific client code
+
+If you were using separate SDK methods for async extraction, switch to the unified method with the async parameter.
+
+</Steps>
+
+## Code Examples
+
+### Python SDK
+
+<CodeGroup>
+
+```python Before (Deprecated)
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Old way — separate async method
+response = client.extract_async(
+    file_url="https://example.com/document.pdf",
+    extract_figure=True
+)
+
+job_id = response.job_id
+```
+
+```python After (Recommended)
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# New way — same endpoint, just add async_=True
+response = client.extract(
+    file_url="https://example.com/document.pdf",
+    extract_figure=True,
+    async_=True
+)
+
+job_id = response.job_id
+```
+
+</CodeGroup>
+
+### TypeScript SDK
+
+<CodeGroup>
+
+```typescript Before (Deprecated)
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+    headers: { "x-api-key": "YOUR_API_KEY" }
+});
+
+// Old way — separate async method
+const response = await client.extractAsync({
+    fileUrl: "https://example.com/document.pdf",
+    extractFigure: true
+});
+
+const jobId = response.jobId;
+```
+
+```typescript After (Recommended)
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+    headers: { "x-api-key": "YOUR_API_KEY" }
+});
+
+// New way — same method, just add async: true
+const response = await client.extract({
+    fileUrl: "https://example.com/document.pdf",
+    extractFigure: true,
+    async: true
+});
+
+const jobId = response.job_id;
+```
+
+</CodeGroup>
+
+### curl
+
+<CodeGroup>
+
+```bash Before (Deprecated)
+curl -X POST https://api.runpulse.com/extract_async \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf" \
+  -F "extract_figure=true"
+```
+
+```bash After (Recommended)
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@document.pdf" \
+  -F "extract_figure=true" \
+  -F "async=true"
+```
+
+</CodeGroup>
+
+## Polling for Results
+
+Polling works exactly the same way — use `GET /job/{job_id}` to check status and retrieve results. No changes are needed to your polling logic.
+
+<CodeGroup>
+
+```python Python
+import time
+
+# Submit async extraction
+response = client.extract(
+    file_url="https://example.com/document.pdf",
+    async_=True
+)
+
+# Poll for completion (unchanged)
+job_id = response.job_id
+delay = 1
+while True:
+    status = client.jobs.get_job(job_id=job_id)
+    
+    if status.status == "completed":
+        print(f"Markdown: {status.result.markdown[:200]}...")
+        print(f"Extraction ID: {status.result.extraction_id}")
+        break
+    elif status.status in ["failed", "canceled"]:
+        print(f"Job failed: {status.status}")
+        break
+    
+    time.sleep(delay)
+    delay = min(delay * 1.5, 10)
+```
+
+```typescript TypeScript
+// Submit async extraction
+const response = await client.extract({
+    fileUrl: "https://example.com/document.pdf",
+    async: true
+});
+
+// Poll for completion (unchanged)
+const jobId = response.job_id;
+let delay = 1;
+while (true) {
+    const status = await client.jobs.getJob({ jobId });
+    
+    if (status.status === "completed") {
+        console.log(`Markdown: ${status.result?.markdown?.slice(0, 200)}...`);
+        console.log(`Extraction ID: ${status.result?.extraction_id}`);
+        break;
+    } else if (status.status === "failed" || status.status === "canceled") {
+        console.log(`Job failed: ${status.status}`);
+        break;
+    }
+    
+    await new Promise(r => setTimeout(r, delay * 1000));
+    delay = Math.min(delay * 1.5, 10);
+}
+```
+
+</CodeGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Will /extract_async stop working immediately?">
+    No. The endpoint will continue to work for backward compatibility but will be removed in a future version. We recommend migrating as soon as possible.
+  </Accordion>
+
+  <Accordion title="Are there any behavioral differences?">
+    The unified `/extract` with `async: true` behaves identically to `/extract_async`. The only addition is a `message` field in the async response. Your existing polling and webhook integrations will continue to work unchanged.
+  </Accordion>
+
+  <Accordion title="Do I need to update my webhooks?">
+    No. Webhook notifications work the same way regardless of which endpoint initiated the job. The `job.completed` event payload is unchanged.
+  </Accordion>
+
+  <Accordion title="Can I still use sync extraction?">
+    Yes! With the unified `/extract` endpoint, you get both modes in one place. Omit the `async` flag (or set `async: false`) for synchronous extraction, or set `async: true` for asynchronous processing.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Extract Endpoint" icon="file-import" href="/api-reference/endpoint/extract">
+    Full reference for the unified /extract endpoint
+  </Card>
+  <Card title="Async Processing" icon="clock" href="/api-reference/async-processing">
+    Guide to async processing and job polling
+  </Card>
+</CardGroup>
+
