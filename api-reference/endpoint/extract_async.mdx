@@ -92,8 +92,7 @@ client = Pulse(api_key="YOUR_API_KEY")
 
 # Submit async extraction
 submission = client.extract_async(
-    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extract_figure=True
+    file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf"
 )
 
 print(f"Job ID: {submission.job_id}")
@@ -127,8 +126,7 @@ const client = new PulseClient({
 
 // Submit async extraction
 const submission = await client.extractAsync({
-    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extractFigure: true
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
 });
 
 console.log(`Job ID: ${submission.job_id}`);

@@ -52,7 +52,6 @@ Click **Re-Extract**. A new extraction job is created with a new `extraction_id`
 result = client.extract(
     file=open("document.pdf", "rb"),
     pages="1-10",           # different page range
-    extract_figure=True,    # enable figures this time
     async_=True
 )
 ```

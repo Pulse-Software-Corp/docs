@@ -498,8 +498,7 @@ def extract_with_fallback(file_path, preferred_mode="full"):
         # Try full extraction with schema
         lambda: client.extract(
             file_path=file_path,
-            schema=complex_schema,
-            extract_figure=True
+            schema=complex_schema
         ),
         # Fallback to simple extraction
         lambda: client.extract(

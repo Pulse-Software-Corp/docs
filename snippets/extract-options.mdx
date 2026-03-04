@@ -3,14 +3,34 @@
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `pages` | string | - | Page range filter (1-indexed). Supports segments like `1-2` or mixed ranges like `1-2,5`. Page 1 is the first page. |
-| `chunking` | string | - | Comma-separated list of chunking strategies (e.g., `semantic,header,page,recursive`). |
-| `chunk_size` | integer | - | Maximum characters per chunk when chunking is enabled. |
-| `extract_figure` | boolean | `false` | Enable figure extraction in results. |
-| `figure_description` | boolean | `false` | Generate descriptive captions for extracted figures. |
-| `show_images` | boolean | `false` | Embed base64-encoded images inline in figure tags. Increases response size. |
-| `return_html` | boolean | `false` | Include HTML representation alongside markdown in the response. |
-| `effort` | boolean | `false` | Enable extended reasoning for higher quality extraction on complex documents. |
+| `figure_processing` | object | - | Settings that control how figures in the document are processed. These affect the **markdown output directly** and do not produce additional output fields. See [Figure Processing](#figure-processing). |
+| `extensions` | object | - | Settings that enable additional processing or alternate output formats. Each enabled extension produces a corresponding result under `response.extensions.*`. See [Extensions](#extensions). |
 | `storage` | object | - | Options for persisting extraction artifacts. See [Storage Options](#storage-options). |
 | `async` | boolean | `false` | If `true`, returns immediately with a `job_id` for polling via `GET /job/{jobId}`. |
 | `structured_output` | object | - | **⚠️ Deprecated** — Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead. Still works for backward compatibility. |
+
+### Figure Processing
+
+Settings under `figure_processing` control how figures (images, charts, diagrams) in the document are processed. These settings affect the **markdown output directly** — for example, adding descriptive captions to figures or converting charts into markdown tables. They do **not** create additional output fields in the response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `figure_processing.description` | boolean | `false` | Generate descriptive captions for extracted figures. |
+| `figure_processing.show_images` | boolean | `false` | Embed base64-encoded images inline in figure tags. Increases response size. |
+
+### Extensions
+
+Settings under `extensions` enable additional processing passes or alternate output formats. Each enabled extension produces a **corresponding output field** under `response.extensions.*`. For example, enabling `extensions.chunking` produces `response.extensions.chunking`, and enabling `extensions.alt_outputs.return_html` produces `response.extensions.alt_outputs.html`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extensions.merge_tables` | boolean | `false` | Merge tables that span multiple pages into a single table. |
+| `extensions.footnote_references` | boolean | `false` | Link footnote markers to their corresponding footnote text. |
+| `extensions.chunking` | object | - | Chunking configuration. See below. |
+| `extensions.chunking.chunk_types` | string[] | - | List of chunking strategies: `semantic`, `header`, `page`, `recursive`. |
+| `extensions.chunking.chunk_size` | integer | - | Maximum characters per chunk. |
+| `extensions.alt_outputs` | object | - | Alternate output formats. See below. |
+| `extensions.alt_outputs.wlbb` | boolean | `false` | Enable word-level bounding boxes (PDF only). Results in `response.extensions.alt_outputs.wlbb`. |
+| `extensions.alt_outputs.return_html` | boolean | `false` | Include HTML representation. `response.markdown` is still present; HTML is at `response.extensions.alt_outputs.html`. |
+| `extensions.alt_outputs.return_xml` | boolean | `false` | Include XML representation (work in progress). |
 

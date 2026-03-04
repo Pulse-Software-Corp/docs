@@ -38,8 +38,7 @@ Every pipeline starts with [`/extract`](/api-reference/endpoint/extract). This p
 
 ```python
 result = client.extract(
-    file=open("document.pdf", "rb"),
-    extract_figure=True
+    file=open("document.pdf", "rb")
 )
 extraction_id = result.extraction_id
 ```

@@ -79,8 +79,6 @@ The generated code reflects your **exact** Playground configuration:
 
     result = client.extract(
         file=open("your_document.pdf", "rb"),
-        extract_figure=True,
-        return_html=False,
         storage={"enabled": True}
     )
 
@@ -99,8 +97,6 @@ The generated code reflects your **exact** Playground configuration:
 
     const result = await client.extract({
         file: fs.createReadStream("your_document.pdf"),
-        extractFigure: true,
-        returnHtml: false,
         storage: { enabled: true }
     });
 
@@ -112,9 +108,7 @@ The generated code reflects your **exact** Playground configuration:
     ```bash
     curl -X POST https://api.runpulse.com/extract \
       -H "x-api-key: YOUR_API_KEY" \
-      -F "file=@your_document.pdf" \
-      -F "extract_figure=true" \
-      -F "return_html=false"
+      -F "file=@your_document.pdf"
     ```
   </Tab>
 </Tabs>
@@ -131,7 +125,6 @@ The generated code reflects your **exact** Playground configuration:
     # Extract
     result = client.extract(
         file=open("your_document.pdf", "rb"),
-        extract_figure=True,
         storage={"enabled": True}
     )
     extraction_id = result.extraction_id
@@ -178,7 +171,6 @@ The generated code reflects your **exact** Playground configuration:
     // Extract
     const result = await client.extract({
         file: fs.createReadStream("your_document.pdf"),
-        extractFigure: true,
         storage: { enabled: true }
     });
     const extractionId = result.extractionId;
@@ -218,8 +210,7 @@ The generated code reflects your **exact** Playground configuration:
     # 1. Extract
     curl -X POST https://api.runpulse.com/extract \
       -H "x-api-key: YOUR_API_KEY" \
-      -F "file=@your_document.pdf" \
-      -F "extract_figure=true"
+      -F "file=@your_document.pdf"
     # Save extraction_id
 
     # 2. Split

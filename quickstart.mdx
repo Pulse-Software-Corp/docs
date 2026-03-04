@@ -30,14 +30,25 @@ Extract content from a document URL:
 
 ```python Python
 from pulse import Pulse
+from pulse.types import (
+    ExtractRequestFigureProcessing,
+    ExtractRequestExtensions,
+    ExtractRequestExtensionsAltOutputs,
+)
 
 client = Pulse(api_key="YOUR_API_KEY")
 
 # Extract from a URL
 response = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extract_figure=True,
-    return_html=True
+    figure_processing=ExtractRequestFigureProcessing(
+        description=True,
+    ),
+    extensions=ExtractRequestExtensions(
+        alt_outputs=ExtractRequestExtensionsAltOutputs(
+            return_html=True,
+        ),
+    ),
 )
 
 print(f"Markdown: {response.markdown}")
@@ -53,8 +64,8 @@ const client = new PulseClient({
 
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extractFigure: true,
-    returnHtml: true
+    figureProcessing: { description: true },
+    extensions: { altOutputs: { returnHtml: true } }
 });
 
 console.log(`Markdown: ${response.markdown}`);
@@ -67,8 +78,8 @@ curl -X POST https://api.runpulse.com/extract \
   -H "Content-Type: application/json" \
   -d '{
     "file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    "extract_figure": true,
-    "return_html": true
+    "figureProcessing": {"description": true},
+    "extensions": {"altOutputs": {"returnHtml": true}}
   }'
 ```
 
@@ -82,6 +93,7 @@ curl -X POST https://api.runpulse.com/extract \
 
 ```python Python
 from pulse import Pulse
+from pulse.types import ExtractRequestFigureProcessing
 
 client = Pulse(api_key="YOUR_API_KEY")
 
@@ -90,7 +102,9 @@ with open("invoice.pdf", "rb") as f:
     response = client.extract(
         file=f,
         pages="1-5",  # 1-indexed page range
-        extract_figure=True
+        figure_processing=ExtractRequestFigureProcessing(
+            description=True,
+        ),
     )
 
 print(f"Extraction ID: {response.extraction_id}")
@@ -112,7 +126,7 @@ const blob = new Blob([fileBuffer], { type: 'application/pdf' });
 const response = await client.extract({
     file: blob,
     pages: "1-5",  // 1-indexed page range
-    extractFigure: true
+    figureProcessing: { description: true }
 });
 
 console.log(`Extraction ID: ${response.extraction_id}`);
@@ -124,8 +138,7 @@ console.log(`Markdown: ${response.markdown}`);
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@invoice.pdf" \
-  -F "pages=1-5" \
-  -F "extract_figure=true"
+  -F "pages=1-5"
 ```
 
 </CodeGroup>
@@ -149,7 +162,7 @@ client = Pulse(api_key="YOUR_API_KEY")
 # Submit async extraction
 submission = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extract_figure=True,
+    figure_processing=ExtractRequestFigureProcessing(description=True),
     async_=True  # Note: async_ in Python (async is reserved)
 )
 
@@ -182,7 +195,6 @@ const client = new PulseClient({
 // Submit async extraction
 const submission = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extractFigure: true,
     async: true
 });
 
@@ -212,7 +224,7 @@ while (true) {
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf", "extract_figure": true, "async": true}'
+  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf", "async": true}'
 
 # Response: {"job_id": "abc123", "status": "pending", "message": "Document processing started"}
 

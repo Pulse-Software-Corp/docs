@@ -73,8 +73,8 @@ def convert_pdf(pdf_path, api_key):
     response_data = response.json()
     return response_data['s3_object_url']
 
-def extract_document(file_url, api_key, schema=None, schema_prompt=None, chunking=None, 
-                    extract_figure=False, figure_description=False, return_html=False):
+def extract_document(file_url, api_key, schema=None, schema_prompt=None, 
+                    figure_processing=None, extensions=None):
     """
     Extract structured data from document using Pulse API
     """
@@ -82,12 +82,11 @@ def extract_document(file_url, api_key, schema=None, schema_prompt=None, chunkin
     data = {
         'file-url': file_url,
         'schema': schema,
-        'schema_prompt': schema_prompt,
-        'chunking': chunking,
-        'extract_figure': extract_figure,
-        'figure_description': figure_description,
-        'return_html': return_html
     }
+    if figure_processing:
+        data['figure_processing'] = figure_processing
+    if extensions:
+        data['extensions'] = extensions
     
     response = requests.post(
         url,

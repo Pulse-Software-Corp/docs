@@ -68,7 +68,6 @@ client = Pulse(api_key="YOUR_API_KEY")
 # New way — same endpoint, just add async_=True
 response = client.extract(
     file_url="https://example.com/document.pdf",
-    extract_figure=True,
     async_=True
 )
 
@@ -107,7 +106,6 @@ const client = new PulseClient({
 // New way — same method, just add async: true
 const response = await client.extract({
     fileUrl: "https://example.com/document.pdf",
-    extractFigure: true,
     async: true
 });
 
@@ -131,7 +129,6 @@ curl -X POST https://api.runpulse.com/extract_async \
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
-  -F "extract_figure=true" \
   -F "async=true"
 ```
 

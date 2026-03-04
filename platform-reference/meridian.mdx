@@ -207,7 +207,6 @@ client = Pulse(api_key="YOUR_API_KEY")
 # 1. Extract the document
 result = client.extract(
     file=open("financial_report.pdf", "rb"),
-    extract_figure=True,
     storage={"enabled": True}
 )
 

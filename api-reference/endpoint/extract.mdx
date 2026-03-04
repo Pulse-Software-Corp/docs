@@ -69,7 +69,7 @@ For documents under 70 pages, results are returned directly in the response body
   "page_count": 15,
   "extraction_id": "abc123-def456-ghi789",
   "extraction_url": "https://platform.runpulse.com/dashboard/extractions/abc123",
-  "plan-info": {
+  "plan_info": {
     "pages_used": 15,
     "tier": "standard",
     "note": "Pulse Ultra"
@@ -81,12 +81,16 @@ For documents under 70 pages, results are returned directly in the response body
     "Images": [],
     "markdown_with_ids": "<p data-bb-text-id=\"txt-1\">..."
   },
-  "chunks": {
-    "semantic": ["chunk 1...", "chunk 2..."],
-    "header": ["section 1...", "section 2..."],
-    "page": ["page 1...", "page 2..."],
-    "recursive": ["part 1...", "part 2..."]
-  }
+  "extensions": {
+    "chunking": {
+      "semantic": ["chunk 1...", "chunk 2..."],
+      "header": ["section 1...", "section 2..."]
+    },
+    "altOutputs": {
+      "html": "<html>...</html>"
+    }
+  },
+  "warnings": []
 }
 ```
 
@@ -94,18 +98,31 @@ For documents under 70 pages, results are returned directly in the response body
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `markdown` | string | Clean markdown content extracted from the document. Present when `return_html` is `false` or omitted. |
-| `html` | string | HTML representation of the document. Present when `return_html` is `true`. |
+| `markdown` | string | Clean markdown content extracted from the document. Always present. |
 | `page_count` | integer | Total number of pages processed. |
 | `extraction_id` | string (uuid) | Persisted extraction ID. Present when storage is enabled (default). Use with `/split` and `/schema`. |
 | `extraction_url` | string | URL to view the extraction in the Pulse Platform. Present when storage is enabled. |
-| `plan-info` | object | Billing information including pages used and plan tier. |
+| `plan_info` | object | Billing information including pages used and plan tier. |
 | `bounding_boxes` | object | Detailed bounding box data for document elements. See [Bounding Boxes](/api-reference/bounding-boxes) for details. |
-| `structured_output` | object | ⚠️ **Deprecated response field** — present only when the deprecated `structured_output` input param was used. Use [`/schema`](/api-reference/endpoint/schema) post-extraction instead. |
-| `chunks` | object | `{ semantic: [...], header: [...], page: [...], recursive: [...] }` — Document chunks by strategy (when `chunking` is enabled). |
-| `input_schema` | object | Echo of the schema that was applied (when the deprecated `structured_output` param was used). |
-| `schema_error` | string | Error message if schema processing failed (deprecated `structured_output` path only). |
-| `schema_processing_time_seconds` | number | Time spent on schema processing (deprecated `structured_output` path only). |
+| `extensions` | object | Output from enabled extensions. Only keys for enabled extensions are present. See below. |
+| `extensions.chunking` | object | Chunk results by strategy (when `extensions.chunking` is enabled). |
+| `extensions.merge_tables` | object | Merge tables result (when `extensions.merge_tables` is enabled). |
+| `extensions.footnote_references` | object | Footnote linking result (when `extensions.footnote_references` is enabled). |
+| `extensions.alt_outputs.wlbb` | object | Word-level bounding boxes (when `extensions.alt_outputs.wlbb` is enabled). |
+| `extensions.alt_outputs.html` | string | HTML representation (when `extensions.alt_outputs.return_html` is enabled). |
+| `extensions.alt_outputs.xml` | string | XML representation (when `extensions.alt_outputs.return_xml` is enabled, WIP). |
+| `warnings` | array | Non-fatal warnings generated during extraction, including deprecation notices for legacy input usage. |
+
+#### Deprecated Response Fields
+
+| Field | Replacement | Description |
+|-------|-------------|-------------|
+| `html` | `extensions.alt_outputs.html` | Present when legacy `return_html` input is used. |
+| `chunks` | `extensions.chunking` | Present when legacy `chunking` input is used. |
+| `plan-info` | `plan_info` | Present when only legacy inputs are used. |
+| `structured_output` | Use [`/schema`](/api-reference/endpoint/schema) | Present when deprecated `structured_output` input was used. |
+| `input_schema` | Use [`/schema`](/api-reference/endpoint/schema) | Echo of the applied schema (deprecated path only). |
+| `schema_error` | Use [`/schema`](/api-reference/endpoint/schema) | Error message if schema processing failed (deprecated path only). |
 
 ### Large Document Response (70+ Pages)
 
@@ -115,7 +132,7 @@ For documents with 70 or more pages, the API returns a URL to fetch the complete
 {
   "is_url": true,
   "url": "https://pulse-studio-api.s3.amazonaws.com/results/abc123.json",
-  "plan-info": {
+  "plan_info": {
     "pages_used": 150,
     "tier": "standard"
   }
@@ -128,7 +145,7 @@ For documents with 70 or more pages, the API returns a URL to fetch the complete
 |-------|------|-------------|
 | `is_url` | boolean | Always `true` for large document responses. Use this to detect URL-based responses. |
 | `url` | string | Pre-signed S3 URL containing the complete extraction results. Expires after 24 hours. |
-| `plan-info` | object | Billing information including pages used and plan tier. |
+| `plan_info` | object | Billing information including pages used and plan tier. |
 
 #### Handling Large Document Responses
 
@@ -199,17 +216,29 @@ curl "https://...s3.amazonaws.com/..."
 
 ```python Python
 from pulse import Pulse
+from pulse.types import (
+    ExtractRequestFigureProcessing,
+    ExtractRequestExtensions,
+    ExtractRequestExtensionsAltOutputs,
+)
 
 client = Pulse(api_key="YOUR_API_KEY")
 
-# Extract from URL
+# Extract from URL with figure processing and HTML output
 response = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extract_figure=True,
-    return_html=True
+    figure_processing=ExtractRequestFigureProcessing(
+        description=True,
+    ),
+    extensions=ExtractRequestExtensions(
+        alt_outputs=ExtractRequestExtensionsAltOutputs(
+            return_html=True,
+        ),
+    ),
 )
 
 print(f"Markdown: {response.markdown}")
+print(f"HTML: {response.extensions.alt_outputs.html}")
 print(f"Extraction ID: {response.extraction_id}")
 ```
 
@@ -222,20 +251,25 @@ const client = new PulseClient({
 
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
-    extractFigure: true,
-    returnHtml: true
+    figureProcessing: { description: true },
+    extensions: { altOutputs: { returnHtml: true } }
 });
 
 console.log(`Markdown: ${response.markdown}`);
+console.log(`HTML: ${response.extensions?.altOutputs?.html}`);
 console.log(`Extraction ID: ${response.extraction_id}`);
 ```
 
 ```bash curl
-# Extract from URL
+# Extract from URL with figure processing
 curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf"}'
+  -d '{
+    "file_url": "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    "figureProcessing": {"description": true},
+    "extensions": {"altOutputs": {"returnHtml": true}}
+  }'
 ```
 
 </CodeGroup>
@@ -245,11 +279,15 @@ curl -X POST https://api.runpulse.com/extract \
 <CodeGroup>
 
 ```python Python
+from pulse.types import ExtractRequestFigureProcessing
+
 # Upload and extract a local file
 with open("document.pdf", "rb") as f:
     response = client.extract(
         file=f,
-        extract_figure=True
+    figure_processing=ExtractRequestFigureProcessing(
+        description=True,
+    ),
     )
 ```
 
@@ -261,7 +299,6 @@ const blob = new Blob([fileBuffer], { type: 'application/pdf' });
 
 const response = await client.extract({
     file: blob,
-    extractFigure: true
 });
 ```
 
@@ -363,21 +400,42 @@ curl -X POST https://api.runpulse.com/schema \
 <CodeGroup>
 
 ```python Python
+from pulse.types import (
+    ExtractRequestExtensions,
+    ExtractRequestExtensionsChunking,
+)
+
 response = client.extract(
     file_url="https://www.impact-bank.com/user/file/dummy_statement.pdf",
     pages="1-5,10",  # 1-indexed
-    chunking="semantic,page",
-    chunk_size=1000
+    extensions=ExtractRequestExtensions(
+        chunking=ExtractRequestExtensionsChunking(
+            chunk_types=["semantic", "page"],
+            chunk_size=1000,
+        ),
+    ),
 )
+
+# Chunk data is in extensions.chunking
+print(response.extensions.chunking.semantic)
+print(response.extensions.chunking.page)
 ```
 
 ```typescript TypeScript
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
     pages: "1-5,10",  // 1-indexed
-    chunking: "semantic,page",
-    chunkSize: 1000
+    extensions: {
+        chunking: {
+            chunkTypes: ["semantic", "page"],
+            chunkSize: 1000
+        }
+    }
 });
+
+// Chunk data is in extensions.chunking
+console.log(response.extensions?.chunking?.semantic);
+console.log(response.extensions?.chunking?.page);
 ```
 
 ```bash curl
@@ -385,8 +443,7 @@ curl -X POST https://api.runpulse.com/extract \
   -H "x-api-key: YOUR_API_KEY" \
   -F "file=@document.pdf" \
   -F "pages=1-5,10" \
-  -F "chunking=semantic,page" \
-  -F "chunk_size=1000"
+  -F 'extensions={"chunking": {"chunkTypes": ["semantic", "page"], "chunkSize": 1000}}'
 ```
 
 </CodeGroup>

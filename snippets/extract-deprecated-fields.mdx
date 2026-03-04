@@ -1,13 +1,22 @@
 ### Deprecated Fields
 
-The following fields are deprecated and will be removed in a future version:
+The following input fields are deprecated and will be removed in a future version. They are still accepted for backward compatibility.
 
 | Field | Replacement |
 |-------|-------------|
-| `structured_output` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction. Pass `extraction_id` + `schema_config`. |
+| `extract_figure` | No replacement |
+| `figure_description` | Use `figure_processing.description` |
+| `show_images` | Use `figure_processing.show_images` |
+| `chunking` | Use `extensions.chunking.chunk_types` (array instead of comma-separated string) |
+| `chunk_size` | Use `extensions.chunking.chunk_size` |
+| `return_html` | Use `extensions.alt_outputs.return_html` |
+| `structured_output` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction. Pass `extraction_id` + `schema_config`. Accepts `schema`, `schema_prompt`, and `effort`. |
 | `schema` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction |
 | `schema_prompt` | Use [`/schema`](/api-reference/endpoint/schema) endpoint with `schema_config.schema_prompt` |
-| `experimental_schema` | Use [`/schema`](/api-reference/endpoint/schema) endpoint after extraction |
 | `custom_prompt` | No replacement |
 | `thinking` | No replacement |
+
+<Note>
+  When legacy input fields are used, the API returns a deprecation warning in the `warnings` array directing you to the updated field names. See the [latest documentation](https://docs.runpulse.com/api-reference/endpoint/extract) for details.
+</Note>
 

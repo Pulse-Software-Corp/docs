@@ -69,8 +69,7 @@ PDFs receive the most comprehensive processing:
 result = client.extract(
     file_path="document.pdf",
     pages="1-10",  # Process specific pages
-    extract_figure=True,  # Extract embedded images
-    return_html=False  # Get markdown output
+    figure_processing={"description": True}
 )
 ```
 
@@ -201,7 +200,6 @@ result = client.extract(file_path="document")  # Works even without extension
   <Accordion title="Technical Documents">
     **Manuals, Specifications, Diagrams**
     
-    - Use `extract_figure=true` for diagrams
     - Process in smaller chunks if very large
     - Maintain original format for tables
     - Consider HTML output for preservation

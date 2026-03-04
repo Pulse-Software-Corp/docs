@@ -37,7 +37,7 @@ Previously, you could pass a `structured_output` object directly in your `/extra
 
 ### Step 1: Remove `structured_output` from your /extract call
 
-Strip the `structured_output`, `schema`, and `schema_prompt` parameters from your extraction request. Keep all other parameters (`pages`, `chunking`, `extract_figure`, etc.) as-is.
+Strip the `structured_output`, `schema`, and `schema_prompt` parameters from your extraction request. Keep all other parameters (`pages`, `figure_processing`, `extensions`, etc.) as-is.
 
 ### Step 2: Save the `extraction_id` from the response
 
@@ -431,7 +431,6 @@ If you're parsing the response, here's how the fields map:
 | `response.structured_output.citations` | `response.schema_output.citations` | Same structure, new path |
 | `response.input_schema` | N/A | Echo removed; you know what schema you sent |
 | `response.schema_error` | Standard HTTP error response | Errors are returned as 4xx/5xx responses |
-| `response.schema_processing_time_seconds` | N/A | Available via job metadata for async schema calls |
 
 ## FAQ
 

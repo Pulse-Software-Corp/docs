@@ -231,7 +231,6 @@ You can mix and match — use a config ID for some steps and inline config for o
 # Inline extract settings + saved split config + inline schema
 result = client.extract(
     file=open("doc.pdf", "rb"),
-    extract_figure=True,     # inline setting
     async_=True,
     storage={"enabled": True}
 )
