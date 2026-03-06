@@ -22,6 +22,9 @@ Pulse provides modular processing steps that can be used independently or chaine
   <Card title="Split Schema" icon="layer-group" href="/api-reference/endpoint/split-schema">
     Apply different schemas to different page groups
   </Card>
+  <Card title="Tables" icon="table" href="/api-reference/endpoint/tables">
+    Extract structured tables with span detection and cross-page merging
+  </Card>
 </CardGroup>
 
 ---
@@ -57,6 +60,24 @@ result = client.schema(
     extraction_id=extract.job_id,
     structured_output={"schema": {...}}
 )
+```
+
+### Extract → Tables (Structured Table Extraction)
+
+For documents with complex tables — span cells, multi-level headers, cross-page tables:
+
+```python
+# Step 1: Extract
+extract = client.extract(file_url="https://example.com/10k-filing.pdf")
+
+# Step 2: Extract tables (terminal step)
+tables = client.tables(
+    extraction_id=extract.job_id,
+    tables_config={"merge": True}
+)
+
+for table in tables.tables_output.tables:
+    print(table.table_content)
 ```
 
 ### Extract → Split → Split-Schema (Multi-Section)
@@ -115,6 +136,7 @@ When `storage.enabled: true` (default), each step saves artifacts:
 | Split | Page assignments per topic |
 | Schema | Input schema, extracted values, citations |
 | Split-Schema | Per-topic schemas and extracted values |
+| Tables | Extracted tables with citations and HTML content |
 
 Access saved artifacts via the [Platform UI](https://platform.runpulse.com) or the console API.
 

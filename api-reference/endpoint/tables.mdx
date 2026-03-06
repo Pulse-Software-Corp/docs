@@ -1,0 +1,240 @@
+---
+title: 'Tables'
+openapi: 'POST /tables'
+---
+
+## Overview
+
+<Info>
+  **Pipeline Step 2 (terminal)** — Tables requires a prior [extraction](/api-reference/endpoint/extract). This is a terminal step — no further pipeline steps can be chained after it.
+</Info>
+
+Extract structured tables from a saved extraction using Pulse's semantic and table-structure algorithms. The `/tables` endpoint detects and reconstructs tables from your document, handling:
+
+- **Span tables** — cells that merge across rows or columns (e.g., "Year Ended December 31" spanning three columns)
+- **Multi-level header hierarchies** — nested spans like period → segment → line item
+- **Cross-page tables** — tables that continue across page breaks, automatically merged with row-continuity tracking
+
+This is particularly valuable for financial documents (10-Ks, 10-Qs, proxy statements) where span tables encode hierarchy visually rather than explicitly, causing most extraction tools to silently misalign values with the wrong columns.
+
+<Note>
+  This endpoint operates on **saved extractions** (created via `/extract` with storage enabled, which is the default).
+</Note>
+
+### Async Mode
+
+Set `async: true` to return immediately with a job ID for polling. See [Polling for Results](/api-reference/endpoint/poll) for details.
+
+```json
+{
+  "extraction_id": "abc123-def456",
+  "async": true
+}
+```
+
+---
+
+## Request
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `extraction_id` | string (uuid) | Yes | ID of the saved extraction to process |
+| `tables_config` | object | No | Configuration options for table processing |
+| `async` | boolean | No | If `true`, returns immediately with a `tables_id` for [polling](/api-reference/endpoint/poll). Default: `false`. |
+
+### Tables Config (`tables_config`)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `merge` | boolean | `false` | Merge tables that continue across pages into a single table |
+| `table_format` | string | `"html"` | Output format for table content. Currently only `"html"` is supported. |
+
+---
+
+## Response
+
+### Synchronous Response (200)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `tables_id` | string (uuid) | Unique identifier for this tables result |
+| `tables_output` | object | Contains the extracted tables |
+| `tables_output.tables` | array | List of extracted table objects |
+
+Each table object:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `citations` | array of strings | Source references for the table (e.g., page numbers) |
+| `table_content` | string | The table content in HTML format |
+| `from_chart` | boolean | Whether the table was derived from a chart/figure rather than a native table |
+
+```json
+{
+  "tables_id": "uuid-123",
+  "tables_output": {
+    "tables": [
+      {
+        "citations": ["page 15", "page 16"],
+        "table_content": "<table>...</table>",
+        "from_chart": false
+      }
+    ]
+  }
+}
+```
+
+### Async Response (200)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `tables_id` | string (uuid) | Job ID for [polling](/api-reference/endpoint/poll) |
+| `status` | string | `"pending"` |
+| `message` | string | Human-readable status message |
+
+```json
+{
+  "tables_id": "uuid-123",
+  "status": "pending",
+  "message": "Table processing started. Poll GET /job/{tables_id} for results."
+}
+```
+
+---
+
+## Example Usage
+
+### Basic Table Extraction
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Step 1: Extract the document
+extract_result = client.extract(
+    file=open("10k-filing.pdf", "rb")
+)
+
+# Step 2: Extract tables
+tables_result = client.tables(
+    extraction_id=extract_result.extraction_id
+)
+
+for table in tables_result.tables_output.tables:
+    print(f"Citations: {table.citations}")
+    print(f"From chart: {table.from_chart}")
+    print(table.table_content)
+```
+
+```typescript TypeScript
+import { PulseClient } from "pulse-ts-sdk";
+
+const client = new PulseClient({
+  headers: { "x-api-key": "YOUR_API_KEY" },
+});
+
+// Step 1: Extract the document
+const extractResult = await client.extract({
+  file: fs.createReadStream("10k-filing.pdf"),
+});
+
+// Step 2: Extract tables
+const tablesResult = await client.tables({
+  extraction_id: extractResult.extraction_id,
+});
+
+for (const table of tablesResult.tables_output.tables) {
+  console.log("Citations:", table.citations);
+  console.log(table.table_content);
+}
+```
+
+```bash curl
+# Step 1: Extract the document
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@10k-filing.pdf"
+
+# Response includes extraction_id: "abc123-..."
+
+# Step 2: Extract tables
+curl -X POST https://api.runpulse.com/tables \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-..."
+  }'
+```
+
+</CodeGroup>
+
+### With Cross-Page Table Merging
+
+<CodeGroup>
+
+```python Python
+tables_result = client.tables(
+    extraction_id=extract_result.extraction_id,
+    tables_config={
+        "merge": True,
+        "table_format": "html"
+    }
+)
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/tables \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-...",
+    "tables_config": {
+      "merge": true,
+      "table_format": "html"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Async Processing
+
+```python
+# Start async table extraction
+job = client.tables(
+    extraction_id=extract_result.extraction_id,
+    tables_config={"merge": True},
+    async_=True
+)
+
+# Poll for results
+result = client.get_job(job.tables_id)  # Repeat until status is "completed"
+```
+
+---
+
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | Invalid request | Missing required fields or invalid configuration |
+| 401 | Unauthorized | Invalid or missing API key |
+| 404 | Extraction not found | The `extraction_id` doesn't exist or you don't have access |
+| 429 | Rate limit exceeded | Too many requests |
+| 500 | Processing error | Table processing failed |
+
+---
+
+## When to Use Tables vs. Basic Extraction
+
+Basic extraction via `/extract` already returns tables in the markdown output. Use the `/tables` endpoint when you need:
+
+- **Span-aware table parsing** — correct handling of merged cells, multi-level headers, and column/row spans
+- **Cross-page table merging** — tables that continue across page breaks reconstructed into a single table
+- **Financial document accuracy** — SEC filings, annual reports, and other documents where misaligned columns mean wrong data
+- **Dedicated table output** — clean HTML tables with citation tracking, separated from the rest of the document content

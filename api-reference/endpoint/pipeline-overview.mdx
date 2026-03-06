@@ -9,7 +9,7 @@ A pipeline is a sequence of API calls that process a document from raw file to s
 
 ## Supported Pipelines
 
-There are four valid pipeline configurations:
+There are five valid pipeline configurations:
 
 | Pipeline | Steps | Use Case |
 |----------|-------|----------|
@@ -17,6 +17,7 @@ There are four valid pipeline configurations:
 | **Extract → Schema** | `/extract` → `/schema` | Extract + apply a schema to get structured data |
 | **Extract → Split** | `/extract` → `/split` | Extract + split document into topic-based page groups |
 | **Extract → Split → Schema** | `/extract` → `/split` → `/schema` | Full pipeline — extract, split by topic, apply per-topic schemas |
+| **Extract → Tables** | `/extract` → `/tables` | Extract + structured table extraction with span detection and cross-page merging |
 
 ```mermaid
 flowchart LR
@@ -25,6 +26,7 @@ flowchart LR
     C -->|Single schema| D["/schema"]
     C -->|Multi-section| E["/split"]
     E --> F["/schema (split mode)"]
+    C -->|Tables| H["/tables"]
     C -->|Content only| G[Done]
 ```
 
@@ -195,7 +197,7 @@ See [Polling for Results](/api-reference/endpoint/poll) for details on async pro
 
 ## Pipeline Steps Reference
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Extract" icon="file-lines" href="/api-reference/endpoint/extract">
     Step 1 — Parse documents into markdown, tables, and figures
   </Card>
@@ -204,6 +206,9 @@ See [Polling for Results](/api-reference/endpoint/poll) for details on async pro
   </Card>
   <Card title="Schema" icon="table-columns" href="/api-reference/endpoint/schema">
     Step 2/3 — Apply schemas to extract structured data
+  </Card>
+  <Card title="Tables" icon="table" href="/api-reference/endpoint/tables">
+    Step 2 (terminal) — Extract structured tables with span detection and cross-page merging
   </Card>
 </CardGroup>
 
