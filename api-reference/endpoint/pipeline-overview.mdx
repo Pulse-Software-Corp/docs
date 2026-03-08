@@ -188,7 +188,7 @@ job = client.extract(
 )
 
 # Poll for completion
-result = client.get_job(job.job_id)  # Repeat until status is "completed"
+result = client.jobs.get_job(job_id=job.job_id)  # Repeat until status is "completed"
 ```
 
 See [Polling for Results](/api-reference/endpoint/poll) for details on async processing.

@@ -67,7 +67,7 @@ Each table object:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `citations` | array of strings | Source references for the table (e.g., page numbers) |
+| `citations` | array of strings | Bounding box table IDs for the table (e.g., `["tbl-1"]` or `["tbl-1", "tbl-2"]` for merged tables) |
 | `table_content` | string | The table content in HTML format |
 | `from_chart` | boolean | Whether the table was derived from a chart/figure rather than a native table |
 
@@ -77,8 +77,8 @@ Each table object:
   "tables_output": {
     "tables": [
       {
-        "citations": ["page 15", "page 16"],
-        "table_content": "<table>...</table>",
+        "citations": ["tbl-1", "tbl-2"],
+        "table_content": "<table data-bb-table-id=\"tbl-1\" data-merged-from=\"tbl-1,tbl-2\">...</table>",
         "from_chart": false
       }
     ]
@@ -145,12 +145,12 @@ const extractResult = await client.extract({
 
 // Step 2: Extract tables
 const tablesResult = await client.tables({
-  extraction_id: extractResult.extraction_id,
+  extractionId: extractResult.extractionId,
 });
 
-for (const table of tablesResult.tables_output.tables) {
+for (const table of tablesResult.tablesOutput.tables) {
   console.log("Citations:", table.citations);
-  console.log(table.table_content);
+  console.log(table.tableContent);
 }
 ```
 
@@ -213,7 +213,7 @@ job = client.tables(
 )
 
 # Poll for results
-result = client.get_job(job.tables_id)  # Repeat until status is "completed"
+result = client.jobs.get_job(job.tables_id)  # Repeat until status is "completed"
 ```
 
 ---
