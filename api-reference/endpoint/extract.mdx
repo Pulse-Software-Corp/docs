@@ -107,7 +107,7 @@ For documents under 70 pages, results are returned directly in the response body
 | `extensions` | object | Output from enabled extensions. Only keys for enabled extensions are present. See below. |
 | `extensions.chunking` | object | Chunk results by strategy (when `extensions.chunking` is enabled). |
 | `extensions.merge_tables` | object | Merge tables result (when `extensions.merge_tables` is enabled). |
-| `extensions.footnote_references` | object | Footnote linking result (when `extensions.footnote_references` is enabled). |
+| `extensions.footnote_references` | array | List of detected footnotes with their in-text references (when `extensions.footnote_references` is enabled). See [Footnote References](#footnote-references) below. |
 | `extensions.alt_outputs.wlbb` | object | Word-level bounding boxes (when `extensions.alt_outputs.wlbb` is enabled). |
 | `extensions.alt_outputs.html` | string | HTML representation (when `extensions.alt_outputs.return_html` is enabled). |
 | `extensions.alt_outputs.xml` | string | XML representation (when `extensions.alt_outputs.return_xml` is enabled, WIP). |
@@ -447,6 +447,94 @@ curl -X POST https://api.runpulse.com/extract \
 ```
 
 </CodeGroup>
+
+### Footnote References
+
+Enable `extensions.footnote_references` to detect footnote markers (e.g. `*`, `†`, `1`) in body text and link them to the footnote explanation paragraphs at the bottom of the page. Each result item includes the marker symbol, the bounding-box text ID of the footnote, and the bounding-box text IDs of all body-text paragraphs that reference it.
+
+<CodeGroup>
+
+```python Python
+from pulse.types import ExtractRequestExtensions
+
+response = client.extract(
+    file_url="https://example.com/research-paper.pdf",
+    extensions=ExtractRequestExtensions(
+        footnote_references=True,
+    ),
+)
+
+# Footnote links are in extensions.footnote_references
+for ref in response.extensions.footnote_references:
+    print(f"Marker: {ref.symbol}")
+    print(f"  Footnote: {ref.footnote_text_id}")
+    print(f"  Referenced by: {ref.reference_text_ids}")
+```
+
+```typescript TypeScript
+const response = await client.extract({
+    fileUrl: "https://example.com/research-paper.pdf",
+    extensions: {
+        footnoteReferences: true
+    }
+});
+
+// Footnote links are in extensions.footnoteReferences
+for (const ref of response.extensions?.footnoteReferences ?? []) {
+    console.log(`Marker: ${ref.symbol}`);
+    console.log(`  Footnote: ${ref.footnoteTextId}`);
+    console.log(`  Referenced by: ${ref.referenceTextIds}`);
+}
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@research-paper.pdf" \
+  -F 'extensions={"footnoteReferences": true}'
+```
+
+</CodeGroup>
+
+#### Example Response
+
+```json
+{
+  "markdown": "...",
+  "bounding_boxes": { ... },
+  "extensions": {
+    "footnoteReferences": [
+      {
+        "symbol": "*",
+        "footnoteTextId": "txt-11",
+        "referenceTextIds": ["txt-4", "txt-5", "txt-6", "txt-7", "txt-8"]
+      },
+      {
+        "symbol": "†",
+        "footnoteTextId": "txt-12",
+        "referenceTextIds": ["txt-8"]
+      },
+      {
+        "symbol": "4",
+        "footnoteTextId": "txt-48",
+        "referenceTextIds": ["txt-45"]
+      }
+    ]
+  }
+}
+```
+
+#### Footnote Reference Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `symbol` | string | The footnote marker symbol as detected in the document (e.g. `*`, `†`, `‡`, `1`, `#`). |
+| `footnoteTextId` | string | The bounding-box text ID (e.g. `txt-11`) of the footnote explanation paragraph. Cross-reference with `bounding_boxes.Footer` to get the footnote's content and position. |
+| `referenceTextIds` | string[] | Bounding-box text IDs of body-text paragraphs that contain a reference to this footnote. Cross-reference with `bounding_boxes.Text` to get each paragraph's content and position. |
+
+<Info>
+Footnote reference detection uses Azure Document Intelligence for paragraph classification, supplemented by PyMuPDF native text extraction for accurate symbol identification. This handles common OCR confusion between visually similar symbols like `†`/`+` and `‡`/`#`. Supported marker types include numbered (`1`, `2`, `3`), symbolic (`*`, `†`, `‡`, `§`, `#`), and lettered (`a`, `b`, `c`) footnotes.
+</Info>
 
 ### Disable Storage
 
