@@ -61,7 +61,7 @@ The `schema_config` object contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `schema` | object | JSON schema defining the structure of data to extract |
+| `input_schema` | object | JSON schema defining the structure of data to extract |
 | `schema_prompt` | string | Natural language instructions to guide extraction |
 | `effort` | boolean | Enable extended reasoning for complex documents |
 
@@ -83,7 +83,7 @@ POST /extract
 {
   "extraction_id": "abc123-...",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "account_holder": {
@@ -164,7 +164,7 @@ schema = {
 schema_result = client.schema(
     extraction_id=response.extraction_id,
     schema_config={
-        "schema": schema,
+        "input_schema": schema,
         "schema_prompt": "Extract bank statement details"
     }
 )
@@ -177,7 +177,7 @@ print(f"Balance: {schema_result.schema_output['values']['closing_balance']}")
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Step 1: Extract
@@ -203,10 +203,10 @@ const schema = {
     required: ["account_holder", "account_number"]
 };
 
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: response.extraction_id,
     schema_config: {
-        schema: schema,
+        input_schema: schema,
         schema_prompt: "Extract bank statement details"
     }
 });
@@ -230,7 +230,7 @@ curl -X POST https://api.runpulse.com/schema \
   -d '{
     "extraction_id": "abc123-...",
     "schema_config": {
-      "schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]},
+      "input_schema": {"type": "object", "properties": {"account_holder": {"type": "string"}, "total": {"type": "number"}}, "required": ["account_holder"]},
       "schema_prompt": "Extract bank statement details"
     }
   }'
@@ -271,7 +271,7 @@ Begin with basic fields and gradually add complexity:
 {
   "extraction_id": "abc123-...",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "invoice_number": {"type": "string"},
@@ -289,7 +289,7 @@ Then expand with nested objects and arrays:
 {
   "extraction_id": "abc123-...",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "invoice_number": {"type": "string", "description": "Invoice ID"},
@@ -351,7 +351,7 @@ The `schema_prompt` field provides natural language guidance to help the model u
 {
   "extraction_id": "abc123-...",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "contract_type": {"type": "string"},
@@ -373,7 +373,7 @@ The `schema_prompt` field provides natural language guidance to help the model u
 {
   "extraction_id": "your-extraction-id",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "document_type": {"type": "string"},
@@ -425,7 +425,7 @@ The `schema_prompt` field provides natural language guidance to help the model u
 {
   "extraction_id": "your-extraction-id",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "document_title": {"type": "string"},
@@ -475,7 +475,7 @@ The `schema_prompt` field provides natural language guidance to help the model u
 {
   "extraction_id": "your-extraction-id",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "patient": {
@@ -536,7 +536,7 @@ Use `schema_prompt` to guide conditional extraction:
 {
   "extraction_id": "your-extraction-id",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "contract_type": {"type": "string", "description": "Type of contract: lease, purchase, service, etc."},
@@ -566,7 +566,7 @@ For documents with deeply nested structures:
 {
   "extraction_id": "your-extraction-id",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "organization": {
@@ -657,7 +657,7 @@ POST /schema
 {
   "extraction_id": "abc123-...",
   "schema_config": {
-    "schema": {
+    "input_schema": {
       "type": "object",
       "properties": {
         "invoice_number": {

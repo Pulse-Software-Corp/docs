@@ -127,7 +127,7 @@ schema = {
     "notes": "string"
 }
 
-result = client.extract(file_path="invoice.pdf", schema=schema)
+result = client.extract(file_url="invoice.pdf", schema=schema)
 ```
 
 ### Contract Analysis
@@ -161,7 +161,7 @@ schema = {
     }]
 }
 
-result = client.extract(file_path="contract.pdf", schema=schema)
+result = client.extract(file_url="contract.pdf", schema=schema)
 ```
 
 ### Medical Records
@@ -198,7 +198,7 @@ schema = {
     "follow_up": "string"
 }
 
-result = client.extract(file_path="medical_record.pdf", schema=schema)
+result = client.extract(file_url="medical_record.pdf", schema=schema)
 ```
 
 ## Advanced Features
@@ -221,7 +221,7 @@ Provide additional context for better extraction:
 
 ```python
 result = client.extract(
-    file_path="document.pdf",
+    file_url="document.pdf",
     schema=schema,
     schema_prompt="This is a German invoice. Extract amounts in EUR. Pay special attention to VAT calculations"
 )
@@ -361,7 +361,7 @@ The API validates your schema before processing:
 
 ```python
 try:
-    result = client.extract(file_path="doc.pdf", schema=invalid_schema)
+    result = client.extract(file_url="doc.pdf", schema=invalid_schema)
 except Exception as e:
     if "Invalid schema" in str(e):
         print("Schema validation failed")
@@ -393,7 +393,7 @@ schema = {
     "date": "date"
 }
 
-result = client.extract(file_path="invoice.pdf", schema=schema)
+result = client.extract(file_url="invoice.pdf", schema=schema)
 
 # Insert into database
 cursor.execute(
@@ -414,7 +414,7 @@ schema = {
     }]
 }
 
-result = client.extract(file_path="order.pdf", schema=schema)
+result = client.extract(file_url="order.pdf", schema=schema)
 
 
 ## Next Steps

@@ -31,7 +31,7 @@ print(f"Portal URL: {response.link}")
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Get webhook portal link
@@ -448,7 +448,7 @@ def handle_webhook():
             schema_result = client.schema(
                 extraction_id=job_result.result.extraction_id,
                 schema_config={
-                    "schema": {
+                    "input_schema": {
                         "type": "object",
                         "properties": {
                             "account_holder": {"type": "string"},
@@ -484,7 +484,7 @@ import express from 'express';
 
 // Initialize Pulse client
 const client = new PulseClient({
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Express app for webhook handler
@@ -511,11 +511,11 @@ app.post('/webhook', async (req, res) => {
         if (jobResult.result) {
             console.log(`Markdown: ${jobResult.result.markdown?.slice(0, 100)}...`);
             
-            // Apply schema post-extraction via /schema endpoint
-            const schemaResult = await client.schema.extractSchema({
+            // Apply schema post-extraction
+            const schemaResult = await client.schema({
                 extraction_id: jobResult.result.extraction_id,
                 schema_config: {
-                    schema: {
+                    input_schema: {
                         type: "object",
                         properties: {
                             account_holder: { type: "string" },

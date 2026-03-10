@@ -173,9 +173,7 @@ else:
 ```typescript TypeScript
 import { PulseClient } from 'pulse-ts-sdk';
 
-const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
@@ -245,9 +243,7 @@ print(f"Extraction ID: {response.extraction_id}")
 ```typescript TypeScript
 import { PulseClient } from 'pulse-ts-sdk';
 
-const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
@@ -332,7 +328,7 @@ extraction_id = response.extraction_id
 schema_result = client.schema(
     extraction_id=extraction_id,
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "total": {"type": "number"},
@@ -355,10 +351,10 @@ const response = await client.extract({
 const extractionId = response.extraction_id;
 
 // Step 2: Apply schema separately
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: extractionId,
     schema_config: {
-        schema: {
+        input_schema: {
             type: "object",
             properties: {
                 total: { type: "number" },
@@ -387,7 +383,7 @@ curl -X POST https://api.runpulse.com/schema \
   -d '{
     "extraction_id": "abc123-...",
     "schema_config": {
-      "schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}},
+      "input_schema": {"type": "object", "properties": {"total": {"type": "number"}, "vendor": {"type": "string"}}},
       "schema_prompt": "Extract invoice total and vendor"
     }
   }'

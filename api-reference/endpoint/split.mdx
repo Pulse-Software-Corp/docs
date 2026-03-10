@@ -26,7 +26,7 @@ Set `async: true` to return immediately with a job ID for polling. See [Polling 
 ```json
 {
   "extraction_id": "abc123-def456",
-  "split_config": { "topics": [...] },
+  "split_config": { "split_input": [...] },
   "async": true
 }
 ```
@@ -92,7 +92,7 @@ client = Pulse(api_key="YOUR_API_KEY")
 split_result = client.split(
     extraction_id="abc123-def456-ghi789",
     split_config={
-        "topics": [
+        "split_input": [
             {
                 "name": "financial_statements",
                 "description": "Balance sheets, income statements, cash flow statements"
@@ -117,19 +117,17 @@ for topic, pages in split_result.split_output.splits.items():
 ```typescript TypeScript
 import { PulseClient } from "pulse-ts-sdk";
 
-const client = new PulseClient({
-  headers: { "x-api-key": "YOUR_API_KEY" },
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
-const splitResult = await client.split.document({
-  extraction_id: "abc123-def456-ghi789",
-  split_config: {
-    topics: [
-      { name: "financial_statements", description: "Balance sheets, income statements" },
-      { name: "executive_summary", description: "Letter to shareholders" },
-      { name: "risk_factors", description: "Risk disclosures" },
-    ],
-  },
+const splitResult = await client.split({
+    extraction_id: "abc123-def456-ghi789",
+    split_config: {
+        split_input: [
+            { name: "financial_statements", description: "Balance sheets, income statements" },
+            { name: "executive_summary", description: "Letter to shareholders" },
+            { name: "risk_factors", description: "Risk disclosures" },
+        ],
+    },
 });
 
 console.log("Split ID:", splitResult.split_id);
@@ -142,7 +140,7 @@ curl -X POST https://api.runpulse.com/split \
   -d '{
     "extraction_id": "abc123-def456-ghi789",
     "split_config": {
-      "topics": [
+      "split_input": [
         {"name": "financial_statements", "description": "Balance sheets, income statements"},
         {"name": "executive_summary", "description": "Letter to shareholders"},
         {"name": "risk_factors", "description": "Risk disclosures"}

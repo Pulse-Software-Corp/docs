@@ -95,14 +95,14 @@ def poll_job(job_id: str, max_attempts: int = 60):
 # Example usage
 job_id = "abc123-def456-ghi789"
 result = poll_job(job_id)
-print(f"Extraction complete! Content: {result.content[:100]}...")
+print(f"Extraction complete! Markdown: {result['markdown'][:100]}...")
 ```
 
 ```typescript TypeScript SDK
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 async function pollJob(jobId: string, maxAttempts: number = 60): Promise<any> {
@@ -135,7 +135,7 @@ async function pollJob(jobId: string, maxAttempts: number = 60): Promise<any> {
 // Example usage
 const jobId = "abc123-def456-ghi789";
 pollJob(jobId).then(result => {
-    console.log(`Extraction complete! Content: ${result.content?.slice(0, 100)}...`);
+    console.log(`Extraction complete! Markdown: ${result.markdown?.slice(0, 100)}...`);
 });
 ```
 
@@ -205,7 +205,7 @@ print(f"Status: {response.status}")
 print(f"Created: {response.created_at}")
 
 if response.status == "completed":
-    print(f"Content: {response.result.content[:100]}...")
+    print(f"Markdown: {response.result['markdown'][:100]}...")
 elif response.status == "failed":
     print(f"Error: {response.error}")
 ```
@@ -214,19 +214,19 @@ elif response.status == "failed":
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Check job status
 const jobId = "abc123-def456-ghi789";
 const response = await client.jobs.getJob({ jobId });
 
-console.log(`Job ID: ${response.jobId}`);
+console.log(`Job ID: ${response.job_id}`);
 console.log(`Status: ${response.status}`);
-console.log(`Created: ${response.createdAt}`);
+console.log(`Created: ${response.created_at}`);
 
 if (response.status === "completed") {
-    console.log(`Content: ${response.result?.content?.slice(0, 100)}...`);
+    console.log(`Markdown: ${response.result?.markdown?.slice(0, 100)}...`);
 } else if (response.status === "failed") {
     console.log(`Error: ${response.error}`);
 }
@@ -268,7 +268,7 @@ while True:
     
     if status_response.status == "completed":
         print("Extraction complete!")
-        extraction_id = status_response.result.extraction_id
+        extraction_id = status_response.result["extraction_id"]
         print(f"Extraction ID: {extraction_id}")
         break
     elif status_response.status in ["failed", "canceled"]:
@@ -283,7 +283,7 @@ while True:
 schema_result = client.schema(
     extraction_id=extraction_id,
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "account_holder": {"type": "string"},
@@ -299,7 +299,7 @@ print(f"Schema output: {schema_result.schema_output}")
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Step 1: Submit async extraction
@@ -334,10 +334,10 @@ while (true) {
 }
 
 // Step 3 (optional): Apply schema via /schema endpoint
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: extractionId,
     schema_config: {
-        schema: {
+        input_schema: {
             type: "object",
             properties: {
                 account_holder: { type: "string" },

@@ -133,9 +133,10 @@ for table in tables_result.tables_output.tables:
 
 ```typescript TypeScript
 import { PulseClient } from "pulse-ts-sdk";
+import * as fs from "fs";
 
 const client = new PulseClient({
-  headers: { "x-api-key": "YOUR_API_KEY" },
+  apiKey: "YOUR_API_KEY",
 });
 
 // Step 1: Extract the document
@@ -145,12 +146,12 @@ const extractResult = await client.extract({
 
 // Step 2: Extract tables
 const tablesResult = await client.tables({
-  extractionId: extractResult.extractionId,
+  extraction_id: extractResult.extraction_id,
 });
 
-for (const table of tablesResult.tablesOutput.tables) {
+for (const table of tablesResult.tables_output.tables) {
   console.log("Citations:", table.citations);
-  console.log(table.tableContent);
+  console.log(table.table_content);
 }
 ```
 

@@ -303,7 +303,7 @@ def debug_extract(file_path):
     logging.debug(f"Extracting from: {file_path}")
     
     try:
-        result = client.extract(file_path=file_path)
+        result = client.extract(file_url=file_url)
         logging.debug(f"Success: {len(result)} characters extracted")
         return result
     except Exception as e:

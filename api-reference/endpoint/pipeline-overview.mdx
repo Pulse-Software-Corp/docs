@@ -57,7 +57,7 @@ For documents where you need structured data from the entire document, call [`/s
 schema_result = client.schema(
     extraction_id=extraction_id,
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "invoice_number": {"type": "string"},
@@ -77,7 +77,7 @@ For multi-section documents (annual reports, contracts, medical records), call [
 split_result = client.split(
     extraction_id=extraction_id,
     split_config={
-        "topics": [
+        "split_input": [
             {"name": "financials", "description": "Balance sheets and income statements"},
             {"name": "risk_factors", "description": "Risk disclosures and legal disclaimers"}
         ]

@@ -57,8 +57,8 @@ extract = client.extract(
 
 # Step 2: Apply schema (can repeat with different schemas)
 result = client.schema(
-    extraction_id=extract.job_id,
-    structured_output={"schema": {...}}
+    extraction_id=extract.extraction_id,
+    schema_config={"input_schema": {...}}
 )
 ```
 
@@ -91,16 +91,18 @@ extract = client.extract(file_url="https://example.com/report.pdf")
 # Step 2: Split into topics
 split = client.split(
     extraction_id=extract.job_id,
-    topics=[
-        {"name": "financials", "description": "Financial statements"},
-        {"name": "governance", "description": "Corporate governance"}
-    ]
+    split_config={
+        "split_input": [
+            {"name": "financials", "description": "Financial statements"},
+            {"name": "governance", "description": "Corporate governance"}
+        ]
+    }
 )
 
 # Step 3: Apply targeted schemas
-result = client.split_schema(
+result = client.schema(
     split_id=split.split_id,
-    structured_outputs={
+    split_schema_config={
         "financials": {"schema": {...}},
         "governance": {"schema": {...}}
     }

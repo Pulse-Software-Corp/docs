@@ -54,7 +54,7 @@ import { PulseClient } from 'pulse-ts-sdk';
 
 // Initialize the client with your API key
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Extract a document
@@ -108,7 +108,7 @@ client = Pulse(api_key=os.getenv("PULSE_API_KEY"))
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({
-    headers: { 'x-api-key': process.env.PULSE_API_KEY! }
+    apiKey: process.env.PULSE_API_KEY!
 });
 ```
 

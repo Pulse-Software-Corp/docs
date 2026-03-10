@@ -76,7 +76,7 @@ The real power of presets is using them in API calls. Instead of inlining your f
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -96,7 +96,7 @@ The real power of presets is using them in API calls. Instead of inlining your f
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
     // Use a saved extraction config
@@ -106,7 +106,7 @@ The real power of presets is using them in API calls. Instead of inlining your f
         storage: { enabled: true }
     });
 
-    console.log("Extraction ID:", result.extractionId);
+    console.log("Extraction ID:", result.extraction_id);
     ```
   </Tab>
   <Tab title="curl">
@@ -125,7 +125,7 @@ The real power of presets is using them in API calls. Instead of inlining your f
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -139,14 +139,14 @@ The real power of presets is using them in API calls. Instead of inlining your f
     extraction_id = result.extraction_id
 
     # Step 2: Split using saved split config
-    split_result = client.split.document(
+    split_result = client.split(
         extraction_id=extraction_id,
         split_config_id="split-config-def456"
     )
     split_id = split_result.split_id
 
     # Step 3: Schema using saved schema config (single mode)
-    schema_result = client.schema.extract_schema(
+    schema_result = client.schema(
         extraction_id=extraction_id,
         schema_config_id="schema-config-ghi789"
     )
@@ -160,32 +160,31 @@ The real power of presets is using them in API calls. Instead of inlining your f
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
-    // Step 1: Extract using saved extraction config
+    // Step 1: Extract using saved extraction config (async)
     const result = await client.extract({
         file: fs.createReadStream("annual_report.pdf"),
         extractionConfigId: "ext-config-abc123",
         async: true,
         storage: { enabled: true }
     });
-    const extractionId = result.extractionId;
+    const extractionId = result.extraction_id;
 
     // Step 2: Split using saved split config
-    const splitResult = await client.split.document({
+    const splitResult = await client.split({
         extraction_id: extractionId,
         split_config_id: "split-config-def456"
     });
-    const splitId = splitResult.splitId;
 
     // Step 3: Schema using saved schema config (single mode)
-    const schemaResult = await client.schema.extractSchema({
+    const schemaResult = await client.schema({
         extraction_id: extractionId,
         schema_config_id: "schema-config-ghi789"
     });
 
-    console.log(schemaResult.schemaOutput);
+    console.log(schemaResult.schema_output);
     ```
   </Tab>
   <Tab title="curl">
@@ -235,12 +234,12 @@ result = client.extract(
     storage={"enabled": True}
 )
 
-split_result = client.split.document(
+split_result = client.split(
     extraction_id=result.extraction_id,
     split_config_id="split-config-def456"   # saved config
 )
 
-schema_result = client.schema.extract_schema(
+schema_result = client.schema(
     split_id=split_result.split_id,
     split_schema_config={                    # inline config
         "Financials": {
