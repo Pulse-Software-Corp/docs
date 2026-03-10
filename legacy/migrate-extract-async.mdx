@@ -84,7 +84,7 @@ job_id = response.job_id
 import { PulseClient } from "pulse-ts-sdk";
 
 const client = new PulseClient({
-    headers: { "x-api-key": "YOUR_API_KEY" }
+    apiKey: "YOUR_API_KEY"
 });
 
 // Old way — separate async method
@@ -93,17 +93,17 @@ const response = await client.extractAsync({
     extractFigure: true
 });
 
-const jobId = response.jobId;
+const jobId = response.job_id;
 ```
 
 ```typescript After (Recommended)
 import { PulseClient } from "pulse-ts-sdk";
 
 const client = new PulseClient({
-    headers: { "x-api-key": "YOUR_API_KEY" }
+    apiKey: "YOUR_API_KEY"
 });
 
-// New way — same method, just add async: true
+// New way — same method, just add async flag
 const response = await client.extract({
     fileUrl: "https://example.com/document.pdf",
     async: true

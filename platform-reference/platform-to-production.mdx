@@ -73,7 +73,7 @@ The generated code reflects your **exact** Playground configuration:
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -92,7 +92,7 @@ The generated code reflects your **exact** Playground configuration:
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
     const result = await client.extract({
@@ -101,7 +101,7 @@ The generated code reflects your **exact** Playground configuration:
     });
 
     console.log(result.markdown);
-    console.log("Extraction ID:", result.extractionId);
+    console.log("Extraction ID:", result.extraction_id);
     ```
   </Tab>
   <Tab title="curl">
@@ -118,7 +118,7 @@ The generated code reflects your **exact** Playground configuration:
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -130,10 +130,10 @@ The generated code reflects your **exact** Playground configuration:
     extraction_id = result.extraction_id
 
     # Split
-    split_result = client.split.document(
+    split_result = client.split(
         extraction_id=extraction_id,
         split_config={
-            "topics": [
+            "split_input": [
                 {"name": "Financials", "description": "Revenue and expense data"},
                 {"name": "Leadership", "description": "Executive team information"}
             ]
@@ -142,7 +142,7 @@ The generated code reflects your **exact** Playground configuration:
     split_id = split_result.split_id
 
     # Schema per topic
-    schema_result = client.schema.extract_schema(
+    schema_result = client.schema(
         split_id=split_id,
         split_schema_config={
             "Financials": {
@@ -165,7 +165,7 @@ The generated code reflects your **exact** Playground configuration:
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
     // Extract
@@ -173,22 +173,22 @@ The generated code reflects your **exact** Playground configuration:
         file: fs.createReadStream("your_document.pdf"),
         storage: { enabled: true }
     });
-    const extractionId = result.extractionId;
+    const extractionId = result.extraction_id;
 
     // Split
-    const splitResult = await client.split.document({
+    const splitResult = await client.split({
         extraction_id: extractionId,
         split_config: {
-            topics: [
+            split_input: [
                 { name: "Financials", description: "Revenue and expense data" },
                 { name: "Leadership", description: "Executive team information" }
             ]
         }
     });
-    const splitId = splitResult.splitId;
+    const splitId = splitResult.split_id;
 
     // Schema per topic
-    const schemaResult = await client.schema.extractSchema({
+    const schemaResult = await client.schema({
         split_id: splitId,
         split_schema_config: {
             Financials: {
@@ -220,7 +220,7 @@ The generated code reflects your **exact** Playground configuration:
       -d '{
         "extraction_id": "EXTRACTION_ID",
         "split_config": {
-          "topics": [
+          "split_input": [
             {"name": "Financials", "description": "Revenue and expense data"},
             {"name": "Leadership", "description": "Executive team information"}
           ]

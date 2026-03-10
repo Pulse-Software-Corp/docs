@@ -203,7 +203,7 @@ except Exception as e:
 import { PulseClient, Pulse } from 'pulse-ts-sdk';
 
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 try {
@@ -347,7 +347,7 @@ result = extract_with_retry("https://www.impact-bank.com/user/file/dummy_stateme
 import { PulseClient, Pulse } from 'pulse-ts-sdk';
 
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 const RETRYABLE_CODES = new Set([
@@ -428,7 +428,7 @@ class CircuitBreaker:
 # Usage
 breaker = CircuitBreaker()
 try:
-    result = breaker.call(lambda: client.extract(file_path="document.pdf"))
+    result = breaker.call(lambda: client.extract(file_url="document.pdf"))
 except Exception as e:
     print(f"Failed: {e}")
 ```
@@ -497,17 +497,17 @@ def extract_with_fallback(file_path, preferred_mode="full"):
     strategies = [
         # Try full extraction with schema
         lambda: client.extract(
-            file_path=file_path,
+            file_url=file_path,
             schema=complex_schema
         ),
         # Fallback to simple extraction
         lambda: client.extract(
-            file_path=file_path,
+            file_url=file_path,
             schema=simple_schema
         ),
         # Last resort: text only
         lambda: client.extract(
-            file_path=file_path
+            file_url=file_path
         )
     ]
     
@@ -537,7 +537,7 @@ def process_large_document_with_recovery(file_path, total_pages=100):
         
         try:
             result = client.extract(
-                file_path=file_path,
+                file_url=file_path,
                 pages=page_range
             )
             results.append({
@@ -553,7 +553,7 @@ def process_large_document_with_recovery(file_path, total_pages=100):
         try:
             # Try with smaller chunks or different parameters
             result = client.extract(
-                file_path=file_path,
+                file_url=file_path,
                 pages=chunk
             )
             results.append({
@@ -616,7 +616,7 @@ def upload_with_validation(file_path):
     
     # Attempt upload with retry
     return exponential_backoff_retry(
-        lambda: client.upload_file(file_path)
+        lambda: client.extract(file_url=file_url)
     )
 ```
 
@@ -632,7 +632,7 @@ def manage_async_job(job_id):
     
     while time.time() - start_time < max_poll_time:
         try:
-            status = client.get_job_status(job_id)
+            status = client.jobs.get_job(job_id=job_id)
             
             if status['status'] == 'completed':
                 return status['result']
@@ -659,7 +659,7 @@ def manage_async_job(job_id):
     
     # Timeout - attempt to cancel
     try:
-        client.cancel_job(job_id)
+        client.jobs.cancel_job(job_id=job_id)
     except:
         pass
     

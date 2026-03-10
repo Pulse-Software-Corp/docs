@@ -93,10 +93,10 @@ The schema is re-applied to the existing extraction data. Results update in-plac
 
 ```python
 # Apply a new schema to an existing extraction
-schema_result = client.schema.extract_schema(
+schema_result = client.schema(
     extraction_id="existing-extraction-id",
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "total_amount": {"type": "number"},
@@ -145,10 +145,10 @@ The split is re-applied to the existing extraction. Page assignments update base
 
 ```python
 # Re-split with different topics
-split_result = client.split.document(
+split_result = client.split(
     extraction_id="existing-extraction-id",
     split_config={
-        "topics": [
+        "split_input": [
             {"name": "Executive Summary", "description": "High-level overview"},
             {"name": "Financial Details", "description": "Revenue, costs, margins"},
             {"name": "Risk Factors", "description": "Identified risks and mitigations"}

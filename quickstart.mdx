@@ -58,9 +58,7 @@ print(f"Extraction ID: {response.extraction_id}")
 ```typescript TypeScript
 import { PulseClient } from 'pulse-ts-sdk';
 
-const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 const response = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
@@ -115,9 +113,7 @@ print(f"Markdown: {response.markdown}")
 import * as fs from 'fs';
 import { PulseClient } from 'pulse-ts-sdk';
 
-const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 // Upload and extract a local file
 const fileBuffer = fs.readFileSync("invoice.pdf");
@@ -188,9 +184,7 @@ while True:
 ```typescript TypeScript
 import { PulseClient } from 'pulse-ts-sdk';
 
-const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 // Submit async extraction
 const submission = await client.extract({
@@ -275,7 +269,7 @@ response = client.extract(
 # Step 2: Apply schema via /schema endpoint
 schema_result = client.schema(
     extraction_id=response.extraction_id,
-    schema_config={"schema": schema}
+    schema_config={"input_schema": schema}
 )
 ```
 
@@ -295,9 +289,9 @@ const response = await client.extract({
 });
 
 // Step 2: Apply schema via /schema endpoint
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: response.extraction_id,
-    schema_config: { schema }
+    schema_config: { input_schema: schema }
 });
 ```
 
@@ -336,7 +330,7 @@ response = client.extract(
 # Step 2: Apply schema
 schema_result = client.schema(
     extraction_id=response.extraction_id,
-    schema_config={"schema": schema}
+    schema_config={"input_schema": schema}
 )
 ```
 
@@ -365,9 +359,9 @@ const response = await client.extract({
 });
 
 // Step 2: Apply schema
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: response.extraction_id,
-    schema_config: { schema }
+    schema_config: { input_schema: schema }
 });
 ```
 
@@ -398,7 +392,7 @@ response = client.extract(
 # Step 2: Apply schema
 schema_result = client.schema(
     extraction_id=response.extraction_id,
-    schema_config={"schema": schema}
+    schema_config={"input_schema": schema}
 )
 ```
 
@@ -419,9 +413,9 @@ const response = await client.extract({
 });
 
 // Step 2: Apply schema
-const schemaResult = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: response.extraction_id,
-    schema_config: { schema }
+    schema_config: { input_schema: schema }
 });
 ```
 

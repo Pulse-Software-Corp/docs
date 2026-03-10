@@ -48,7 +48,7 @@ Apply one schema to an entire extraction.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `extraction_id` | uuid | Yes | ID of the saved extraction |
-| `schema_config` | object | XOR | Inline schema: `{ schema: {...}, schema_prompt: "...", effort: false }` |
+| `schema_config` | object | XOR | Inline schema: `{ input_schema: {...}, schema_prompt: "...", effort: false }` |
 | `schema_config_id` | uuid | XOR | Reference to a saved schema configuration |
 | `async` | boolean | No | Default: `false` |
 
@@ -72,7 +72,7 @@ client = Pulse(api_key="YOUR_API_KEY")
 schema_result = client.schema(
     extraction_id="abc123-def456-ghi789",
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "invoice_number": {"type": "string"},
@@ -101,24 +101,22 @@ print(schema_result.schema_output)
 ```typescript TypeScript
 import { PulseClient } from "pulse-ts-sdk";
 
-const client = new PulseClient({
-  headers: { "x-api-key": "YOUR_API_KEY" },
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
-const schemaResult = await client.schema.extractSchema({
-  extraction_id: "abc123-def456-ghi789",
-  schema_config: {
-    schema: {
-      type: "object",
-      properties: {
-        invoice_number: { type: "string" },
-        total_amount: { type: "number" },
-        vendor_name: { type: "string" },
-      },
-      required: ["invoice_number", "total_amount"],
+const schemaResult = await client.schema({
+    extraction_id: "abc123-def456-ghi789",
+    schema_config: {
+        input_schema: {
+            type: "object",
+            properties: {
+                invoice_number: { type: "string" },
+                total_amount: { type: "number" },
+                vendor_name: { type: "string" },
+            },
+            required: ["invoice_number", "total_amount"],
+        },
+        schema_prompt: "Extract all invoice details",
     },
-    schema_prompt: "Extract all invoice details",
-  },
 });
 
 console.log(schemaResult.schema_output);
@@ -131,7 +129,7 @@ curl -X POST https://api.runpulse.com/schema \
   -d '{
     "extraction_id": "abc123-def456-ghi789",
     "schema_config": {
-      "schema": {
+      "input_schema": {
         "type": "object",
         "properties": {
           "invoice_number": {"type": "string"},
@@ -265,37 +263,35 @@ for topic, result in schema_result.results.items():
 ```typescript TypeScript
 import { PulseClient } from "pulse-ts-sdk";
 
-const client = new PulseClient({
-  headers: { "x-api-key": "YOUR_API_KEY" },
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
-const schemaResult = await client.schema.extractSchema({
-  split_id: "split-uuid-123",
-  split_schema_config: {
-    financial_statements: {
-      schema: {
-        type: "object",
-        properties: {
-          revenue: { type: "number" },
-          expenses: { type: "number" },
+const schemaResult = await client.schema({
+    split_id: "split-uuid-123",
+    split_schema_config: {
+        financial_statements: {
+            schema: {
+                type: "object",
+                properties: {
+                    revenue: { type: "number" },
+                    expenses: { type: "number" },
+                },
+            },
+            schema_prompt: "Extract financial data",
         },
-      },
-      schema_prompt: "Extract financial data",
-    },
-    signatures: {
-      schema: {
-        type: "object",
-        properties: {
-          signee_name: { type: "string" },
-          date_signed: { type: "string" },
+        signatures: {
+            schema: {
+                type: "object",
+                properties: {
+                    signee_name: { type: "string" },
+                    date_signed: { type: "string" },
+                },
+            },
         },
-      },
     },
-  },
 });
 
 for (const [topic, result] of Object.entries(schemaResult.results)) {
-  console.log(`${topic}:`, result);
+    console.log(`${topic}:`, result);
 }
 ```
 

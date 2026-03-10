@@ -132,7 +132,7 @@ Everything from [Extract](/platform-reference/extract), plus:
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -145,10 +145,10 @@ Everything from [Extract](/platform-reference/extract), plus:
     extraction_id = extract_result.extraction_id
 
     # Step 2: Split
-    split_result = client.split.document(
+    split_result = client.split(
         extraction_id=extraction_id,
         split_config={
-            "topics": [
+            "split_input": [
                 {"name": "Financials", "description": "Revenue, expenses, and profit data"},
                 {"name": "Leadership", "description": "Executive team and board members"},
                 {"name": "Outlook", "description": "Future plans and projections"}
@@ -159,7 +159,7 @@ Everything from [Extract](/platform-reference/extract), plus:
     print(f"Split: {split_result.split_output}")
 
     # Step 3: Schema per topic
-    schema_result = client.schema.extract_schema(
+    schema_result = client.schema(
         split_id=split_id,
         split_schema_config={
             "Financials": {
@@ -205,32 +205,32 @@ Everything from [Extract](/platform-reference/extract), plus:
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
-    // Step 1: Extract
+    // Step 1: Extract (async)
     const extractResult = await client.extract({
         file: fs.createReadStream("annual_report.pdf"),
         async: true,
         storage: { enabled: true }
     });
-    const extractionId = extractResult.extractionId;
+    const extractionId = extractResult.extraction_id;
 
     // Step 2: Split
-    const splitResult = await client.split.document({
+    const splitResult = await client.split({
         extraction_id: extractionId,
         split_config: {
-            topics: [
+            split_input: [
                 { name: "Financials", description: "Revenue, expenses, and profit data" },
                 { name: "Leadership", description: "Executive team and board members" },
                 { name: "Outlook", description: "Future plans and projections" }
             ]
         }
     });
-    const splitId = splitResult.splitId;
+    const splitId = splitResult.split_id;
 
     // Step 3: Schema per topic
-    const schemaResult = await client.schema.extractSchema({
+    const schemaResult = await client.schema({
         split_id: splitId,
         split_schema_config: {
             Financials: {
@@ -268,7 +268,7 @@ Everything from [Extract](/platform-reference/extract), plus:
       -d '{
         "extraction_id": "EXTRACTION_ID",
         "split_config": {
-          "topics": [
+          "split_input": [
             {"name": "Financials", "description": "Revenue, expenses, and profit data"},
             {"name": "Leadership", "description": "Executive team and board members"},
             {"name": "Outlook", "description": "Future plans and projections"}
@@ -306,10 +306,10 @@ You don't have to add schema after splitting. If you just want to know which pag
 
 ```python
 # Extract → Split only (no schema)
-split_result = client.split.document(
+split_result = client.split(
     extraction_id=extraction_id,
     split_config={
-        "topics": [
+        "split_input": [
             {"name": "Relevant", "description": "Pages related to our query"},
             {"name": "Not Relevant", "description": "Background or boilerplate pages"}
         ]

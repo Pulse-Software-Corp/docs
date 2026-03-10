@@ -72,21 +72,23 @@ print(f"Status: {job.status}")  # "pending"
 # Async schema extraction
 job = client.schema(
     extraction_id="abc123",
-    structured_output={"schema": {...}},
+    schema_config={"input_schema": {...}, "schema_prompt": "..."},
     async_=True
 )
 
 # Async split
 job = client.split(
     extraction_id="abc123",
-    topics=[{"name": "financials", "description": "..."}],
+    split_config={"split_input": [{"name": "financials", "description": "..."}]},
     async_=True
 )
 ```
 
 ```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Async extraction
@@ -97,9 +99,9 @@ const job = await client.extract({
 console.log(`Job ID: ${job.job_id}`);
 
 // Async schema extraction
-const schemaJob = await client.schema.extractSchema({
+const schemaJob = await client.schema({
     extraction_id: "abc123",
-    schema_config: { schema: {...}, schema_prompt: "Extract details" },
+    schema_config: { input_schema: {}, schema_prompt: "Extract details" },
     async: true
 });
 ```

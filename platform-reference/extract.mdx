@@ -111,7 +111,7 @@ Results appear across several tabs:
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -131,7 +131,7 @@ Results appear across several tabs:
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
     const result = await client.extract({
@@ -140,7 +140,7 @@ Results appear across several tabs:
     });
 
     console.log(result.markdown);
-    console.log("Extraction ID:", result.extractionId);
+    console.log("Extraction ID:", result.extraction_id);
     ```
   </Tab>
   <Tab title="curl">
@@ -175,12 +175,15 @@ See [Async Processing](/api-reference/async-processing) for the full polling flo
 
 Once you have your `extraction_id`, you can:
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Add Schema" icon="table" href="/platform-reference/extract-schema">
     Extract structured data fields with a JSON Schema
   </Card>
   <Card title="Split & Schema" icon="scissors" href="/platform-reference/extract-split-schema">
     Divide into sections and extract per-section structured data
+  </Card>
+  <Card title="Tables" icon="table-cells" href="/api-reference/endpoint/tables">
+    Extract structured tables with span detection and cross-page merging
   </Card>
   <Card title="Export to Excel" icon="file-excel" href="/platform-reference/meridian">
     Convert detected tables to `.xlsx` with Meridian

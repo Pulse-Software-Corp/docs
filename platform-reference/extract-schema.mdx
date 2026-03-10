@@ -137,7 +137,7 @@ Everything from [Extract](/platform-reference/extract), plus:
 <Tabs>
   <Tab title="Python">
     ```python
-    from pulse_python_sdk import Pulse
+    from pulse import Pulse
 
     client = Pulse(api_key="YOUR_API_KEY")
 
@@ -152,10 +152,10 @@ Everything from [Extract](/platform-reference/extract), plus:
     extraction_id = extract_result.extraction_id
 
     # Step 2: Apply schema
-    schema_result = client.schema.extract_schema(
+    schema_result = client.schema(
         extraction_id=extraction_id,
         schema_config={
-            "schema": {
+            "input_schema": {
                 "type": "object",
                 "properties": {
                     "invoice_number": {"type": "string"},
@@ -188,7 +188,7 @@ Everything from [Extract](/platform-reference/extract), plus:
     import fs from "fs";
 
     const client = new PulseClient({
-        headers: { "x-api-key": "YOUR_API_KEY" }
+        apiKey: "YOUR_API_KEY"
     });
 
     // Step 1: Extract the document
@@ -198,13 +198,14 @@ Everything from [Extract](/platform-reference/extract), plus:
         storage: { enabled: true }
     });
 
-    const extractionId = extractResult.extractionId;
+    // Poll for completion, then get extraction_id
+    const extractionId = extractResult.extraction_id;
 
     // Step 2: Apply schema
-    const schemaResult = await client.schema.extractSchema({
+    const schemaResult = await client.schema({
         extraction_id: extractionId,
         schema_config: {
-            schema: {
+            input_schema: {
                 type: "object",
                 properties: {
                     invoice_number: { type: "string" },
@@ -228,7 +229,7 @@ Everything from [Extract](/platform-reference/extract), plus:
         }
     });
 
-    console.log(schemaResult.schemaOutput);
+    console.log(schemaResult.schema_output);
     ```
   </Tab>
   <Tab title="curl">
@@ -250,7 +251,7 @@ Everything from [Extract](/platform-reference/extract), plus:
       -d '{
         "extraction_id": "EXTRACTION_ID",
         "schema_config": {
-          "schema": {
+          "input_schema": {
             "type": "object",
             "properties": {
               "invoice_number": {"type": "string"},

@@ -121,12 +121,13 @@ while True:
 import { PulseClient } from 'pulse-ts-sdk';
 
 const client = new PulseClient({ 
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
+    apiKey: 'YOUR_API_KEY'
 });
 
 // Submit async extraction
-const submission = await client.extractAsync({
-    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf"
+const submission = await client.extract({
+    fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    async: true
 });
 
 console.log(`Job ID: ${submission.job_id}`);
@@ -199,8 +200,9 @@ submission = client.extract_async(
 ```
 
 ```typescript TypeScript
-const submission = await client.extractAsync({
+const submission = await client.extract({
     fileUrl: "https://www.impact-bank.com/user/file/dummy_statement.pdf",
+    async: true,
     structuredOutput: {
         schema: {
             type: "object",

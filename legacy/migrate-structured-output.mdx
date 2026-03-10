@@ -112,10 +112,10 @@ extraction_id = extract_response.extraction_id
 print(f"Markdown: {extract_response.markdown[:200]}...")
 
 # Step 2: Apply schema separately
-schema_response = client.schema.extract_schema(
+schema_response = client.schema(
     extraction_id=extraction_id,
     schema_config={
-        "schema": schema,
+        "input_schema": schema,
         "schema_prompt": "Extract bank statement details"
     }
 )
@@ -133,9 +133,9 @@ invoice_schema = {
     }
 }
 
-schema_response_2 = client.schema.extract_schema(
+schema_response_2 = client.schema(
     extraction_id=extraction_id,  # same extraction!
-    schema_config={"schema": invoice_schema}
+    schema_config={"input_schema": invoice_schema}
 )
 ```
 
@@ -148,9 +148,7 @@ schema_response_2 = client.schema.extract_schema(
 ```typescript Before (Deprecated)
 import { PulseClient } from "pulse-ts-sdk";
 
-const client = new PulseClient({
-    headers: { "x-api-key": "YOUR_API_KEY" }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 const schema = {
     type: "object",
@@ -179,9 +177,7 @@ console.log(response.structured_output?.values?.closing_balance);
 ```typescript After (Recommended)
 import { PulseClient } from "pulse-ts-sdk";
 
-const client = new PulseClient({
-    headers: { "x-api-key": "YOUR_API_KEY" }
-});
+const client = new PulseClient({ apiKey: "YOUR_API_KEY" });
 
 const schema = {
     type: "object",
@@ -202,23 +198,23 @@ const extractionId = extractResponse.extraction_id;
 console.log(`Markdown: ${extractResponse.markdown?.slice(0, 200)}...`);
 
 // Step 2: Apply schema separately
-const schemaResponse = await client.schema.extractSchema({
+const schemaResult = await client.schema({
     extraction_id: extractionId,
     schema_config: {
-        schema,
+        input_schema: schema,
         schema_prompt: "Extract bank statement details"
     }
 });
 
 // Structured data is now in schema_output
-console.log(schemaResponse.schema_output?.values?.account_holder);
-console.log(schemaResponse.schema_output?.values?.closing_balance);
+console.log(schemaResult.schema_output?.values?.account_holder);
+console.log(schemaResult.schema_output?.values?.closing_balance);
 
 // Bonus: Re-run with a different schema without re-extracting
-const schemaResponse2 = await client.schema.extractSchema({
-    extraction_id: extractionId, // same extraction!
+const schemaResult2 = await client.schema({
+    extraction_id: extractionId,
     schema_config: {
-        schema: {
+        input_schema: {
             type: "object",
             properties: {
                 total_due: { type: "number" },
@@ -258,7 +254,7 @@ curl -X POST https://api.runpulse.com/schema \
   -d "{
     \"extraction_id\": \"$EXTRACTION_ID\",
     \"schema_config\": {
-      \"schema\": {
+      \"input_schema\": {
         \"type\": \"object\",
         \"properties\": {
           \"account_holder\": {\"type\": \"string\"},
@@ -299,10 +295,10 @@ while True:
     time.sleep(2)
 
 # Step 3: Apply schema (can also be async)
-schema_response = client.schema.extract_schema(
+schema_response = client.schema(
     extraction_id=extraction_id,
     schema_config={
-        "schema": {
+        "input_schema": {
             "type": "object",
             "properties": {
                 "account_holder": {"type": "string"},
@@ -324,11 +320,9 @@ const extractResponse = await client.extract({
 
 // Step 2: Poll for extraction completion
 const jobId = extractResponse.job_id;
-let extractionId: string;
 while (true) {
     const status = await client.jobs.getJob({ jobId });
     if (status.status === "completed") {
-        extractionId = status.result?.extraction_id!;
         break;
     } else if (status.status === "failed" || status.status === "canceled") {
         throw new Error(`Extraction failed: ${status.status}`);
@@ -336,11 +330,14 @@ while (true) {
     await new Promise(r => setTimeout(r, 2000));
 }
 
-// Step 3: Apply schema (can also be async)
-const schemaResponse = await client.schema.extractSchema({
+// extraction_id is the same as job_id (when storage is enabled, which is the default)
+const extractionId = jobId;
+
+// Step 3: Apply schema
+const schemaResult = await client.schema({
     extraction_id: extractionId,
     schema_config: {
-        schema: {
+        input_schema: {
             type: "object",
             properties: {
                 account_holder: { type: "string" },
@@ -350,7 +347,7 @@ const schemaResponse = await client.schema.extractSchema({
     }
 });
 
-console.log(schemaResponse.schema_output);
+console.log(schemaResult.schema_output);
 ```
 
 </CodeGroup>
@@ -366,10 +363,10 @@ extract_response = client.extract(
 )
 
 # Step 2: Split into topics
-split_response = client.split.document(
+split_response = client.split(
     extraction_id=extract_response.extraction_id,
     split_config={
-        "topics": [
+        "split_input": [
             {"name": "Financials", "description": "Revenue, expenses, profit data"},
             {"name": "Leadership", "description": "Executive team and board info"},
             {"name": "Outlook", "description": "Future plans and projections"}
@@ -378,7 +375,7 @@ split_response = client.split.document(
 )
 
 # Step 3: Apply different schemas to each topic
-schema_response = client.schema.extract_schema(
+schema_response = client.schema(
     split_id=split_response.split_id,
     split_schema_config={
         "Financials": {
@@ -440,7 +437,7 @@ If you're parsing the response, here's how the fields map:
   </Accordion>
 
   <Accordion title="Is the schema format the same?">
-    Yes. The JSON Schema format is identical. The only change is where you send it: instead of `structured_output.schema` on `/extract`, you send `schema_config.schema` on `/schema`. The `schema_prompt` field is also in the same location within the config object.
+    Yes. The JSON Schema format is identical. The only change is where you send it: instead of `structured_output.schema` on `/extract`, you send `schema_config.input_schema` on `/schema`. The `schema_prompt` field is also in the same location within the config object.
   </Accordion>
 
   <Accordion title="Does the two-step flow cost more?">

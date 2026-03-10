@@ -31,13 +31,13 @@ The production client automatically switches to async mode for large files:
 
 ```python
 # Automatic async detection
-client = PulseAPIClient(api_key="YOUR_API_KEY")
+client = Pulse(api_key="YOUR_API_KEY")
 
 # Files > 10MB automatically use async
-result = client.extract(file_path="large_document.pdf")  # Auto-async
+result = client.extract(file_url="large_document.pdf")  # Auto-async
 
 # Or force async mode
-result = client.extract(file_path="document.pdf", async_mode=True)
+result = client.extract(file_url="document.pdf", async_=True)
 ```
 
 ### S3 URL Responses
@@ -45,7 +45,7 @@ result = client.extract(file_path="document.pdf", async_mode=True)
 For documents over 70 pages, results are automatically delivered via S3 URL:
 
 ```python
-result = client.extract(file_path="large_report.pdf")
+result = client.extract(file_url="large_report.pdf")
 
 # Check if result is a URL
 if isinstance(result, dict) and result.get('is_url'):
@@ -63,8 +63,8 @@ Process entire documents when you need complete context:
 ```python
 # Process complete document asynchronously
 result = client.extract(
-    file_path="annual_report.pdf",
-    async_mode=True,
+    file_url="annual_report.pdf",
+    async_=True,
     schema={
         "executive_summary": "string",
         "financial_highlights": {
@@ -84,7 +84,7 @@ Extract specific sections to reduce processing time:
 ```python
 # Process only specific pages
 result = client.extract(
-    file_path="manual.pdf",
+    file_url="manual.pdf",
     pages="1-10,50-55,100",  # First 10 pages, pages 50-55, and page 100
     schema={"introduction": "string", "specifications": {}}
 )
@@ -105,7 +105,7 @@ def process_document_in_chunks(file_path, chunk_size=50):
     """Process large document in chunks."""
     
     # First, get total pages (you might need to check this separately)
-    first_page = client.extract(file_path=file_path, pages="1")
+    first_page = client.extract(file_url=file_path, pages="1")
     
     results = []
     page_num = 1
@@ -116,9 +116,9 @@ def process_document_in_chunks(file_path, chunk_size=50):
         
         try:
             chunk_result = client.extract(
-                file_path=file_path,
+                file_url=file_path,
                 pages=page_range,
-                async_mode=True
+                async_=True
             )
             results.append(chunk_result)
             page_num = end_page + 1
@@ -140,7 +140,7 @@ Extract only what you need to minimize processing:
 ```python
 # Extract only table of contents first
 toc_result = client.extract(
-    file_path="technical_manual.pdf",
+    file_url="technical_manual.pdf",
     pages="1-5",
     schema={"sections": [{"title": "string", "page": "integer"}]}
 )
@@ -149,7 +149,7 @@ toc_result = client.extract(
 for section in toc_result["sections"]:
     if section["title"] == "Technical Specifications":
         specs = client.extract(
-            file_path="technical_manual.pdf",
+            file_url="technical_manual.pdf",
             pages=str(section["page"]),
             schema={"specifications": {}}
         )
@@ -180,7 +180,7 @@ job_info = response.json()
 #     headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
 #     json={
 #         "extraction_id": result["extraction_id"],
-#         "schema_config": {"schema": schema}
+#         "schema_config": {"input_schema": schema}
 #     }
 # )
 ```
@@ -224,9 +224,9 @@ import concurrent.futures
 def process_document_async(file_path, schema):
     """Start async processing for a single document."""
     return client.extract(
-        file_path=file_path,
+        file_url=file_path,
         schema=schema,
-        async_mode=True
+        async_=True
     )
 
 # Process multiple documents in parallel
@@ -290,13 +290,13 @@ Minimize pages processed to reduce costs:
 ```python
 # Option 1: Extract summary first
 summary = client.extract(
-    file_path="report.pdf",
+    file_url="report.pdf",
     pages="1-3"
 )
 
 # Option 2: Use custom chunk size
 result = client.extract(
-    file_path="report.pdf",
+    file_url="report.pdf",
     chunk_size=5000,  # Larger chunks for better context
     pages="1-50"  # Process only relevant section
 )
@@ -317,7 +317,7 @@ class PerformanceMonitor:
         start_time = time.time()
         file_size = os.path.getsize(file_path) / (1024 * 1024)  # MB
         
-        result = client.extract(file_path=file_path, **kwargs)
+        result = client.extract(file_url=file_path, **kwargs)
         
         elapsed = time.time() - start_time
         self.metrics.append({
@@ -330,7 +330,7 @@ class PerformanceMonitor:
         return result
 
 monitor = PerformanceMonitor()
-result = monitor.process_with_metrics("large_doc.pdf", async_mode=True)
+result = monitor.process_with_metrics("large_doc.pdf", async_=True)
 ```
 
 ## Common Patterns
@@ -342,7 +342,7 @@ result = monitor.process_with_metrics("large_doc.pdf", async_mode=True)
 def process_legal_document(file_path):
     # First, extract table of contents
     toc = client.extract(
-        file_path=file_path,
+        file_url=file_path,
         pages="1-10",
         schema={
             "sections": [{
@@ -358,7 +358,7 @@ def process_legal_document(file_path):
     for section in toc["sections"]:
         if section["title"] in ["Terms and Conditions", "Liability"]:
             content = client.extract(
-                file_path=file_path,
+                file_url=file_path,
                 pages=f"{section['page']}-{section['page']+10}",
                 schema={"content": "string", "key_terms": ["string"]}
             )
@@ -383,10 +383,10 @@ def analyze_annual_report(file_path):
     results = {}
     for pages, schema in stages:
         stage_result = client.extract(
-            file_path=file_path,
+            file_url=file_path,
             pages=pages,
             schema=schema,
-            async_mode=True
+            async_=True
         )
         results.update(stage_result)
     
@@ -405,8 +405,8 @@ def robust_large_document_processing(file_path, max_retries=3):
         try:
             # Try async processing
             result = client.extract(
-                file_path=file_path,
-                async_mode=True,
+                file_url=file_path,
+                async_=True,
                 timeout=600  # 10 minutes
             )
             

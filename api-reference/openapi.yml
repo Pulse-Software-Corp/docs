@@ -86,7 +86,7 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
 
             // Basic extraction from URL
@@ -197,7 +197,7 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
             const response = await client.extract({
                 fileUrl: "https://example.com/document.pdf",
@@ -254,10 +254,10 @@ paths:
             client = Pulse(api_key="YOUR_API_KEY")
 
             # Async split (recommended)
-            response = client.split.document(
+            response = client.split(
                 extraction_id="your-extraction-id",
                 split_config={
-                    "topics": [
+                    "split_input": [
                         {"name": "Introduction", "description": "Overview section"},
                         {"name": "Financials", "description": "Financial data"}
                     ]
@@ -267,10 +267,10 @@ paths:
             print(response.job_id)  # poll via client.jobs.get_job(job_id=...)
 
             # Sync split
-            response = client.split.document(
+            response = client.split(
                 extraction_id="your-extraction-id",
                 split_config={
-                    "topics": [
+                    "split_input": [
                         {"name": "Introduction", "description": "Overview section"},
                         {"name": "Financials", "description": "Financial data"}
                     ]
@@ -283,14 +283,14 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
 
             // Async split (recommended)
-            const response = await client.split.document({
+            const response = await client.split({
                 extraction_id: "your-extraction-id",
                 split_config: {
-                    topics: [
+                    split_input: [
                         { name: "Introduction", description: "Overview section" },
                         { name: "Financials", description: "Financial data" }
                     ]
@@ -300,10 +300,10 @@ paths:
             console.log(response.job_id); // poll via client.jobs.getJob(...)
 
             // Sync split
-            const syncResp = await client.split.document({
+            const syncResp = await client.split({
                 extraction_id: "your-extraction-id",
                 split_config: {
-                    topics: [
+                    split_input: [
                         { name: "Introduction", description: "Overview section" },
                         { name: "Financials", description: "Financial data" }
                     ]
@@ -319,7 +319,7 @@ paths:
               -d '{
                 "extraction_id": "your-extraction-id",
                 "split_config": {
-                  "topics": [
+                  "split_input": [
                     {"name": "Introduction", "description": "Overview section"},
                     {"name": "Financials", "description": "Financial data"}
                   ]
@@ -381,10 +381,10 @@ paths:
             client = Pulse(api_key="YOUR_API_KEY")
 
             # Single mode — apply schema to entire document
-            response = client.schema.extract_schema(
+            response = client.schema(
                 extraction_id="your-extraction-id",
                 schema_config={
-                    "schema": {
+                    "input_schema": {
                         "type": "object",
                         "properties": {
                             "total": {"type": "number"},
@@ -397,7 +397,7 @@ paths:
             print(response.schema_output)
 
             # Split mode — different schemas per topic
-            response = client.schema.extract_schema(
+            response = client.schema(
                 split_id="your-split-id",
                 split_schema_config={
                     "Introduction": {
@@ -410,21 +410,21 @@ paths:
                     }
                 }
             )
-            print(response.results)
+            print(response.schema_output)
         - lang: typescript
           label: TypeScript SDK
           source: |
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
 
             // Single mode — apply schema to entire document
-            const response = await client.schema.extractSchema({
+            const response = await client.schema({
                 extraction_id: "your-extraction-id",
                 schema_config: {
-                    schema: {
+                    input_schema: {
                         type: "object",
                         properties: {
                             total: { type: "number" },
@@ -437,7 +437,7 @@ paths:
             console.log(response.schema_output);
 
             // Split mode — different schemas per topic
-            const splitResp = await client.schema.extractSchema({
+            const splitResp = await client.schema({
                 split_id: "your-split-id",
                 split_schema_config: {
                     Introduction: {
@@ -450,7 +450,7 @@ paths:
                     }
                 }
             });
-            console.log(splitResp.results);
+            console.log(splitResp.schema_output);
         - lang: bash
           label: curl
           source: |
@@ -461,7 +461,7 @@ paths:
               -d '{
                 "extraction_id": "your-extraction-id",
                 "schema_config": {
-                  "schema": {
+                  "input_schema": {
                     "type": "object",
                     "properties": {
                       "total": {"type": "number"},
@@ -546,7 +546,7 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
 
             const status = await client.jobs.getJob({ jobId: "your-job-id" });
@@ -606,7 +606,7 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
             const result = await client.jobs.cancelJob({ jobId: "your-job-id" });
             console.log(result);
@@ -732,7 +732,7 @@ paths:
             import { PulseClient } from "pulse-ts-sdk";
 
             const client = new PulseClient({
-                headers: { "x-api-key": "YOUR_API_KEY" }
+                apiKey: "YOUR_API_KEY"
             });
             const portal = await client.webhooks.createWebhookLink();
             console.log(portal.link); // Open this URL to manage webhooks

@@ -67,7 +67,7 @@ PDFs receive the most comprehensive processing:
 ```python
 # Extract with PDF-specific options
 result = client.extract(
-    file_path="document.pdf",
+    file_url="document.pdf",
     pages="1-10",  # Process specific pages
     figure_processing={"description": True}
 )
@@ -87,7 +87,7 @@ Images are processed using advanced OCR:
 ```python
 # High-quality image extraction
 result = client.extract(
-    file_path="scanned_document.jpg"
+    file_url="scanned_document.jpg"
 )
 ```
 
@@ -109,7 +109,7 @@ schema = {
 }
 
 result = client.extract(
-    file_path="spreadsheet.xlsx",
+    file_url="spreadsheet.xlsx",
     schema=schema
 )
 ```
@@ -173,7 +173,7 @@ Pulse API automatically detects file types based on:
 
 ```python
 # API automatically detects format
-result = client.extract(file_path="document")  # Works even without extension
+result = client.extract(file_url="document")  # Works even without extension
 ```
 
 ## Best Practices by Document Type
@@ -224,10 +224,10 @@ result = client.extract(file_path="document")  # Works even without extension
     
     ```python
     # Correct
-    client.extract(file_path="document.pdf")
+    client.extract(file_url="document.pdf")
     
     # Incorrect
-    client.extract(file_path="document.doc")  # Use .docx instead
+    client.extract(file_url="document.doc")  # Use .docx instead
     ```
   </Accordion>
 
@@ -236,7 +236,7 @@ result = client.extract(file_path="document")  # Works even without extension
     
     ```python
     # For large files
-    client.extract(file_path="large_file.pdf", async_mode=True)
+    client.extract(file_url="large_file.pdf", async_=True)
     ```
   </Accordion>
 
