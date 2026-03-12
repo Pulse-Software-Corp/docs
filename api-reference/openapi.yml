@@ -1017,11 +1017,31 @@ components:
                 `extensions.merge_tables` was enabled.
               additionalProperties: true
             footnote_references:
-              type: object
+              type: array
               description: >-
-                Footnote linking result/metadata. Present when
-                `extensions.footnote_references` was enabled.
-              additionalProperties: true
+                List of detected footnotes with their in-text references.
+                Present when `extensions.footnote_references` was enabled.
+                Each item links a footnote paragraph to the body-text
+                paragraphs that reference it, using bounding-box text IDs.
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                    description: >-
+                      The footnote marker symbol (e.g. "*", "†", "1", "#").
+                  footnoteTextId:
+                    type: string
+                    description: >-
+                      The bounding-box text ID (e.g. "txt-15") of the
+                      footnote explanation paragraph.
+                  referenceTextIds:
+                    type: array
+                    description: >-
+                      Bounding-box text IDs of body-text paragraphs that
+                      contain a reference to this footnote marker.
+                    items:
+                      type: string
             alt_outputs:
               type: object
               description: >-

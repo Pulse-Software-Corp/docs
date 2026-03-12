@@ -164,6 +164,35 @@ Each page number element contains:
   The `id` field allows you to link bounding box elements to specific locations in the `markdown_with_ids` field via `data-bb-text-id` attributes.
 </Note>
 
+## Footnote References
+
+When you enable `extensions.footnote_references` in your extract request, the response includes an `extensions.footnoteReferences` array that uses bounding box IDs to link footnote markers to their in-text references.
+
+Each entry contains:
+- `symbol` — the footnote marker (e.g. `*`, `†`, `‡`, `1`)
+- `footnoteTextId` — the `id` of the footnote explanation, typically found in the `Footer` array
+- `referenceTextIds` — an array of `id` values from the `Text`, `Title`, or `Header` arrays identifying body paragraphs that contain the marker
+
+```json
+{
+  "extensions": {
+    "footnoteReferences": [
+      {
+        "symbol": "*",
+        "footnoteTextId": "txt-42",
+        "referenceTextIds": ["txt-5", "txt-12"]
+      }
+    ]
+  }
+}
+```
+
+Use `footnoteTextId` to look up the footnote's position and content in `bounding_boxes.Footer` (or `bounding_boxes.Text`), and each entry in `referenceTextIds` to locate the citing paragraphs in `bounding_boxes.Text`, `bounding_boxes.Title`, or `bounding_boxes.Header`. This allows you to spatially highlight both the footnote and every place in the document that references it.
+
+<Note>
+  Footnote references are only available for PDF documents. See the [Extract endpoint](/api-reference/endpoint/extract#footnote-references) for usage examples.
+</Note>
+
 ## Converting Coordinates
 
 To convert normalized coordinates to pixel coordinates:
