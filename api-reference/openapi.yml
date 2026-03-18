@@ -365,8 +365,18 @@ paths:
         **Single mode** — Provide `extraction_id` + `schema_config` (or
         `schema_config_id`) to apply one schema to the entire document.
 
+        **Multi-extraction mode** — Provide a batch extract ID as `extraction_id`
+        (auto-detected) or an explicit `extraction_ids` list. The content from all
+        extractions is combined and the schema is applied to the composite. Citations
+        use `extraction_id-bb_id` format to disambiguate across source documents.
+
         **Split mode** — Provide `split_id` + `split_schema_config` to apply
         different schemas to different page groups from a prior `/split` call.
+
+        **Excel template mode** — Provide `excel_template` (base64 .xlsx) in
+        `schema_config` instead of `input_schema`. The schema is auto-generated
+        from the template's column headers, and a filled copy is returned as
+        `excel_output_url`.
 
         Set `async: true` to return 202 with a job_id for polling.
       operationId: extractSchema
@@ -518,6 +528,38 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  /schema/{schemaId}/excel:
+    get:
+      summary: Download Filled Excel Output
+      description: |-
+        Download the filled Excel template produced by a schema extraction that
+        used `excel_template` in its `schema_config`. Requires the same API key
+        authentication as other endpoints. The caller must belong to the org
+        that owns the underlying extraction.
+      operationId: downloadSchemaExcel
+      tags:
+        - Schema
+      parameters:
+        - name: schemaId
+          in: path
+          required: true
+          description: The schema ID returned from a prior `POST /schema` call.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Filled Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Authentication failed or missing API key
+        '404':
+          description: Schema not found or no Excel output available
 
   /job/{jobId}:
     get:
@@ -1277,24 +1319,51 @@ components:
       type: object
       description: |
         Request body for schema extraction. Mode is inferred from the input:
-        - Provide `extraction_id` + `schema_config` for single-mode extraction.
+        - Provide `extraction_id` for single-mode or multi-extraction (auto-detected).
+          If the ID belongs to a batch extract, its child extractions are combined automatically.
+        - Provide `extraction_ids` for an explicit list of extractions to combine.
         - Provide `split_id` + `split_schema_config` for split-mode extraction.
       properties:
         extraction_id:
           type: string
           format: uuid
-          description: ID of saved extraction (for single mode).
+          description: >-
+            ID of a saved extraction OR a batch extract job. When a batch extract
+            ID is provided, the system auto-detects it and combines all completed
+            child extractions into a single schema application.
+        extraction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: >-
+            Explicit list of extraction IDs to combine. The markdown and bounding
+            boxes from all extractions are merged and the schema is applied to the
+            composite content. Citations use `extraction_id-bb_id` format to
+            disambiguate across source documents.
         split_id:
           type: string
           format: uuid
           description: ID of saved split (for split mode).
         schema_config:
           type: object
-          description: Inline schema configuration for single mode.
+          description: >-
+            Inline schema configuration for single mode.
+            Provide `input_schema` (JSON Schema) OR `excel_template` (base64 .xlsx) — not both.
           properties:
-            schema:
+            input_schema:
               type: object
-              description: JSON Schema defining the structured data to extract.
+              description: >-
+                JSON Schema defining the structured data to extract.
+                Required unless `excel_template` is provided.
+            excel_template:
+              type: string
+              format: byte
+              description: >-
+                Base64-encoded Excel template (.xlsx). When provided, the template's
+                column headers are used to auto-generate the JSON Schema and a
+                filled copy of the template is returned in the response as
+                `excel_output_url`. Mutually exclusive with `input_schema`.
             schema_prompt:
               type: string
               description: Natural language prompt with extraction instructions.
@@ -1360,6 +1429,22 @@ components:
             citations:
               type: object
               additionalProperties: true
+        extraction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: >-
+            Present when multiple extractions were combined (via batch extract
+            auto-detection or explicit `extraction_ids` input). Lists all source
+            extraction IDs that contributed to the result.
+        excel_output_url:
+          type: string
+          description: >-
+            API path to download the filled Excel template (e.g.
+            `/schema/{schema_id}/excel`). Requires the same API key
+            authentication. Only present when `excel_template` was provided
+            in the request.
 
     SplitSchemaResponse:
       type: object

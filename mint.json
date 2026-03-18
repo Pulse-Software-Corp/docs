@@ -84,7 +84,8 @@
         "api-reference/endpoint/pipeline-overview",
         "api-reference/endpoint/extract",
         "api-reference/endpoint/split",
-        "api-reference/endpoint/schema"
+        "api-reference/endpoint/schema",
+        "api-reference/endpoint/batch-overview"
       ]
     },
     {

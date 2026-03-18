@@ -62,6 +62,13 @@ Enumerate files from an input source and extract content from each one.
 | `status` | string | `"processing"` |
 | `total_files` | integer | Number of files that will be processed |
 
+<Note>
+  The `batch_job_id` from a batch extract can be used in two ways:
+
+  - **Batch Schema** — Pass it as `batch_extract_id` to `POST /batch/schema` to apply the same schema to each document independently (one result per document).
+  - **Multi-Extraction** — Pass it as `extraction_id` to `POST /schema` to combine all documents and apply the schema to the composite (one merged result). See [Multi-Extraction Mode](/api-reference/endpoint/schema#multi-extraction).
+</Note>
+
 ### Example
 
 <CodeGroup>
@@ -113,10 +120,19 @@ curl -X POST https://api.runpulse.com/batch/extract \
 
 ## Batch Schema
 
-Apply structured data extraction to multiple items. Supports two modes, inferred from input:
+Apply the **same schema to each document independently**, producing one result per extraction. Supports two modes, inferred from input:
 
 - **Single mode** — Provide `extraction_ids` or `batch_extract_id` with `schema_config`
 - **Split mode** — Provide `split_ids` or `batch_split_id` with `split_schema_config`
+
+<Warning>
+  **Batch Schema vs Multi-Extraction** — these solve different problems:
+
+  - **Batch Schema** (`POST /batch/schema`) applies the same schema to each document **separately** — you get N results for N documents.
+  - **Multi-Extraction** (`POST /schema` with a batch extract ID or `extraction_ids`) **combines** all documents into one composite and applies the schema once — you get a single result with data merged from all sources.
+
+  If you need to pull data that spans across multiple files (e.g., loss data in one file + exposure data in another), use [Multi-Extraction](/api-reference/endpoint/schema#multi-extraction) instead.
+</Warning>
 
 <Info>
   See [Schema](/api-reference/endpoint/schema) for details on `schema_config`, `split_schema_config`, and the difference between single and split modes.

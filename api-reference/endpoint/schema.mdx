@@ -6,13 +6,15 @@ openapi: 'POST /schema'
 ## Overview
 
 <Info>
-  **Pipeline Step 2 or 3** — Schema requires a prior [extraction](/api-reference/endpoint/extract). For split mode, it also requires a prior [split](/api-reference/endpoint/split). The mode is inferred from whether you provide `extraction_id` (single) or `split_id` (split).
+  **Pipeline Step 2 or 3** — Schema requires a prior [extraction](/api-reference/endpoint/extract). For split mode, it also requires a prior [split](/api-reference/endpoint/split). The mode is inferred from the input fields you provide.
 </Info>
 
-Apply a schema to a previously extracted document to get structured data output. This endpoint supports two modes, inferred from the input:
+Apply a schema to previously extracted documents to get structured data output. This endpoint supports multiple modes, inferred from the input:
 
-- **Single mode** — provide `extraction_id` to apply one schema to the entire document
+- **Single mode** — provide `extraction_id` to apply one schema to a single document
+- **Multi-extraction mode** — provide a batch extract ID as `extraction_id` (auto-detected) or an explicit `extraction_ids` list to combine content from multiple documents and apply the schema to the composite
 - **Split mode** — provide `split_id` to apply per-topic schemas to page groups from a prior `/split`
+- **Excel template mode** — provide `excel_template` (base64 `.xlsx`) in `schema_config` instead of `input_schema` to auto-generate the schema from column headers and receive a filled Excel file
 
 <Note>
   This endpoint operates on **saved extractions** (created via `/extract` with storage enabled, which is the default).
@@ -51,10 +53,22 @@ Apply one schema to an entire extraction.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `extraction_id` | uuid | Yes | ID of the saved extraction |
-| `schema_config` | object | XOR | Inline schema: `{ input_schema: {...}, schema_prompt: "...", effort: false }` |
+| `extraction_id` | uuid | Yes | ID of a saved extraction, or a batch extract job ID (auto-detected — see [Multi-Extraction Mode](#multi-extraction)) |
+| `extraction_ids` | uuid[] | No | Explicit list of extraction IDs to combine (see [Multi-Extraction Mode](#multi-extraction)) |
+| `schema_config` | object | XOR | Inline schema (see [Schema Config](#schema-config)) |
 | `schema_config_id` | uuid | XOR | Reference to a saved schema configuration |
 | `async` | boolean | No | Default: `false` |
+
+#### Schema Config
+
+Provide **either** `input_schema` or `excel_template` — not both.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `input_schema` | object | XOR | JSON Schema defining the structured data to extract |
+| `excel_template` | string (base64) | XOR | Base64-encoded `.xlsx` template — column headers are used to auto-generate the JSON Schema and a filled copy is returned (see [Excel Template Mode](#excel-template-mode)) |
+| `schema_prompt` | string | No | Natural language instructions to guide extraction |
+| `effort` | boolean | No | Enable extended reasoning for complex documents |
 
 ### Response (200)
 
@@ -63,6 +77,8 @@ Apply one schema to an entire extraction.
 | `schema_id` | uuid | Unique identifier for this schema version |
 | `version` | integer | Schema version number |
 | `schema_output` | object | `{ values: {...}, citations: {...} }` |
+| `extraction_ids` | uuid[] | Present when multiple extractions were combined — lists all source extraction IDs |
+| `excel_output_url` | string | API path to download the filled Excel template (only present when `excel_template` was provided) |
 
 ### Example — Inline Schema
 
@@ -191,6 +207,162 @@ curl -X POST https://api.runpulse.com/schema \
   }
 }
 ```
+
+### Multi-Extraction Mode {#multi-extraction}
+
+Combine content from multiple documents and apply a single schema to the composite, producing **one merged result**. This is useful when the data you need spans across several files (e.g., a loss summary in one file and exposure data in another).
+
+<Note>
+  This is different from [Batch Schema](/api-reference/endpoint/batch-overview#batch-schema), which applies the same schema to each document **independently** (one result per document). Use multi-extraction when you need to cross-reference or merge data from multiple source files into a single output.
+</Note>
+
+There are two ways to trigger multi-extraction:
+
+1. **Batch extract auto-detection** — Pass a batch extract `batch_job_id` as `extraction_id`. The system detects it as a batch parent and automatically combines all completed child extractions.
+2. **Explicit list** — Pass an `extraction_ids` array with the specific extraction IDs to combine.
+
+Citations in multi-extraction results use the `extraction_id-bb_id` format (e.g., `abc123-txt-1`) to disambiguate bounding boxes across source documents.
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+from pulse.types.schema_config import SchemaConfig
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Option 1: Pass a batch extract job ID (auto-detected)
+schema_result = client.schema(
+    extraction_id="<batch_job_id>",
+    schema_config=SchemaConfig(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "policy_period": {"type": "string"},
+                "exposure": {"type": "number"},
+            },
+        },
+        schema_prompt="Combine data from both documents",
+    ),
+)
+
+# Option 2: Pass an explicit list of extraction IDs
+schema_result = client.schema(
+    extraction_ids=["extraction-1-uuid", "extraction-2-uuid"],
+    schema_config=SchemaConfig(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "policy_period": {"type": "string"},
+                "exposure": {"type": "number"},
+            },
+        },
+    ),
+)
+
+# Response includes the list of source extraction IDs
+print(schema_result.extraction_ids)
+```
+
+```bash curl
+# Option 1: Batch extract ID (auto-detected)
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "<batch_job_id>",
+    "schema_config": {
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "policy_period": {"type": "string"},
+          "exposure": {"type": "number"}
+        }
+      },
+      "schema_prompt": "Combine data from both documents"
+    }
+  }'
+
+# Option 2: Explicit extraction IDs
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_ids": ["extraction-1-uuid", "extraction-2-uuid"],
+    "schema_config": {
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "policy_period": {"type": "string"},
+          "exposure": {"type": "number"}
+        }
+      }
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Excel Template Mode {#excel-template-mode}
+
+Instead of writing a JSON Schema by hand, provide an Excel template (`.xlsx`) with the column headers you want filled. The system auto-generates the JSON Schema from the template's structure, applies it to the extraction, and returns a filled copy of the original template.
+
+<CodeGroup>
+
+```python Python
+import base64
+from pulse import Pulse
+from pulse.types.schema_config import SchemaConfig
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+with open("template.xlsx", "rb") as f:
+    template_b64 = base64.b64encode(f.read()).decode()
+
+schema_result = client.schema(
+    extraction_id="abc123-def456-ghi789",
+    schema_config=SchemaConfig(
+        excel_template=template_b64,
+        schema_prompt="Extract policy period data into the template columns",
+    ),
+)
+
+# Download the filled Excel file
+excel_bytes = client.download_schema_excel(schema_result.schema_id)
+with open("filled_output.xlsx", "wb") as f:
+    for chunk in excel_bytes:
+        f.write(chunk)
+```
+
+```bash curl
+# Base64-encode the template
+TEMPLATE_B64=$(base64 -i template.xlsx)
+
+# Apply schema with Excel template
+curl -X POST https://api.runpulse.com/schema \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"extraction_id\": \"abc123-def456-ghi789\",
+    \"schema_config\": {
+      \"excel_template\": \"$TEMPLATE_B64\",
+      \"schema_prompt\": \"Extract policy period data into the template columns\"
+    }
+  }"
+
+# Download the filled Excel (requires API key auth)
+curl -o filled_output.xlsx \
+  -H "x-api-key: YOUR_API_KEY" \
+  https://api.runpulse.com/schema/<schema_id>/excel
+```
+
+</CodeGroup>
+
+The response includes `excel_output_url` (e.g., `/schema/{schema_id}/excel`) — an authenticated API path for downloading the filled template. Use `client.download_schema_excel(schema_id)` in the SDK or make an authenticated `GET` request.
+
+<Note>
+  Excel template mode and multi-extraction mode can be combined — pass a batch extract ID or `extraction_ids` along with `excel_template` to fill a template from multiple source documents.
+</Note>
 
   </Tab>
 
@@ -347,14 +519,27 @@ curl -X POST https://api.runpulse.com/schema \
 
 ---
 
+## Download Filled Excel — `GET /schema/{schemaId}/excel`
+
+When a schema extraction was created with `excel_template`, the filled output can be downloaded from this authenticated endpoint. Requires the same API key used for other endpoints. The caller must belong to the org that owns the underlying extraction.
+
+| Status | Description |
+|--------|-------------|
+| 200 | Returns the filled `.xlsx` file as a binary download |
+| 401 | Authentication failed or missing API key |
+| 404 | Schema not found, or no Excel output (was `excel_template` provided in the original request?) |
+
+---
+
 ## Error Responses
 
 | Status | Error | Description |
 |--------|-------|-------------|
-| 400 | Invalid request | Must provide either `extraction_id` or `split_id` (not both) |
+| 400 | Invalid request | Must provide `extraction_id`, `extraction_ids`, or `split_id` |
 | 400 | Invalid schema | Schema must follow JSON Schema / OpenAPI 3.0 format |
+| 400 | Mutually exclusive | Cannot provide both `input_schema` and `excel_template` |
 | 401 | Unauthorized | Invalid or missing API key |
-| 404 | Not found | Extraction or split not found |
+| 404 | Not found | Extraction, batch job, or split not found |
 | 500 | Processing error | Schema extraction failed |
 
 ---
@@ -376,6 +561,14 @@ curl -X POST https://api.runpulse.com/schema \
   
   <Accordion title="For multi-section documents, use split mode">
     First call [`/split`](/api-reference/endpoint/split) to get page groups, then use this endpoint with `split_id` + `split_schema_config`.
+  </Accordion>
+  
+  <Accordion title="Combine data from multiple files with multi-extraction">
+    When the data you need spans multiple documents, use [Batch Extract](/api-reference/endpoint/batch-overview#batch-extract) to extract all files, then pass the `batch_job_id` as `extraction_id` to this endpoint. The system auto-detects the batch parent and combines content from all child extractions.
+  </Accordion>
+  
+  <Accordion title="Use Excel templates for spreadsheet-native workflows">
+    If your output is an Excel spreadsheet, skip the JSON Schema definition and provide the empty `.xlsx` template directly via `excel_template`. The column headers define the schema, and you get a filled copy back via `excel_output_url`.
   </Accordion>
 </AccordionGroup>
 
