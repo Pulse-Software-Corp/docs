@@ -22,6 +22,10 @@ For documents over 70 pages, results are returned via S3 URL.
   For large documents or batch processing workflows, set `async: true` to process asynchronously and poll for results via [GET /job/{'{'}jobId{'}'}](/api-reference/endpoint/poll).
 </Note>
 
+<Note>
+  To process many files at once, use [Batch Extract](/api-reference/endpoint/batch-overview#batch-extract). It accepts an S3 prefix, local directory, or list of URLs and runs `/extract` on each file in parallel.
+</Note>
+
 ### Async Mode
 
 Set `async: true` to return immediately with a job ID for polling:

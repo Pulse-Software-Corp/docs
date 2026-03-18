@@ -18,6 +18,10 @@ Apply a schema to a previously extracted document to get structured data output.
   This endpoint operates on **saved extractions** (created via `/extract` with storage enabled, which is the default).
 </Note>
 
+<Note>
+  To apply schemas across many extractions or splits at once, use [Batch Schema](/api-reference/endpoint/batch-overview#batch-schema). It supports both single and split modes.
+</Note>
+
 ### Async Mode
 
 Set `async: true` to return immediately with a job ID for polling. See [Polling for Results](/api-reference/endpoint/poll) for details.
@@ -385,5 +389,8 @@ curl -X POST https://api.runpulse.com/schema \
   </Card>
   <Card title="Split Document" icon="scissors" href="/api-reference/endpoint/split">
     Split a document into topic-based page groups
+  </Card>
+  <Card title="Batch Processing" icon="layer-group" href="/api-reference/endpoint/batch-overview">
+    Apply schema across many documents in parallel
   </Card>
 </CardGroup>

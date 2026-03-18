@@ -62,6 +62,12 @@
             ]
           },
           {
+            "group": "Batch Processing",
+            "pages": [
+              "api-reference/endpoint/batch-overview"
+            ]
+          },
+          {
             "group": "Utilities",
             "pages": [
               "api-reference/endpoint/extract_async",

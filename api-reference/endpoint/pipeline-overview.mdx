@@ -18,6 +18,7 @@ There are five valid pipeline configurations:
 | **Extract → Split** | `/extract` → `/split` | Extract + split document into topic-based page groups |
 | **Extract → Split → Schema** | `/extract` → `/split` → `/schema` | Full pipeline — extract, split by topic, apply per-topic schemas |
 | **Extract → Tables** | `/extract` → `/tables` | Extract + structured table extraction with span detection and cross-page merging |
+| **Batch Pipeline** | `/batch/extract` → `/batch/schema`, `/batch/tables`, `/batch/split` | Process many files through any pipeline in parallel. See [Batch Processing](/api-reference/endpoint/batch-overview). |
 
 ```mermaid
 flowchart LR
@@ -209,6 +210,9 @@ See [Polling for Results](/api-reference/endpoint/poll) for details on async pro
   </Card>
   <Card title="Tables" icon="table" href="/api-reference/endpoint/tables">
     Step 2 (terminal) — Extract structured tables with span detection and cross-page merging
+  </Card>
+  <Card title="Batch Processing" icon="layer-group" href="/api-reference/endpoint/batch-overview">
+    Run any pipeline step across many documents in parallel
   </Card>
 </CardGroup>
 
