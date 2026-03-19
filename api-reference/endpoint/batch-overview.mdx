@@ -69,7 +69,7 @@ Enumerate files from an input source and extract content from each one.
   - **Multi-Extraction** — Pass it as `extraction_id` to `POST /schema` to combine all documents and apply the schema to the composite (one merged result). See [Multi-Extraction Mode](/api-reference/endpoint/schema#multi-extraction).
 </Note>
 
-### Example
+### Example -- S3 Source
 
 <CodeGroup>
 
@@ -100,7 +100,7 @@ const resp = await client.batch.extract({
     workers: 10,
 });
 
-console.log(`Job: ${resp.batchJobId}, files: ${resp.totalFiles}`);
+console.log(`Job: ${resp.batch_job_id}, files: ${resp.total_files}`);
 ```
 
 ```bash curl
@@ -112,6 +112,59 @@ curl -X POST https://api.runpulse.com/batch/extract \
     "output": { "s3_prefix": "s3://my-bucket/results/extractions/" },
     "workers": 10
   }'
+```
+
+</CodeGroup>
+
+### Example -- Upload Files from Folder
+
+<CodeGroup>
+
+```python Python
+import base64
+import os
+from pulse.types import BatchFileUpload
+
+# Upload and extract all files from a local folder
+folder = "documents/"
+files = []
+for name in os.listdir(folder):
+    with open(os.path.join(folder, name), "rb") as f:
+        files.append(BatchFileUpload(
+            filename=name,
+            content=base64.b64encode(f.read()).decode(),
+        ))
+
+resp = client.batch.extract(
+    input=BatchInputSource(files=files),
+    output=BatchOutputDestination(s_3_prefix="s3://my-bucket/results/"),
+)
+```
+
+```typescript TypeScript
+import * as fs from "fs";
+import * as path from "path";
+
+// Upload and extract all files from a local folder
+const folder = "documents/";
+const files = fs.readdirSync(folder).map(name => ({
+    filename: name,
+    content: fs.readFileSync(path.join(folder, name)).toString("base64"),
+}));
+
+const resp = await client.batch.extract({
+    input: { files },
+    output: { s3Prefix: "s3://my-bucket/results/" },
+});
+```
+
+```bash curl
+# Upload files directly as multipart form data
+curl -X POST https://api.runpulse.com/batch/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@documents/report.pdf" \
+  -F "file=@documents/data.xlsx" \
+  -F 'output={"s3_prefix":"s3://my-bucket/results/"}'
 ```
 
 </CodeGroup>
@@ -399,13 +452,23 @@ curl -X POST https://api.runpulse.com/batch/split \
 
 ### Input Sources
 
-Batch Extract accepts one of the following input sources:
+Batch Extract accepts one of the following input sources via JSON body:
 
-| Source | Field | Example |
-|--------|-------|---------|
-| S3 prefix | `s3_prefix` | `s3://my-bucket/documents/` |
-| Local directory | `local_path` | `/data/documents/` |
-| URL list | `file_urls` | `["https://example.com/doc.pdf"]` |
+| Source | Field | Description |
+|--------|-------|-------------|
+| S3 prefix | `input.s3_prefix` | S3 URI prefix (e.g. `s3://my-bucket/documents/`). All supported files under this prefix are processed. |
+| URL list | `input.file_urls` | Explicit list of file URLs to download and process. |
+| Inline file uploads | `input.files` | Array of `{ filename, content }` objects where `content` is base64-encoded file bytes. |
+
+Alternatively, you can upload files directly via **multipart form data** instead of a JSON body:
+
+```bash
+curl -X POST https://api.runpulse.com/batch/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@report.pdf" \
+  -F "file=@data.xlsx" \
+  -F 'output={"s3_prefix":"s3://my-bucket/results/"}'
+```
 
 All other batch endpoints reference prior results via IDs rather than raw files.
 
