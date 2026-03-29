@@ -31,13 +31,14 @@ Pulse API supports a wide range of document formats, enabling extraction from vi
   </Card>
 
   <Card title="Office Documents" icon="file-word">
-    **Extensions**: `.docx`, `.pptx`, `.xlsx`
-    
+    **Extensions**: `.docx`, `.pptx`, `.xlsx`, `.xls`
+
     - Microsoft Word documents
     - PowerPoint presentations
-    - Excel spreadsheets
+    - Excel spreadsheets (`.xlsx` and legacy `.xls`)
     - Embedded images and charts
     - Complex formatting preserved
+    - [Spreadsheet options](/api-reference/endpoint/extract#spreadsheet-options) for hidden rows/columns/sheets
   </Card>
 
   <Card title="Web Documents" icon="globe">
@@ -102,16 +103,21 @@ result = client.extract(
 Office files maintain their structure:
 
 ```python
-# Extract structured data from Excel
-schema = {
-    "headers": ["string"],
-    "data": [["string"]]
-}
+from pulse import Pulse
 
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Extract from Excel with spreadsheet-specific options
 result = client.extract(
-    file_url="spreadsheet.xlsx",
-    schema=schema
+    file=open("spreadsheet.xlsx", "rb"),
+    spreadsheet={
+        "include_hidden_rows": True,
+        "include_hidden_cols": True,
+        "include_hidden_sheets": False,
+    }
 )
+
+print(result.markdown)
 ```
 
 **Office Document Features**:
@@ -119,6 +125,7 @@ result = client.extract(
 - Extract embedded objects
 - Handle multiple sheets/slides
 - Maintain formatting context
+- Control hidden rows, columns, and sheets in Excel (see [Spreadsheet Options](/api-reference/endpoint/extract#spreadsheet-options))
 
 ## File Upload Methods
 
@@ -156,7 +163,7 @@ The following formats are **not** currently supported:
 - Video files (`.mp4`, `.avi`, `.mov`)
 - Audio files (`.mp3`, `.wav`)
 - CAD files (`.dwg`, `.dxf`)
-- Legacy Office formats (`.doc`, `.xls`, `.ppt`)
+- Legacy Office formats (`.doc`, `.ppt`)
 - Compressed archives (`.zip`, `.rar`)
 - Executable files (`.exe`, `.app`)
 

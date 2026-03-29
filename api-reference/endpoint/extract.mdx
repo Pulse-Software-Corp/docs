@@ -110,18 +110,17 @@ For documents under 70 pages, results are returned directly in the response body
 | `bounding_boxes` | object | Detailed bounding box data for document elements. See [Bounding Boxes](/api-reference/bounding-boxes) for details. |
 | `extensions` | object | Output from enabled extensions. Only keys for enabled extensions are present. See below. |
 | `extensions.chunking` | object | Chunk results by strategy (when `extensions.chunking` is enabled). |
-| `extensions.merge_tables` | object | Merge tables result (when `extensions.merge_tables` is enabled). |
-| `extensions.footnote_references` | array | List of detected footnotes with their in-text references (when `extensions.footnote_references` is enabled). See [Footnote References](#footnote-references) below. |
-| `extensions.alt_outputs.wlbb` | object | Word-level bounding boxes (when `extensions.alt_outputs.wlbb` is enabled). |
-| `extensions.alt_outputs.html` | string | HTML representation (when `extensions.alt_outputs.return_html` is enabled). |
-| `extensions.alt_outputs.xml` | string | XML representation (when `extensions.alt_outputs.return_xml` is enabled, WIP). |
+| `extensions.footnoteReferences` | array | List of detected footnotes with their in-text references (when `extensions.footnote_references` is enabled). See [Footnote References](#footnote-references) below. |
+| `extensions.altOutputs.wlbb` | object | Word-level bounding boxes (when `extensions.alt_outputs.wlbb` is enabled). |
+| `extensions.altOutputs.html` | string | HTML representation (when `extensions.alt_outputs.return_html` is enabled). |
+| `extensions.altOutputs.xml` | string | XML representation (when `extensions.alt_outputs.return_xml` is enabled, WIP). |
 | `warnings` | array | Non-fatal warnings generated during extraction, including deprecation notices for legacy input usage. |
 
 #### Deprecated Response Fields
 
 | Field | Replacement | Description |
 |-------|-------------|-------------|
-| `html` | `extensions.alt_outputs.html` | Present when legacy `return_html` input is used. |
+| `html` | `extensions.altOutputs.html` | Present when legacy `return_html` input is used. |
 | `chunks` | `extensions.chunking` | Present when legacy `chunking` input is used. |
 | `plan-info` | `plan_info` | Present when only legacy inputs are used. |
 | `structured_output` | Use [`/schema`](/api-reference/endpoint/schema) | Present when deprecated `structured_output` input was used. |
@@ -535,6 +534,57 @@ curl -X POST https://api.runpulse.com/extract \
 <Info>
 Footnote reference detection uses Azure Document Intelligence for paragraph classification, supplemented by PyMuPDF native text extraction for accurate symbol identification. This handles common OCR confusion between visually similar symbols like `†`/`+` and `‡`/`#`. Supported marker types include numbered (`1`, `2`, `3`), symbolic (`*`, `†`, `‡`, `§`, `#`), and lettered (`a`, `b`, `c`) footnotes.
 </Info>
+
+### Excel Spreadsheet Options
+
+<CodeGroup>
+
+```python Python
+from pulse import Pulse
+from pulse.types import ExtractRequestSpreadsheet
+
+client = Pulse(api_key="YOUR_API_KEY")
+
+# Extract from Excel with hidden content included
+response = client.extract(
+    file=open("financials.xlsx", "rb"),
+    spreadsheet=ExtractRequestSpreadsheet(
+        include_hidden_rows=True,
+        include_hidden_cols=True,
+        include_hidden_sheets=False,
+    ),
+)
+
+print(response.markdown)
+```
+
+```typescript TypeScript
+import { PulseClient } from 'pulse-ts-sdk';
+
+const client = new PulseClient({
+    headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+
+const response = await client.extract({
+    file: fs.createReadStream("financials.xlsx"),
+    spreadsheet: {
+        includeHiddenRows: true,
+        includeHiddenCols: true,
+        includeHiddenSheets: false
+    }
+});
+
+console.log(response.markdown);
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/extract \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@financials.xlsx" \
+  -F 'spreadsheet={"includeHiddenRows": true, "includeHiddenCols": true, "includeHiddenSheets": false}'
+```
+
+</CodeGroup>
 
 ### Disable Storage
 

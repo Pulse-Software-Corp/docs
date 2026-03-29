@@ -5,6 +5,7 @@
 | `pages` | string | - | Page range filter (1-indexed). Supports segments like `1-2` or mixed ranges like `1-2,5`. Page 1 is the first page. |
 | `figure_processing` | object | - | Settings that control how figures in the document are processed. These affect the **markdown output directly** and do not produce additional output fields. See [Figure Processing](#figure-processing). |
 | `extensions` | object | - | Settings that enable additional processing or alternate output formats. Each enabled extension produces a corresponding result under `response.extensions.*`. See [Extensions](#extensions). |
+| `spreadsheet` | object | - | Settings for Excel/spreadsheet extraction. Controls handling of hidden rows, columns, and sheets. Only applies to `.xlsx` and `.xls` files. See [Spreadsheet Options](#spreadsheet-options). |
 | `storage` | object | - | Options for persisting extraction artifacts. See [Storage Options](#storage-options). |
 | `async` | boolean | `false` | If `true`, returns immediately with a `job_id` for polling via `GET /job/{jobId}`. |
 | `structured_output` | object | - | **⚠️ Deprecated** — Use the [`/schema`](/api-reference/endpoint/schema) endpoint after extraction instead. Still works for backward compatibility. |
@@ -18,13 +19,26 @@ Settings under `figure_processing` control how figures (images, charts, diagrams
 | `figure_processing.description` | boolean | `false` | Generate descriptive captions for extracted figures. |
 | `figure_processing.show_images` | boolean | `false` | Embed base64-encoded images inline in figure tags. Increases response size. |
 
+### Spreadsheet Options
+
+Settings under `spreadsheet` control how Excel workbooks (`.xlsx`, `.xls`) are processed. By default, hidden rows, columns, and sheets are excluded from extraction output.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `spreadsheet.include_hidden_rows` | boolean | `false` | Include rows that are hidden in the Excel workbook. |
+| `spreadsheet.include_hidden_cols` | boolean | `false` | Include columns that are hidden in the Excel workbook. |
+| `spreadsheet.include_hidden_sheets` | boolean | `false` | Include sheets that are hidden in the Excel workbook. |
+
+<Note>
+  These settings accept both camelCase (`includeHiddenRows`) and snake_case (`include_hidden_rows`) formats.
+</Note>
+
 ### Extensions
 
 Settings under `extensions` enable additional processing passes or alternate output formats. Each enabled extension produces a **corresponding output field** under `response.extensions.*`. For example, enabling `extensions.chunking` produces `response.extensions.chunking`, and enabling `extensions.alt_outputs.return_html` produces `response.extensions.alt_outputs.html`.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `extensions.merge_tables` | boolean | `false` | Merge tables that span multiple pages into a single table. |
 | `extensions.footnote_references` | boolean | `false` | Link footnote markers to their corresponding footnote text. |
 | `extensions.chunking` | object | - | Chunking configuration. See below. |
 | `extensions.chunking.chunk_types` | string[] | - | List of chunking strategies: `semantic`, `header`, `page`, `recursive`. |

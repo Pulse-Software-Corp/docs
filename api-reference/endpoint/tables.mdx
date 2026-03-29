@@ -54,6 +54,7 @@ Set `async: true` to return immediately with a job ID for polling. See [Polling 
 |-------|------|---------|-------------|
 | `merge` | boolean | `false` | Merge tables that continue across pages into a single table |
 | `table_format` | string | `"html"` | Output format for table content. Currently only `"html"` is supported. |
+| `charts_to_tables` | boolean | `false` | Convert figures and charts into tables using LLM processing. Resulting tables have `from_chart: true` in the response. |
 
 ---
 
@@ -201,6 +202,42 @@ curl -X POST https://api.runpulse.com/tables \
     "tables_config": {
       "merge": true,
       "table_format": "html"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### With Chart-to-Table Conversion
+
+Convert figures and charts into structured tables using LLM processing. Chart-derived tables are marked with `from_chart: true` in the response.
+
+<CodeGroup>
+
+```python Python
+tables_result = client.tables(
+    extraction_id=extract_result.extraction_id,
+    tables_config={
+        "merge": True,
+        "charts_to_tables": True
+    }
+)
+
+for table in tables_result.tables_output.tables:
+    if table.from_chart:
+        print("Chart-derived table:")
+    print(table.table_content)
+```
+
+```bash curl
+curl -X POST https://api.runpulse.com/tables \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "extraction_id": "abc123-...",
+    "tables_config": {
+      "merge": true,
+      "charts_to_tables": true
     }
   }'
 ```
